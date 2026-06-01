@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Học Viên – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d',
+            secondary: '#0061a5', accent: '#e07b28',
+            surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-blue-200/70 hover:bg-white/10 hover:text-white transition-all cursor-pointer; }
+    .sidebar-link.active { @apply bg-white/15 text-white; }
+    .section { display: none; }
+    .section.active { display: block; }
+  </style>
+</head>
+<body class="bg-surface min-h-screen flex">
+
+<!-- Sidebar -->
+<aside class="w-60 min-h-screen bg-primary flex flex-col fixed left-0 top-0 z-20">
+  <div class="px-5 py-5 border-b border-white/10">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+        <span class="material-symbols-outlined text-white text-base">school</span>
+      </div>
+      <div>
+        <div class="text-white font-bold text-sm">EngPro</div>
+        <div class="text-blue-200/60 text-xs">Học Viên</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+    <p class="text-blue-200/40 text-xs font-semibold uppercase tracking-widest px-4 mb-2 mt-1">Tổng quan</p>
+    <div class="sidebar-link active" onclick="showSection('overview')">
+      <span class="material-symbols-outlined text-lg">dashboard</span> Tổng quan
+    </div>
+    <div class="sidebar-link" onclick="showSection('roadmap')">
+      <span class="material-symbols-outlined text-lg">route</span> Lộ trình học
+    </div>
+
+    <p class="text-blue-200/40 text-xs font-semibold uppercase tracking-widest px-4 mb-2 mt-4">Học tập</p>
+    <div class="sidebar-link" onclick="showSection('my-courses')">
+      <span class="material-symbols-outlined text-lg">menu_book</span> Khóa học của tôi
+    </div>
+    <div class="sidebar-link" onclick="showSection('lectures')">
+      <span class="material-symbols-outlined text-lg">play_circle</span> Bài giảng
+    </div>
+    <div class="sidebar-link" onclick="showSection('tests')">
+      <span class="material-symbols-outlined text-lg">quiz</span> Bài kiểm tra
+    </div>
+
+    <p class="text-blue-200/40 text-xs font-semibold uppercase tracking-widest px-4 mb-2 mt-4">Kết quả</p>
+    <div class="sidebar-link" onclick="showSection('results')">
+      <span class="material-symbols-outlined text-lg">grade</span> Kết quả & Điểm số
+    </div>
+    <div class="sidebar-link" onclick="showSection('certificates')">
+      <span class="material-symbols-outlined text-lg">workspace_premium</span> Chứng nhận
+    </div>
+
+    <p class="text-blue-200/40 text-xs font-semibold uppercase tracking-widest px-4 mb-2 mt-4">Khác</p>
+    <div class="sidebar-link" onclick="showSection('explore')">
+      <span class="material-symbols-outlined text-lg">explore</span> Khám phá khóa học
+    </div>
+    <div class="sidebar-link" onclick="showSection('feedback')">
+      <span class="material-symbols-outlined text-lg">forum</span> Bình luận
+    </div>
+    <div class="sidebar-link" onclick="showSection('profile')">
+      <span class="material-symbols-outlined text-lg">manage_accounts</span> Hồ sơ của tôi
+    </div>
+  </nav>
+
+  <div class="px-3 py-4 border-t border-white/10">
+    <div class="flex items-center gap-3 px-4 py-2 mb-2">
+      <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white font-bold text-sm">N</div>
+      <div>
+        <div class="text-white text-xs font-semibold">Người Học</div>
+        <div class="text-blue-200/60 text-xs">user@gmail.com</div>
+      </div>
+    </div>
+    <button onclick="doLogout()" class="flex items-center gap-2 px-4 py-2 text-blue-200/60 hover:text-white text-sm transition-colors w-full">
+      <span class="material-symbols-outlined text-base">logout</span> Đăng xuất
+    </button>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="ml-60 flex-1 flex flex-col min-h-screen">
+  <!-- Topbar -->
+  <header class="bg-white border-b border-outline-variant/30 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+    <div>
+      <h1 id="page-title" class="text-lg font-bold text-primary">Tổng quan</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="relative p-2 rounded-xl hover:bg-surface transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full"></span>
+      </button>
+      <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white font-bold text-sm">N</div>
+    </div>
+  </header>
+
+  <main class="flex-1 p-8">
+
+    <!-- ===== OVERVIEW ===== -->
+    <div id="sec-overview" class="section active">
+      <!-- Welcome banner -->
+      <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
+        <div class="absolute right-0 top-0 w-48 h-full opacity-10">
+          <span class="material-symbols-outlined text-[180px]">school</span>
+        </div>
+        <p class="text-sm text-blue-200 mb-1">Chào mừng trở lại 👋</p>
+        <h2 class="text-xl font-bold mb-1">Người Học</h2>
+        <p class="text-blue-100 text-sm mb-4">Bạn đang học khóa <strong>IELTS 5.5–6.5</strong>. Hãy tiếp tục nào!</p>
+        <div class="flex items-center gap-3">
+          <div class="flex-1 bg-white/20 rounded-full h-2.5 overflow-hidden">
+            <div class="h-full bg-accent rounded-full" style="width:65%"></div>
+          </div>
+          <span class="text-sm font-bold">65%</span>
+        </div>
+        <p class="text-xs text-blue-200 mt-1.5">Hoàn thành 13/20 bài học</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-4 gap-5 mb-6">
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Khóa đã đăng ký</p>
+            <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-secondary text-lg">menu_book</span>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-primary">2</p>
+          <p class="text-xs text-on-surface-variant mt-1.5">IELTS · TOEIC</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Bài đã hoàn thành</p>
+            <div class="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-green-600 text-lg">check_circle</span>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-primary">13</p>
+          <p class="text-xs text-green-600 mt-1.5">+2 tuần này</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Điểm trung bình</p>
+            <div class="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-accent text-lg">grade</span>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-primary">7.2</p>
+          <p class="text-xs text-green-600 mt-1.5">+0.3 so với tháng trước</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Chuỗi học liên tục</p>
+            <div class="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-purple-600 text-lg">local_fire_department</span>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-primary">7</p>
+          <p class="text-xs text-purple-600 mt-1.5">ngày liên tiếp</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6">
+        <!-- Continue learning -->
+        <div class="col-span-2 space-y-4">
+          <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-semibold text-primary">Tiếp tục học</h2>
+              <button onclick="showSection('lectures')" class="text-xs text-secondary hover:underline">Xem tất cả</button>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-red-500 text-3xl">play_circle</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-secondary font-semibold mb-1">IELTS 5.5–6.5 · Bài 14</p>
+                <h3 class="font-bold text-on-surface">Writing Task 2 – Argument Essay</h3>
+                <div class="flex items-center gap-3 mt-2">
+                  <div class="flex-1 h-1.5 bg-surface-low rounded-full overflow-hidden">
+                    <div class="h-full bg-accent rounded-full" style="width:30%"></div>
+                  </div>
+                  <span class="text-xs text-on-surface-variant">30% · 45 phút</span>
+                </div>
+              </div>
+              <button onclick="showSection('lectures')" class="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity flex-shrink-0">
+                Tiếp tục
+              </button>
+            </div>
+          </div>
+
+          <!-- Upcoming tests -->
+          <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-semibold text-primary">Bài kiểm tra sắp đến</h2>
+              <button onclick="showSection('tests')" class="text-xs text-secondary hover:underline">Xem tất cả</button>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined text-amber-600 text-sm">quiz</span>
+                </div>
+                <div class="flex-1">
+                  <p class="font-medium text-on-surface text-sm">Unit 5 – Grammar Review</p>
+                  <p class="text-xs text-on-surface-variant">IELTS 5.5–6.5 · 20 câu · 20 phút</p>
+                </div>
+                <button onclick="showSection('tests')" class="px-3 py-1.5 bg-amber-500 text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity">Làm bài</button>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-surface rounded-xl border border-outline-variant/30">
+                <div class="w-8 h-8 bg-surface-low rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined text-on-surface-variant text-sm">quiz</span>
+                </div>
+                <div class="flex-1">
+                  <p class="font-medium text-on-surface text-sm">Listening Mock Test 1</p>
+                  <p class="text-xs text-on-surface-variant">IELTS 5.5–6.5 · 40 câu · 30 phút</p>
+                </div>
+                <span class="text-xs text-on-surface-variant px-3 py-1.5 bg-surface-low rounded-lg">Chưa mở</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="space-y-4">
+          <!-- Skill chart -->
+          <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+            <h2 class="font-semibold text-primary mb-4">Kỹ năng của bạn</h2>
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-on-surface-variant font-medium">Listening</span>
+                  <span class="font-bold text-secondary">7.0</span>
+                </div>
+                <div class="h-2 bg-surface-low rounded-full overflow-hidden">
+                  <div class="h-full bg-secondary rounded-full" style="width:70%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-on-surface-variant font-medium">Reading</span>
+                  <span class="font-bold text-secondary">7.5</span>
+                </div>
+                <div class="h-2 bg-surface-low rounded-full overflow-hidden">
+                  <div class="h-full bg-green-500 rounded-full" style="width:75%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-on-surface-variant font-medium">Writing</span>
+                  <span class="font-bold text-accent">6.0</span>
+                </div>
+                <div class="h-2 bg-surface-low rounded-full overflow-hidden">
+                  <div class="h-full bg-accent rounded-full" style="width:60%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-on-surface-variant font-medium">Speaking</span>
+                  <span class="font-bold text-secondary">6.5</span>
+                </div>
+                <div class="h-2 bg-surface-low rounded-full overflow-hidden">
+                  <div class="h-full bg-indigo-400 rounded-full" style="width:65%"></div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-outline-variant/20 text-center">
+              <p class="text-xs text-on-surface-variant">Điểm tổng hiện tại</p>
+              <p class="text-2xl font-bold text-primary mt-0.5">6.75</p>
+              <p class="text-xs text-green-600">Mục tiêu: 7.0</p>
+            </div>
+          </div>
+
+          <!-- Quick links -->
+          <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+            <h2 class="font-semibold text-primary mb-3">Khám phá nhanh</h2>
+            <div class="space-y-2">
+              <a href="mock-test.html" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-surface-low transition-colors text-sm">
+                <span class="material-symbols-outlined text-secondary text-lg">assignment</span>
+                <span class="text-on-surface">Làm bài test thử</span>
+                <span class="material-symbols-outlined text-on-surface-variant text-sm ml-auto">chevron_right</span>
+              </a>
+              <a href="practice.html" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-surface-low transition-colors text-sm">
+                <span class="material-symbols-outlined text-accent text-lg">library_books</span>
+                <span class="text-on-surface">Luyện đề thêm</span>
+                <span class="material-symbols-outlined text-on-surface-variant text-sm ml-auto">chevron_right</span>
+              </a>
+              <a href="placement-test.html" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-surface-low transition-colors text-sm">
+                <span class="material-symbols-outlined text-purple-600 text-lg">psychology</span>
+                <span class="text-on-surface">Đánh giá trình độ</span>
+                <span class="material-symbols-outlined text-on-surface-variant text-sm ml-auto">chevron_right</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ROADMAP ===== -->
+    <div id="sec-roadmap" class="section">
+      <p class="text-sm text-on-surface-variant mb-6">Lộ trình học IELTS của bạn — từ band hiện tại đến mục tiêu</p>
+      <div class="max-w-2xl">
+        <!-- Roadmap steps -->
+        <div class="relative">
+          <!-- Vertical line -->
+          <div class="absolute left-5 top-8 bottom-8 w-0.5 bg-outline-variant/40"></div>
+          <div class="absolute left-5 top-8 w-0.5 bg-secondary" style="height:45%"></div>
+
+          <div class="space-y-6">
+            <!-- Step 1: completed -->
+            <div class="flex items-start gap-5">
+              <div class="w-10 h-10 bg-secondary rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 border-white shadow">
+                <span class="material-symbols-outlined text-white text-base">check</span>
+              </div>
+              <div class="flex-1 bg-white rounded-2xl border border-outline-variant/30 p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="font-bold text-primary">IELTS 4.5 → 5.5 <span class="text-xs font-normal text-on-surface-variant ml-1">· Nền tảng</span></p>
+                  <span class="text-xs bg-green-100 text-green-700 font-semibold px-2.5 py-1 rounded-full">Đã hoàn thành</span>
+                </div>
+                <p class="text-xs text-on-surface-variant">Từ vựng cơ bản, ngữ pháp nền tảng, kỹ năng nghe đơn giản</p>
+                <p class="text-xs text-green-600 font-medium mt-2">Hoàn thành 01/03/2026 · Điểm trung bình: 5.5</p>
+              </div>
+            </div>
+
+            <!-- Step 2: in progress -->
+            <div class="flex items-start gap-5">
+              <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 border-white shadow">
+                <span class="material-symbols-outlined text-white text-base">pending</span>
+              </div>
+              <div class="flex-1 bg-white rounded-2xl border-2 border-accent/40 p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="font-bold text-primary">IELTS 5.5 → 6.5 <span class="text-xs font-normal text-on-surface-variant ml-1">· Trung cấp</span></p>
+                  <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 bg-accent rounded-full animate-pulse"></span> Đang học
+                  </span>
+                </div>
+                <p class="text-xs text-on-surface-variant">4 kỹ năng Listening/Reading/Writing/Speaking nâng cao</p>
+                <div class="mt-3">
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="text-on-surface-variant">Tiến độ</span>
+                    <span class="font-semibold text-accent">65% · 13/20 bài</span>
+                  </div>
+                  <div class="h-2 bg-surface-low rounded-full overflow-hidden">
+                    <div class="h-full bg-accent rounded-full" style="width:65%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: locked -->
+            <div class="flex items-start gap-5 opacity-50">
+              <div class="w-10 h-10 bg-surface-low rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 border-white shadow">
+                <span class="material-symbols-outlined text-on-surface-variant text-base">lock</span>
+              </div>
+              <div class="flex-1 bg-white rounded-2xl border border-outline-variant/30 p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="font-bold text-primary">IELTS 6.5 → 7.5 <span class="text-xs font-normal text-on-surface-variant ml-1">· Nâng cao</span></p>
+                  <span class="text-xs bg-surface-low text-on-surface-variant font-semibold px-2.5 py-1 rounded-full">Chưa mở khóa</span>
+                </div>
+                <p class="text-xs text-on-surface-variant">Chiến lược thi nâng cao, Writing complex arguments, Speaking fluency</p>
+                <p class="text-xs text-on-surface-variant mt-2">Mở khóa sau khi hoàn thành IELTS 5.5–6.5</p>
+              </div>
+            </div>
+
+            <!-- Step 4: locked -->
+            <div class="flex items-start gap-5 opacity-40">
+              <div class="w-10 h-10 bg-surface-low rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 border-white shadow">
+                <span class="material-symbols-outlined text-on-surface-variant text-base">emoji_events</span>
+              </div>
+              <div class="flex-1 bg-white rounded-2xl border border-outline-variant/30 p-4">
+                <p class="font-bold text-primary">Đạt mục tiêu IELTS 7.5+</p>
+                <p class="text-xs text-on-surface-variant mt-1">Sẵn sàng cho kỳ thi thực tế</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MY COURSES ===== -->
+    <div id="sec-my-courses" class="section">
+      <div class="flex items-center justify-between mb-6">
+        <p class="text-sm text-on-surface-variant" id="my-courses-count">Các khóa học bạn đã đăng ký</p>
+        <a href="courses.html" class="flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
+          <span class="material-symbols-outlined text-base">add</span> Đăng ký thêm
+        </a>
+      </div>
+      <div id="my-courses-grid" class="grid grid-cols-2 gap-5">
+        <div class="col-span-2 flex flex-col items-center justify-center py-16">
+          <span class="material-symbols-outlined text-4xl text-outline-variant animate-spin mb-3">sync</span>
+          <p class="text-sm text-on-surface-variant">Đang tải...</p>
+        </div>
+      </div>
+
+      <!-- ── Tiến độ học tập theo khóa ── -->
+      <div class="mt-10">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-8 h-8 bg-secondary/10 rounded-xl flex items-center justify-center">
+            <span class="material-symbols-outlined text-secondary text-base">analytics</span>
+          </div>
+          <h2 class="font-bold text-primary text-base">Tiến độ học tập theo khóa</h2>
+        </div>
+        <div id="progress-summary-list" class="space-y-4">
+          <div class="flex items-center justify-center py-10">
+            <span class="material-symbols-outlined text-3xl text-outline-variant animate-spin">sync</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LECTURES ===== -->
+    <div id="sec-lectures" class="section">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="flex gap-2">
+          <button class="px-4 py-2 text-sm font-semibold bg-secondary text-white rounded-xl">IELTS 5.5–6.5</button>
+          <button class="px-4 py-2 text-sm font-medium text-on-surface-variant bg-white border border-outline-variant/50 rounded-xl hover:border-secondary hover:text-secondary transition-colors">TOEIC 450–600</button>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Completed -->
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-4 flex items-center gap-4 opacity-70">
+          <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-green-600 text-lg">check_circle</span>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-on-surface-variant mb-0.5">Bài 1 · Listening</p>
+            <p class="font-medium text-on-surface">Giới thiệu IELTS Listening – Cấu trúc đề thi</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs text-green-600 font-semibold">Đã hoàn thành</p>
+            <p class="text-xs text-on-surface-variant">32 phút</p>
+          </div>
+          <button class="px-3 py-1.5 text-xs bg-surface border border-outline-variant/50 rounded-lg hover:bg-surface-low transition-colors">Xem lại</button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-4 flex items-center gap-4 opacity-70">
+          <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-green-600 text-lg">check_circle</span>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-on-surface-variant mb-0.5">Bài 2 · Listening</p>
+            <p class="font-medium text-on-surface">Section 1 & 2 – Chiến lược nghe điền từ</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs text-green-600 font-semibold">Đã hoàn thành</p>
+            <p class="text-xs text-on-surface-variant">38 phút</p>
+          </div>
+          <button class="px-3 py-1.5 text-xs bg-surface border border-outline-variant/50 rounded-lg hover:bg-surface-low transition-colors">Xem lại</button>
+        </div>
+
+        <!-- In progress -->
+        <div class="bg-white rounded-2xl border-2 border-accent/40 p-4 flex items-center gap-4">
+          <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-red-500 text-lg">play_circle</span>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-secondary mb-0.5">Bài 14 · Writing · Đang xem</p>
+            <p class="font-bold text-on-surface">Writing Task 2 – Argument Essay Structure</p>
+            <div class="flex items-center gap-2 mt-1.5">
+              <div class="flex-1 h-1 bg-surface-low rounded-full overflow-hidden">
+                <div class="h-full bg-accent rounded-full" style="width:30%"></div>
+              </div>
+              <span class="text-xs text-on-surface-variant">30% · 45 phút</span>
+            </div>
+          </div>
+          <button class="px-4 py-2 bg-accent text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity flex-shrink-0">Tiếp tục</button>
+        </div>
+
+        <!-- Locked -->
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-4 flex items-center gap-4 opacity-50">
+          <div class="w-10 h-10 bg-surface-low rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-on-surface-variant text-lg">lock</span>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-on-surface-variant mb-0.5">Bài 15 · Writing</p>
+            <p class="font-medium text-on-surface">Writing Task 2 – Discussion Essay</p>
+          </div>
+          <span class="text-xs text-on-surface-variant px-3 py-1.5 bg-surface-low rounded-lg flex-shrink-0">Chưa mở khóa</span>
+        </div>
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-4 flex items-center gap-4 opacity-50">
+          <div class="w-10 h-10 bg-surface-low rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-on-surface-variant text-lg">lock</span>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-on-surface-variant mb-0.5">Bài 16 · Speaking</p>
+            <p class="font-medium text-on-surface">Speaking Part 2 – Long Turn Strategy</p>
+          </div>
+          <span class="text-xs text-on-surface-variant px-3 py-1.5 bg-surface-low rounded-lg flex-shrink-0">Chưa mở khóa</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TESTS ===== -->
+    <div id="sec-tests" class="section">
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Pending tests -->
+        <div>
+          <h2 class="font-semibold text-primary mb-4">Bài kiểm tra cần làm</h2>
+          <div class="space-y-3">
+            <div class="bg-white rounded-2xl border-2 border-amber-300 p-4">
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <p class="font-bold text-on-surface">Unit 5 – Grammar Review</p>
+                  <p class="text-xs text-on-surface-variant mt-0.5">IELTS 5.5–6.5 · 20 câu · 20 phút</p>
+                </div>
+                <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-1 rounded-full">Cần làm</span>
+              </div>
+              <button class="w-full py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity mt-2">Bắt đầu làm bài</button>
+            </div>
+            <div class="bg-white rounded-2xl border border-outline-variant/30 p-4">
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <p class="font-bold text-on-surface">Listening Mock Test 1</p>
+                  <p class="text-xs text-on-surface-variant mt-0.5">IELTS 5.5–6.5 · 40 câu · 30 phút</p>
+                </div>
+                <span class="text-xs bg-surface-low text-on-surface-variant font-semibold px-2 py-1 rounded-full">Chưa mở</span>
+              </div>
+              <button class="w-full py-2.5 bg-surface border border-outline-variant/50 text-on-surface-variant text-sm font-semibold rounded-xl cursor-not-allowed mt-2">Hoàn thành bài 14 trước</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Completed tests -->
+        <div>
+          <h2 class="font-semibold text-primary mb-4">Đã hoàn thành</h2>
+          <div class="space-y-3">
+            <div class="bg-white rounded-2xl border border-outline-variant/30 p-4 flex items-center gap-4">
+              <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-green-600 text-lg">check_circle</span>
+              </div>
+              <div class="flex-1">
+                <p class="font-medium text-on-surface">Unit 1 – Vocabulary Quiz</p>
+                <p class="text-xs text-on-surface-variant">20/05/2026 · 20 câu</p>
+              </div>
+              <div class="text-right">
+                <p class="text-lg font-bold text-green-600">8.5</p>
+                <p class="text-xs text-green-600">Đạt</p>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-outline-variant/30 p-4 flex items-center gap-4">
+              <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-green-600 text-lg">check_circle</span>
+              </div>
+              <div class="flex-1">
+                <p class="font-medium text-on-surface">Unit 2 – Grammar Review</p>
+                <p class="text-xs text-on-surface-variant">15/05/2026 · 25 câu</p>
+              </div>
+              <div class="text-right">
+                <p class="text-lg font-bold text-secondary">7.2</p>
+                <p class="text-xs text-green-600">Đạt</p>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-outline-variant/30 p-4 flex items-center gap-4">
+              <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-error text-lg">cancel</span>
+              </div>
+              <div class="flex-1">
+                <p class="font-medium text-on-surface">Unit 3 – Listening Quiz</p>
+                <p class="text-xs text-on-surface-variant">10/05/2026 · 20 câu</p>
+              </div>
+              <div class="text-right">
+                <p class="text-lg font-bold text-error">4.5</p>
+                <p class="text-xs text-error">Chưa đạt</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RESULTS ===== -->
+    <div id="sec-results" class="section">
+      <div class="grid grid-cols-2 gap-6 mb-6">
+        <!-- Skill scores -->
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-6">
+          <h2 class="font-semibold text-primary mb-5">Điểm kỹ năng hiện tại (IELTS)</h2>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1.5">
+                <span class="text-on-surface font-medium">Listening</span>
+                <span class="font-bold text-secondary">7.0</span>
+              </div>
+              <div class="h-3 bg-surface-low rounded-full overflow-hidden">
+                <div class="h-full bg-secondary rounded-full" style="width:70%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5">
+                <span class="text-on-surface font-medium">Reading</span>
+                <span class="font-bold text-green-600">7.5</span>
+              </div>
+              <div class="h-3 bg-surface-low rounded-full overflow-hidden">
+                <div class="h-full bg-green-500 rounded-full" style="width:75%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5">
+                <span class="text-on-surface font-medium">Writing</span>
+                <span class="font-bold text-accent">6.0</span>
+              </div>
+              <div class="h-3 bg-surface-low rounded-full overflow-hidden">
+                <div class="h-full bg-accent rounded-full" style="width:60%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1.5">
+                <span class="text-on-surface font-medium">Speaking</span>
+                <span class="font-bold text-secondary">6.5</span>
+              </div>
+              <div class="h-3 bg-surface-low rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-400 rounded-full" style="width:65%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-5 pt-5 border-t border-outline-variant/20 flex items-center justify-between">
+            <div>
+              <p class="text-xs text-on-surface-variant">Điểm ước tính</p>
+              <p class="text-2xl font-bold text-primary">6.75</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-on-surface-variant">Mục tiêu</p>
+              <p class="text-2xl font-bold text-secondary">7.0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress over time -->
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-6">
+          <h2 class="font-semibold text-primary mb-5">Xu hướng điểm số (5 bài gần nhất)</h2>
+          <div class="flex items-end gap-3 h-36 mb-4">
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <span class="text-xs text-on-surface-variant">4.5</span>
+              <div class="w-full bg-red-400 rounded-t-lg" style="height:40%"></div>
+              <span class="text-xs text-on-surface-variant">BKT3</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <span class="text-xs text-on-surface-variant">7.2</span>
+              <div class="w-full bg-secondary rounded-t-lg" style="height:70%"></div>
+              <span class="text-xs text-on-surface-variant">BKT2G</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <span class="text-xs text-on-surface-variant">6.5</span>
+              <div class="w-full bg-secondary rounded-t-lg" style="height:63%"></div>
+              <span class="text-xs text-on-surface-variant">BKT2</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <span class="text-xs text-on-surface-variant">8.5</span>
+              <div class="w-full bg-green-500 rounded-t-lg" style="height:88%"></div>
+              <span class="text-xs text-on-surface-variant">BKT1G</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <span class="text-xs text-on-surface-variant">8.0</span>
+              <div class="w-full bg-green-500 rounded-t-lg" style="height:82%"></div>
+              <span class="text-xs text-on-surface-variant">BKT1</span>
+            </div>
+          </div>
+          <p class="text-xs text-center text-on-surface-variant">Điểm trung bình: <strong class="text-primary">6.94</strong> · Cần cải thiện: <strong class="text-accent">Writing</strong></p>
+        </div>
+      </div>
+
+      <!-- Detailed history -->
+      <div class="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden">
+        <div class="px-5 py-4 border-b border-outline-variant/20">
+          <h2 class="font-semibold text-primary">Lịch sử bài kiểm tra</h2>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-surface-low">
+            <tr>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Bài kiểm tra</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Kỹ năng</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Điểm</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Kết quả</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Ngày</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant/20">
+            <tr class="hover:bg-surface/50"><td class="px-5 py-3 font-medium">Unit 1 – Vocabulary Quiz</td><td class="px-5 py-3 text-on-surface-variant">Grammar</td><td class="px-5 py-3 font-bold text-green-600">8.5/10</td><td class="px-5 py-3"><span class="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Đạt</span></td><td class="px-5 py-3 text-on-surface-variant">20/05/2026</td></tr>
+            <tr class="hover:bg-surface/50"><td class="px-5 py-3 font-medium">Unit 2 – Grammar Review</td><td class="px-5 py-3 text-on-surface-variant">Grammar</td><td class="px-5 py-3 font-bold text-secondary">7.2/10</td><td class="px-5 py-3"><span class="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Đạt</span></td><td class="px-5 py-3 text-on-surface-variant">15/05/2026</td></tr>
+            <tr class="hover:bg-surface/50"><td class="px-5 py-3 font-medium">Unit 3 – Listening Quiz</td><td class="px-5 py-3 text-on-surface-variant">Listening</td><td class="px-5 py-3 font-bold text-error">4.5/10</td><td class="px-5 py-3"><span class="text-xs bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full">Chưa đạt</span></td><td class="px-5 py-3 text-on-surface-variant">10/05/2026</td></tr>
+            <tr class="hover:bg-surface/50"><td class="px-5 py-3 font-medium">Unit 2 – Grammar Review</td><td class="px-5 py-3 text-on-surface-variant">Grammar</td><td class="px-5 py-3 font-bold text-secondary">6.5/10</td><td class="px-5 py-3"><span class="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Đạt</span></td><td class="px-5 py-3 text-on-surface-variant">08/05/2026</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== CERTIFICATES ===== -->
+    <div id="sec-certificates" class="section">
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Earned -->
+        <div>
+          <h2 class="font-semibold text-primary mb-4">Chứng nhận đã đạt</h2>
+          <div class="bg-gradient-to-br from-primary to-secondary rounded-2xl p-6 text-white">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="material-symbols-outlined text-amber-300 text-4xl">workspace_premium</span>
+              <div>
+                <p class="text-xs text-blue-200">EngPro Certificate</p>
+                <p class="font-bold text-lg">IELTS Foundation</p>
+              </div>
+            </div>
+            <p class="text-sm text-blue-100 mb-3">Hoàn thành khóa IELTS 4.5–5.5 với điểm trung bình 5.5</p>
+            <div class="flex items-center justify-between">
+              <p class="text-xs text-blue-300">Cấp ngày 01/03/2026</p>
+              <button class="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-sm font-semibold rounded-lg transition-colors">Tải xuống</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Locked -->
+        <div>
+          <h2 class="font-semibold text-primary mb-4">Chứng nhận sắp đạt được</h2>
+          <div class="bg-white rounded-2xl border border-outline-variant/30 p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 bg-surface-low rounded-xl flex items-center justify-center">
+                <span class="material-symbols-outlined text-on-surface-variant text-3xl">workspace_premium</span>
+              </div>
+              <div>
+                <p class="text-xs text-on-surface-variant">EngPro Certificate</p>
+                <p class="font-bold text-on-surface">IELTS Intermediate</p>
+              </div>
+            </div>
+            <p class="text-sm text-on-surface-variant mb-4">Hoàn thành khóa IELTS 5.5–6.5</p>
+            <div>
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-on-surface-variant">Tiến độ</span>
+                <span class="font-semibold text-secondary">65%</span>
+              </div>
+              <div class="h-2.5 bg-surface-low rounded-full overflow-hidden">
+                <div class="h-full bg-secondary rounded-full" style="width:65%"></div>
+              </div>
+              <p class="text-xs text-on-surface-variant mt-2">Còn 7 bài giảng và 4 bài kiểm tra nữa</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EXPLORE ===== -->
+    <div id="sec-explore" class="section">
+      <p class="text-sm text-on-surface-variant mb-6">Khám phá và đăng ký thêm khóa học</p>
+      <div class="grid grid-cols-3 gap-5">
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs font-semibold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">IELTS</span>
+            <span class="text-xs font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">Nâng cao</span>
+          </div>
+          <h3 class="font-bold text-primary text-base">6.5 → 7.5</h3>
+          <p class="text-xs text-on-surface-variant mt-1 mb-3">Advanced Writing · Complex Grammar · Fluency</p>
+          <div class="flex items-center gap-3 text-xs text-on-surface-variant mb-4 border-t border-outline-variant/20 pt-3">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">groups</span> 31 học sinh</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">play_circle</span> 16 bài</span>
+          </div>
+          <p class="text-base font-bold text-primary mb-3">1.800.000 ₫</p>
+          <button class="w-full py-2 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">Đăng ký</button>
+        </div>
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">TOEFL</span>
+            <span class="text-xs font-semibold bg-surface-low text-on-surface-variant px-2.5 py-1 rounded-full">Trung cấp</span>
+          </div>
+          <h3 class="font-bold text-primary text-base">75 → 90</h3>
+          <p class="text-xs text-on-surface-variant mt-1 mb-3">Reading · Listening · Speaking · Integrated Writing</p>
+          <div class="flex items-center gap-3 text-xs text-on-surface-variant mb-4 border-t border-outline-variant/20 pt-3">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">groups</span> 18 học sinh</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">play_circle</span> 14 bài</span>
+          </div>
+          <p class="text-base font-bold text-primary mb-3">1.600.000 ₫</p>
+          <button class="w-full py-2 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">Đăng ký</button>
+        </div>
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs font-semibold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">TOEIC</span>
+            <span class="text-xs font-semibold bg-surface-low text-on-surface-variant px-2.5 py-1 rounded-full">Nâng cao</span>
+          </div>
+          <h3 class="font-bold text-primary text-base">600 → 750</h3>
+          <p class="text-xs text-on-surface-variant mt-1 mb-3">Advanced Listening · Business Reading · Grammar</p>
+          <div class="flex items-center gap-3 text-xs text-on-surface-variant mb-4 border-t border-outline-variant/20 pt-3">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">groups</span> 22 học sinh</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">play_circle</span> 12 bài</span>
+          </div>
+          <p class="text-base font-bold text-primary mb-3">1.400.000 ₫</p>
+          <button class="w-full py-2 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">Đăng ký</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FEEDBACK ===== -->
+    <div id="sec-feedback" class="section">
+      <div class="max-w-2xl space-y-4">
+        <!-- My comment -->
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <div class="flex items-start gap-4">
+            <div class="w-9 h-9 bg-accent rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">N</div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-0.5">
+                <p class="font-semibold text-on-surface text-sm">Bạn</p>
+                <span class="text-xs text-on-surface-variant">5 giờ trước</span>
+              </div>
+              <p class="text-xs text-secondary mb-2">IELTS 5.5–6.5 · Bài giảng Listening</p>
+              <p class="text-sm text-on-surface-variant">Thầy/Cô có thể làm thêm video về phần điền vào bảng không ạ? Em thấy phần đó còn khó.</p>
+
+              <!-- Reply from teacher -->
+              <div class="mt-3 pt-3 border-t border-outline-variant/20 flex items-start gap-2">
+                <div class="w-7 h-7 bg-secondary rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">GV</div>
+                <div class="bg-blue-50 rounded-xl px-3 py-2.5">
+                  <p class="text-xs font-semibold text-secondary mb-1">Giảng Viên đã trả lời</p>
+                  <p class="text-sm text-on-surface">Cô sẽ upload video bổ sung về table completion vào tuần tới nhé em! Trong thời gian đó em tham khảo file PDF trong phần tài liệu.</p>
+                  <p class="text-xs text-on-surface-variant mt-1">1 giờ trước</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New comment form -->
+        <div class="bg-white rounded-2xl border border-outline-variant/30 p-5">
+          <h2 class="font-semibold text-primary mb-4">Gửi bình luận mới</h2>
+          <div class="space-y-3">
+            <select class="w-full px-3 py-2.5 text-sm border border-outline-variant/50 rounded-xl bg-white focus:outline-none focus:border-secondary">
+              <option>Chọn bài giảng để bình luận...</option>
+              <option>Bài 14 – Writing Task 2 Argument Essay</option>
+              <option>Bài 13 – Speaking Part 3</option>
+              <option>Bài 12 – Reading Academic Texts</option>
+            </select>
+            <textarea rows="3" class="w-full px-4 py-3 text-sm border border-outline-variant/50 rounded-xl resize-none focus:outline-none focus:border-secondary" placeholder="Viết bình luận hoặc câu hỏi của bạn..."></textarea>
+            <div class="flex justify-end">
+              <button class="px-5 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">Gửi bình luận</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== HỒ SƠ CÁ NHÂN ===== -->
+    <div id="sec-profile" class="section">
+      <div class="max-w-2xl space-y-6">
+
+        <!-- Avatar + thông tin cơ bản -->
+        <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+          <div class="flex items-center gap-5 mb-6">
+            <div class="w-20 h-20 rounded-full bg-secondary flex items-center justify-center shrink-0">
+              <span class="text-white text-3xl font-bold" id="profile-initial">?</span>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-primary" id="profile-name">...</h2>
+              <p class="text-sm text-on-surface-variant" id="profile-email">...</p>
+              <span class="inline-block mt-1 px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">Học viên</span>
+            </div>
+          </div>
+          <!-- Thống kê nhanh -->
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-surface-low rounded-xl p-3 text-center">
+              <p class="text-2xl font-bold text-primary" id="stat-total">0</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">Khóa đã đăng ký</p>
+            </div>
+            <div class="bg-surface-low rounded-xl p-3 text-center">
+              <p class="text-2xl font-bold text-secondary" id="stat-active">0</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">Đang học</p>
+            </div>
+            <div class="bg-surface-low rounded-xl p-3 text-center">
+              <p class="text-2xl font-bold text-green-600" id="stat-completed">0</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">Hoàn thành</p>
+            </div>
+          </div>
+          <!-- Form chỉnh sửa -->
+          <h3 class="text-sm font-bold text-on-surface mb-3">Chỉnh sửa thông tin</h3>
+          <div id="profile-msg" class="hidden mb-3 px-3 py-2 rounded-xl text-sm font-medium"></div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Họ và tên</label>
+              <input id="profile-name-input" type="text"
+                class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Email</label>
+              <input type="text" id="profile-email-input" disabled
+                class="w-full px-4 py-2.5 text-sm border border-outline-variant/40 bg-surface-low rounded-xl text-on-surface-variant cursor-not-allowed" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Số điện thoại</label>
+              <input id="profile-phone-input" type="tel" placeholder="Nhập số điện thoại"
+                class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+            </div>
+          </div>
+          <button onclick="saveProfile()"
+            class="mt-4 px-6 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">
+            Lưu thay đổi
+          </button>
+        </div>
+
+        <!-- Đổi mật khẩu -->
+        <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+          <h3 class="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-base text-secondary">lock</span>Đổi mật khẩu
+          </h3>
+          <div id="pwd-msg" class="hidden mb-3 px-3 py-2 rounded-xl text-sm font-medium"></div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Mật khẩu hiện tại</label>
+              <input id="pwd-current" type="password"
+                class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Mật khẩu mới</label>
+              <input id="pwd-new" type="password" placeholder="Tối thiểu 6 ký tự"
+                class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Xác nhận mật khẩu mới</label>
+              <input id="pwd-confirm" type="password"
+                class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+            </div>
+          </div>
+          <button onclick="changePassword()"
+            class="mt-4 px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">
+            Đổi mật khẩu
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Kiểm tra session & role – chỉ học viên (role='user') mới được vào
+  (async function checkAuth() {
+    try {
+      const res  = await fetch('/api/auth/me', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success || !json.data) { window.location.href = 'login.html'; return; }
+      const role = json.data.role;
+      if (role === 'admin') { window.location.href = 'dashboard-admin.html'; return; }
+      if (role === 'gv')    { window.location.href = 'dashboard-gv.html';    return; }
+      // role === 'user': cập nhật tên hiển thị nếu có
+      const u = json.data;
+      const initial = (u.name || '?').charAt(0).toUpperCase();
+      const sidebarEl = document.getElementById('sidebar-initial');
+      const topbarEl  = document.getElementById('topbar-initial');
+      if (sidebarEl) sidebarEl.textContent = initial;
+      if (topbarEl)  topbarEl.textContent  = initial;
+    } catch { window.location.href = 'login.html'; }
+  })();
+
+  const pageTitles = {
+    overview: 'Tổng quan', roadmap: 'Lộ trình học', 'my-courses': 'Khóa học của tôi',
+    lectures: 'Bài giảng', tests: 'Bài kiểm tra', results: 'Kết quả & Điểm số',
+    certificates: 'Chứng nhận', explore: 'Khám phá khóa học', feedback: 'Bình luận',
+    profile: 'Hồ sơ của tôi',
+  };
+
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('active');
+    document.querySelectorAll('.sidebar-link').forEach(l => {
+      if (l.getAttribute('onclick')?.includes(`'${id}'`)) l.classList.add('active');
+    });
+    document.getElementById('page-title').textContent = pageTitles[id] || id;
+    if (id === 'my-courses') { loadMyCourses(); loadProgressSummary(); }
+    if (id === 'profile')    loadProfile();
+  }
+
+  const TYPE_COLOR = { IELTS: 'bg-blue-100 text-blue-700', TOEFL: 'bg-purple-100 text-purple-700', TOEIC: 'bg-green-100 text-green-700' };
+
+  async function loadMyCourses() {
+    const grid = document.getElementById('my-courses-grid');
+    try {
+      const res  = await fetch('/api/user/courses', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) return;
+      const list = json.data;
+      document.getElementById('my-courses-count').textContent = list.length + ' khóa học đã đăng ký';
+
+      if (!list.length) {
+        grid.innerHTML = `
+          <div class="col-span-2 flex flex-col items-center justify-center py-16 text-center">
+            <span class="material-symbols-outlined text-5xl text-outline-variant mb-4">menu_book</span>
+            <p class="font-bold text-primary mb-1">Chưa đăng ký khóa học nào</p>
+            <p class="text-sm text-on-surface-variant mb-4">Khám phá và đăng ký ngay để bắt đầu học.</p>
+            <a href="courses.html" class="px-5 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90">Xem khóa học</a>
+          </div>`;
+        return;
+      }
+
+      const statusBadge = {
+        pending:   `<span class="text-xs font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full flex items-center gap-1"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>Chờ duyệt</span>`,
+        active:    `<span class="text-xs font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Đang học</span>`,
+        completed: `<span class="text-xs font-semibold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">✅ Hoàn thành</span>`,
+        rejected:  `<span class="text-xs font-semibold bg-red-100 text-error px-2.5 py-1 rounded-full">❌ Bị từ chối</span>`,
+        paused:    `<span class="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">⏸ Tạm dừng</span>`,
+      };
+      const cards = list.map(c => {
+        const typeKey  = (c.category_type || '').toUpperCase();
+        const badge    = TYPE_COLOR[typeKey] || 'bg-gray-100 text-gray-600';
+        const pct      = c.progress_percent || 0;
+        const isPending  = c.enroll_status === 'pending';
+        const isRejected = c.enroll_status === 'rejected';
+        const canLearn   = c.enroll_status === 'active' || c.enroll_status === 'completed';
+        return `
+        <div class="bg-white rounded-2xl border ${isPending ? 'border-amber-200' : isRejected ? 'border-red-200' : 'border-outline-variant/30'} p-5 flex flex-col">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs font-semibold ${badge} px-2.5 py-1 rounded-full">${c.category_name || typeKey}</span>
+            ${statusBadge[c.enroll_status] || ''}
+          </div>
+          <h3 class="font-bold text-primary text-base mb-1 line-clamp-2">${c.title}</h3>
+          <p class="text-xs text-on-surface-variant mb-3">${c.teacher_name || '—'} · ${c.lecture_count} bài giảng</p>
+          ${isPending ? `
+            <div class="flex-grow bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 mb-3 text-xs text-amber-700">
+              <span class="material-symbols-outlined text-sm align-text-bottom">info</span>
+              Yêu cầu của bạn đang chờ Admin phê duyệt.
+            </div>` : isRejected ? `
+            <div class="flex-grow bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 mb-3 text-xs text-error">
+              <span class="material-symbols-outlined text-sm align-text-bottom">cancel</span>
+              Đăng ký đã bị từ chối. Liên hệ Admin để biết thêm.
+            </div>` : `
+          <div class="my-1">
+            <div class="flex justify-between text-xs mb-1.5">
+              <span class="text-on-surface-variant">Tiến độ</span>
+              <span class="font-semibold text-secondary">${pct}%</span>
+            </div>
+            <div class="h-2 bg-surface-low rounded-full overflow-hidden">
+              <div class="h-full bg-secondary rounded-full" style="width:${pct}%"></div>
+            </div>
+          </div>`}
+          ${c.enroll_status === 'completed' ? `
+          <button onclick="openCompletionModal(${c.id})"
+            class="mt-auto w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors text-center">
+            Xem kết quả
+          </button>` : canLearn ? `
+          <a href="course-learn.html?id=${c.id}"
+            class="mt-auto w-full py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity text-center block">
+            ${pct > 0 ? 'Tiếp tục học' : 'Bắt đầu học'}
+          </a>` : `
+          <button disabled class="mt-auto w-full py-2.5 bg-outline-variant/30 text-on-surface-variant text-sm font-semibold rounded-xl cursor-not-allowed text-center">
+            ${isPending ? 'Chờ phê duyệt' : 'Không thể truy cập'}
+          </button>`}
+        </div>`;
+      }).join('');
+
+      const addCard = `
+        <a href="courses.html" class="bg-surface border-2 border-dashed border-outline-variant/50 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 hover:border-secondary hover:bg-blue-50/30 transition-all text-on-surface-variant hover:text-secondary">
+          <span class="material-symbols-outlined text-3xl">add_circle</span>
+          <span class="text-sm font-medium">Đăng ký khóa học mới</span>
+        </a>`;
+
+      grid.innerHTML = cards + addCard;
+    } catch (e) { console.error(e); }
+  }
+
+  // ── Tiến độ học tập theo khóa ─────────────────────────────────
+  const CAT_BADGE = {
+    IELTS:  'bg-blue-100 text-blue-700',
+    TOEFL:  'bg-purple-100 text-purple-700',
+    TOEIC:  'bg-green-100 text-green-700',
+  };
+
+  async function loadProgressSummary() {
+    const container = document.getElementById('progress-summary-list');
+    try {
+      const res  = await fetch('/api/user/progress-summary', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) { container.innerHTML = ''; return; }
+      const list = json.data;
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-outline-variant/30 px-6 py-10 text-center text-on-surface-variant text-sm">
+            Chưa có dữ liệu tiến độ. Hãy bắt đầu học một khóa để xem kết quả tại đây.
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = list.map((c, ci) => {
+        const typeKey  = (c.category_type || '').toUpperCase();
+        const catBadge = CAT_BADGE[typeKey] || 'bg-gray-100 text-gray-600';
+        const pct      = c.progress_percent || 0;
+        const avg      = c.avg_score;
+        const avgColor = avg === null ? 'text-on-surface-variant'
+                       : avg >= 70   ? 'text-green-600'
+                       : avg >= 50   ? 'text-accent'
+                       : 'text-error';
+
+        // Bảng điểm từng bài kiểm tra
+        const tableRows = c.test_details.length
+          ? c.test_details.map(t => {
+              const done = t.score !== null;
+              const date = done
+                ? new Date(t.submitted_at).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' })
+                : '—';
+              const scoreTxt = done ? t.score + '%' : '—';
+              const scoreColor = !done ? 'text-on-surface-variant'
+                               : t.passed ? 'text-green-600 font-bold' : 'text-error font-bold';
+              const badge = !done
+                ? `<span class="text-xs bg-surface-low text-on-surface-variant px-2 py-0.5 rounded-full">Chưa làm</span>`
+                : t.passed
+                  ? `<span class="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">Đạt</span>`
+                  : `<span class="text-xs bg-red-100 text-error font-semibold px-2 py-0.5 rounded-full">Chưa đạt</span>`;
+              return `
+                <tr class="hover:bg-surface/60 transition-colors">
+                  <td class="px-4 py-2.5 text-sm text-on-surface">${t.test_title}</td>
+                  <td class="px-4 py-2.5 text-sm ${scoreColor}">${scoreTxt}</td>
+                  <td class="px-4 py-2.5">${badge}</td>
+                  <td class="px-4 py-2.5 text-xs text-on-surface-variant">${date}</td>
+                </tr>`;
+            }).join('')
+          : `<tr><td colspan="4" class="px-4 py-4 text-center text-sm text-on-surface-variant">Khóa học chưa có bài kiểm tra nào.</td></tr>`;
+
+        return `
+        <div class="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden">
+          <!-- Header khóa -->
+          <div class="px-5 py-4 flex items-center gap-4 border-b border-outline-variant/15">
+            <div class="flex-grow min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-semibold ${catBadge} px-2.5 py-0.5 rounded-full">${c.category_name || typeKey}</span>
+                ${c.enroll_status === 'completed'
+                  ? '<span class="text-xs bg-blue-100 text-blue-700 font-semibold px-2.5 py-0.5 rounded-full">Hoàn thành</span>'
+                  : '<span class="text-xs bg-green-100 text-green-700 font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Đang học</span>'}
+              </div>
+              <h3 class="font-bold text-primary text-sm">${c.course_title}</h3>
+            </div>
+            <!-- Stats nhanh -->
+            <div class="flex items-center gap-5 shrink-0 text-center">
+              <div>
+                <p class="text-lg font-bold ${avgColor}">${avg !== null ? avg + '%' : '—'}</p>
+                <p class="text-xs text-on-surface-variant">Điểm TB</p>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-secondary">${c.done_tests}/${c.total_tests}</p>
+                <p class="text-xs text-on-surface-variant">Bài đã làm</p>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-green-600">${c.passed_tests}</p>
+                <p class="text-xs text-on-surface-variant">Bài đạt</p>
+              </div>
+            </div>
+          </div>
+          <!-- Thanh tiến độ -->
+          <div class="px-5 py-3 bg-surface-low/60 flex items-center gap-3 border-b border-outline-variant/10">
+            <span class="text-xs text-on-surface-variant shrink-0">Tiến độ khóa học</span>
+            <div class="flex-grow h-2 bg-outline-variant/20 rounded-full overflow-hidden">
+              <div class="h-full bg-secondary rounded-full transition-all" style="width:${pct}%"></div>
+            </div>
+            <span class="text-xs font-bold text-secondary shrink-0">${pct}%</span>
+          </div>
+          <!-- Bảng điểm -->
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-surface-low/40">
+                <th class="text-left px-4 py-2.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Bài kiểm tra</th>
+                <th class="text-left px-4 py-2.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Điểm</th>
+                <th class="text-left px-4 py-2.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Kết quả</th>
+                <th class="text-left px-4 py-2.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Ngày làm</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/10">
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>`;
+      }).join('');
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = `<p class="text-sm text-error text-center py-6">Lỗi tải dữ liệu tiến độ.</p>`;
+    }
+  }
+
+  // ── Profile ───────────────────────────────────────────────────
+  async function loadProfile() {
+    try {
+      const res  = await fetch('/api/user/profile', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) return;
+      const u = json.data;
+      const initial = (u.name || '?').charAt(0).toUpperCase();
+      document.getElementById('profile-initial').textContent    = initial;
+      document.getElementById('profile-name').textContent       = u.name;
+      document.getElementById('profile-email').textContent      = u.email;
+      document.getElementById('profile-name-input').value       = u.name;
+      document.getElementById('profile-email-input').value      = u.email;
+      document.getElementById('profile-phone-input').value      = u.phone || '';
+      document.getElementById('stat-total').textContent         = u.stats.total || 0;
+      document.getElementById('stat-active').textContent        = u.stats.active_count || 0;
+      document.getElementById('stat-completed').textContent     = u.stats.completed_count || 0;
+    } catch {}
+  }
+
+  function showMsg(elId, msg, type = 'success') {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.className = `mb-3 px-3 py-2 rounded-xl text-sm font-medium ${type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-error'}`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+  }
+
+  async function saveProfile() {
+    const name  = document.getElementById('profile-name-input').value.trim();
+    const phone = document.getElementById('profile-phone-input').value.trim();
+    if (!name) return showMsg('profile-msg', 'Tên không được để trống', 'error');
+    try {
+      const res  = await fetch('/api/user/profile', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        document.getElementById('profile-name').textContent    = name;
+        document.getElementById('profile-initial').textContent = name.charAt(0).toUpperCase();
+        showMsg('profile-msg', 'Cập nhật thành công!', 'success');
+      } else {
+        showMsg('profile-msg', json.message || 'Cập nhật thất bại', 'error');
+      }
+    } catch { showMsg('profile-msg', 'Không thể kết nối server', 'error'); }
+  }
+
+  async function changePassword() {
+    const current = document.getElementById('pwd-current').value;
+    const newPwd  = document.getElementById('pwd-new').value;
+    const confirm = document.getElementById('pwd-confirm').value;
+    if (!current || !newPwd) return showMsg('pwd-msg', 'Vui lòng điền đầy đủ thông tin', 'error');
+    if (newPwd !== confirm)  return showMsg('pwd-msg', 'Mật khẩu xác nhận không khớp', 'error');
+    if (newPwd.length < 6)   return showMsg('pwd-msg', 'Mật khẩu mới phải có ít nhất 6 ký tự', 'error');
+    try {
+      const res  = await fetch('/api/user/password', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password: current, new_password: newPwd }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        document.getElementById('pwd-current').value = '';
+        document.getElementById('pwd-new').value     = '';
+        document.getElementById('pwd-confirm').value = '';
+        showMsg('pwd-msg', 'Đổi mật khẩu thành công!', 'success');
+      } else {
+        showMsg('pwd-msg', json.message || 'Đổi mật khẩu thất bại', 'error');
+      }
+    } catch { showMsg('pwd-msg', 'Không thể kết nối server', 'error'); }
+  }
+
+  async function doLogout() {
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+    window.location.href = 'login.html';
+  }
+
+  // Load ngay khi vào trang nếu đang ở tab my-courses
+  if (document.getElementById('sec-my-courses').classList.contains('active')) {
+    loadMyCourses();
+    loadProgressSummary();
+  }
+
+  // ── Modal kết quả hoàn thành khóa học ─────────────────────
+  async function openCompletionModal(courseId) {
+    const modal   = document.getElementById('completion-modal');
+    const content = document.getElementById('completion-content');
+    modal.classList.remove('hidden');
+    content.innerHTML = `
+      <div class="flex flex-col items-center py-10 text-on-surface-variant">
+        <span class="material-symbols-outlined text-4xl animate-spin mb-2">sync</span>
+        <p class="text-sm">Đang tải...</p>
+      </div>`;
+    try {
+      const res  = await fetch('/api/user/courses/' + courseId + '/completion', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+      const d = json.data;
+
+      // Header khóa
+      const scoreColor = d.avg_score === null ? 'text-on-surface-variant'
+                       : d.avg_score >= 70 ? 'text-green-600'
+                       : d.avg_score >= 50 ? 'text-accent' : 'text-error';
+
+      // Test result chips
+      const testChips = d.test_results.length === 0
+        ? '<p class="text-xs text-on-surface-variant italic">Khóa học không có bài kiểm tra.</p>'
+        : d.test_results.map(t => {
+            if (t.score === null)
+              return `<span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-low text-on-surface-variant border border-outline-variant/30">${t.test_title}: —</span>`;
+            return t.passed
+              ? `<span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-100 text-green-700 border border-green-200">${t.test_title}: ${t.score}% ✓</span>`
+              : `<span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-100 text-error border border-red-200">${t.test_title}: ${t.score}% ✗</span>`;
+          }).join('');
+
+      // Feedback GV
+      const feedbackHtml = d.feedback.length === 0
+        ? '<p class="text-sm text-on-surface-variant italic">Chưa có nhận xét nào.</p>'
+        : d.feedback.map(f => {
+            const date = new Date(f.updated_at).toLocaleDateString('vi-VN');
+            return `<div class="border-l-2 border-secondary pl-3 py-1">
+              <p class="text-xs text-secondary font-semibold mb-0.5">${f.teacher_name} · ${f.lecture_title} · ${date}</p>
+              <p class="text-sm text-on-surface whitespace-pre-line">${f.content}</p>
+            </div>`;
+          }).join('');
+
+      // Materials
+      const materialsHtml = d.materials.length === 0
+        ? '<p class="text-sm text-on-surface-variant italic">Không có tài liệu.</p>'
+        : d.materials.map(m => {
+            const size = m.filesize > 1048576
+              ? (m.filesize/1048576).toFixed(1) + ' MB'
+              : Math.ceil(m.filesize/1024) + ' KB';
+            return `<a href="/${m.filepath}" download="${m.filename}"
+                class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors group">
+              <span class="material-symbols-outlined text-secondary text-lg shrink-0">download</span>
+              <div class="flex-grow min-w-0">
+                <p class="text-sm font-semibold text-on-surface truncate">${m.filename}</p>
+                <p class="text-xs text-on-surface-variant">${m.lecture_title} · ${size}</p>
+              </div>
+            </a>`;
+          }).join('');
+
+      content.innerHTML = `
+        <!-- Kết quả điểm -->
+        <div class="bg-surface-low/60 rounded-2xl p-5 mb-5 flex items-center gap-6">
+          <div class="text-center shrink-0">
+            <p class="text-3xl font-bold ${scoreColor}">${d.avg_score !== null ? d.avg_score + '%' : '—'}</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">Điểm trung bình</p>
+          </div>
+          <div class="w-px h-12 bg-outline-variant/30"></div>
+          <div class="flex-grow">
+            <p class="text-sm font-semibold text-on-surface mb-1">
+              Đã làm ${d.tests_done}/${d.tests_total} bài kiểm tra ·
+              <span class="text-green-600">${d.tests_passed} đạt</span>
+            </p>
+            <div class="flex flex-wrap gap-1.5 mt-2">${testChips}</div>
+          </div>
+        </div>
+
+        <!-- Nhận xét GV -->
+        <div class="mb-5">
+          <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Nhận xét của giảng viên</p>
+          <div class="space-y-3">${feedbackHtml}</div>
+        </div>
+
+        <!-- Tài liệu -->
+        <div>
+          <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Tài liệu khóa học</p>
+          <div class="space-y-2">${materialsHtml}</div>
+        </div>`;
+
+    } catch (e) {
+      content.innerHTML = `<p class="text-sm text-error text-center py-8">Lỗi: ${e.message}</p>`;
+    }
+  }
+
+  function closeCompletionModal() {
+    document.getElementById('completion-modal').classList.add('hidden');
+  }
+</script>
+
+<!-- ── Modal kết quả hoàn thành khóa học ── -->
+<div id="completion-modal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+     onclick="if(event.target===this) closeCompletionModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/20 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-blue-600 text-base">workspace_premium</span>
+        </span>
+        <p class="font-bold text-primary text-sm">Kết quả hoàn thành khóa học</p>
+      </div>
+      <button onclick="closeCompletionModal()"
+        class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-surface-low transition-colors text-on-surface-variant">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+    <!-- Scrollable content -->
+    <div id="completion-content" class="flex-grow overflow-y-auto px-6 py-5"></div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bài Test Thử – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d', 'on-primary': '#ffffff',
+            secondary: '#0061a5', 'secondary-container': '#66affe', 'on-secondary': '#ffffff',
+            accent: '#e07b28', surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-8">
+        <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
+        <a href="mock-test.html" class="text-secondary font-bold border-b-2 border-secondary pb-0.5 text-sm">Bài test thử</a>
+        <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden items-center gap-2 shrink-0">
+        <a id="dash-link" href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">dashboard</span>
+        </a>
+        <button onclick="doLogout()" title="Đăng xuất" class="p-2 rounded-xl hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined text-xl">logout</span>
+        </button>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-secondary font-bold text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-2">
+        <a id="dash-link-mobile" href="#" class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div><p class="text-sm font-bold text-primary" id="user-name-mobile">...</p><p class="text-xs text-on-surface-variant">Vào Dashboard</p></div>
+        </a>
+        <button onclick="doLogout()" class="text-sm font-semibold text-error border border-error/40 rounded-lg px-4 py-2 text-center w-full hover:bg-red-50 flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-base">logout</span>Đăng xuất
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+
+    <!-- PAGE HEADER -->
+    <section class="bg-primary-container py-12">
+      <div class="max-w-container mx-auto px-4 md:px-16 text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Trung Tâm Thi Thử</h1>
+        <p class="text-blue-200 text-sm max-w-xl mx-auto">Trải nghiệm đề thi thật với đầy đủ kỹ năng. Mỗi loại chứng chỉ có <strong class="text-white">1 bài test chuẩn</strong> để bạn làm quen cấu trúc trước khi thi thật.</p>
+      </div>
+    </section>
+
+    <!-- NOTICE -->
+    <section class="max-w-container mx-auto px-4 md:px-16 py-6">
+      <div class="bg-blue-50 border border-secondary/30 rounded-xl p-4 flex items-start gap-3">
+        <span class="material-symbols-outlined text-secondary text-xl shrink-0 mt-0.5">info</span>
+        <p class="text-sm text-on-surface-variant">
+          <strong class="text-primary">Lưu ý:</strong> Mỗi bài test thử bên dưới là <strong>1 đề duy nhất</strong> phản ánh đúng cấu trúc kỳ thi thật.
+          Nếu bạn muốn luyện tập với nhiều đề hơn, hãy vào <a href="practice.html" class="text-secondary font-semibold hover:underline">Kho Luyện Đề</a>.
+        </p>
+      </div>
+    </section>
+
+    <!-- TEST CARDS (dynamic) -->
+    <section class="max-w-container mx-auto px-4 md:px-16 pb-16">
+      <div id="mock-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- loading placeholder -->
+        <div class="col-span-full text-center py-16 text-sm text-on-surface-variant" id="mock-loading">Đang tải bài test thử...</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL XÁC NHẬN BẮT ĐẦU -->
+  <div id="start-modal" class="hidden fixed inset-0 bg-primary/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+      <span class="material-symbols-outlined text-5xl text-primary mb-3 block">assignment</span>
+      <h3 class="text-xl font-bold text-primary mb-2" id="start-modal-title">Bắt đầu IELTS Full Test?</h3>
+      <p class="text-sm text-on-surface-variant mb-6">Hãy đảm bảo bạn có đủ thời gian và môi trường yên tĩnh. Bài test sẽ được tính giờ tự động.</p>
+      <div class="flex gap-3">
+        <button onclick="closeStartModal()" class="flex-1 border border-outline-variant text-on-surface-variant font-semibold py-3 rounded-xl hover:bg-surface-low transition-colors text-sm">Hủy</button>
+        <button onclick="confirmStart()" class="flex-1 bg-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm">Bắt đầu</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-primary text-white py-8 mt-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 text-center text-xs text-blue-200">
+      © 2026 EngPro English Systems.
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+
+    const HEADER_COLOR = { ielts: 'bg-primary', toefl: 'bg-accent', toeic: 'bg-secondary' };
+    const HEADER_ICON  = { ielts: 'school', toefl: 'public', toeic: 'work' };
+    const BTN_COLOR    = { ielts: 'bg-primary', toefl: 'bg-accent', toeic: 'bg-secondary' };
+
+    let currentTestId = null;
+    let currentTestTitle = '';
+
+    function buildMockCard(t) {
+      const examKey   = (t.category_name || '').toLowerCase();
+      const hdrColor  = HEADER_COLOR[examKey] || 'bg-primary';
+      const btnColor  = BTN_COLOR[examKey]    || 'bg-primary';
+      const icon      = HEADER_ICON[examKey]  || 'assignment';
+      const skillLbl  = t.skill ? ` · ${t.skill.charAt(0).toUpperCase() + t.skill.slice(1)}` : '';
+      const catLabel  = (t.category_name || 'Bài test').toUpperCase();
+      return `
+        <div class="bg-white rounded-2xl border border-outline-variant/50 shadow-sm overflow-hidden flex flex-col">
+          <div class="${hdrColor} px-6 py-8 text-white">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">${catLabel}</span>
+              <span class="material-symbols-outlined text-3xl opacity-50">${icon}</span>
+            </div>
+            <h2 class="text-xl font-bold mb-1">${t.title}</h2>
+            <p class="text-white/70 text-xs">${t.category_name || ''}${skillLbl}</p>
+          </div>
+          <div class="p-6 flex flex-col flex-grow">
+            ${t.description ? `<p class="text-sm text-on-surface-variant mb-4">${t.description}</p>` : ''}
+            <div class="bg-surface-low rounded-lg p-3 mb-5 flex flex-wrap gap-4">
+              <div class="flex items-center gap-1.5 text-sm text-on-surface-variant">
+                <span class="material-symbols-outlined text-base">help_outline</span>
+                <span class="font-semibold text-on-surface">${t.num_questions}</span> câu
+              </div>
+              <div class="flex items-center gap-1.5 text-sm text-on-surface-variant">
+                <span class="material-symbols-outlined text-base">schedule</span>
+                <span class="font-semibold text-on-surface">${t.duration_minutes}</span> phút
+              </div>
+            </div>
+            <div class="mt-auto">
+              <button onclick="startTest(${t.id}, '${t.title.replace(/'/g,"&#39;")}')"
+                class="w-full ${btnColor} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base">play_arrow</span> Bắt đầu thi thử
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function loadMockTests() {
+      try {
+        const res  = await fetch('/api/public/admin-tests?type=test_thu');
+        const json = await res.json();
+        const grid = document.getElementById('mock-grid');
+        if (!json.success || !json.data.length) {
+          grid.innerHTML = '<div class="col-span-full text-center py-16 text-sm text-on-surface-variant">Chưa có bài test thử nào. Vui lòng quay lại sau.</div>';
+          return;
+        }
+        grid.innerHTML = json.data.map(buildMockCard).join('');
+      } catch {
+        document.getElementById('mock-loading').textContent = 'Không thể tải dữ liệu. Vui lòng thử lại.';
+      }
+    }
+
+    function startTest(id, title) {
+      // Kiểm tra đăng nhập (window.__engproUser được set bởi auth-nav.js)
+      if (!window.__engproUser) {
+        if (confirm('Bạn cần đăng nhập để làm bài thi thử.\nChuyển đến trang đăng nhập?')) {
+          window.location.href = 'login.html';
+        }
+        return;
+      }
+      currentTestId    = id;
+      currentTestTitle = title;
+      document.getElementById('start-modal-title').textContent = `Bắt đầu "${title}"?`;
+      document.getElementById('start-modal').classList.remove('hidden');
+    }
+    function closeStartModal() {
+      document.getElementById('start-modal').classList.add('hidden');
+    }
+    function confirmStart() {
+      window.location.href = 'test-take.html?source=admin&id=' + currentTestId;
+    }
+
+    loadMockTests();
+  </script>
+  <script src="../js/auth-nav.js"></script>
+</body>
+</html>

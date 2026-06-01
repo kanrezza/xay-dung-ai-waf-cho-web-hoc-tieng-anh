@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luyện Đề – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d', 'on-primary': '#ffffff',
+            secondary: '#0061a5', 'secondary-container': '#66affe', 'on-secondary': '#ffffff',
+            accent: '#e07b28', surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-8">
+        <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
+        <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
+        <a href="practice.html" class="text-secondary font-bold border-b-2 border-secondary pb-0.5 text-sm">Luyện đề</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden items-center gap-2 shrink-0">
+        <a id="dash-link" href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">dashboard</span>
+        </a>
+        <button onclick="doLogout()" title="Đăng xuất" class="p-2 rounded-xl hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined text-xl">logout</span>
+        </button>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-secondary font-bold text-base py-1">Luyện đề</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-2">
+        <a id="dash-link-mobile" href="#" class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div><p class="text-sm font-bold text-primary" id="user-name-mobile">...</p><p class="text-xs text-on-surface-variant">Vào Dashboard</p></div>
+        </a>
+        <button onclick="doLogout()" class="text-sm font-semibold text-error border border-error/40 rounded-lg px-4 py-2 text-center w-full hover:bg-red-50 flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-base">logout</span>Đăng xuất
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+
+    <!-- PAGE HEADER -->
+    <section class="bg-primary-container py-12">
+      <div class="max-w-container mx-auto px-4 md:px-16">
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Kho Luyện Đề</h1>
+        <p class="text-blue-200 text-sm max-w-xl">Hàng trăm bộ đề được phân loại theo kỳ thi, kỹ năng và độ khó. Luyện tập có chủ đích để tăng điểm nhanh nhất.</p>
+      </div>
+    </section>
+
+    <!-- FILTERS -->
+    <section class="max-w-container mx-auto px-4 md:px-16 py-6">
+      <div class="bg-white rounded-xl border border-outline-variant/50 p-4 flex flex-wrap gap-4 items-center shadow-sm">
+        <!-- Kỳ thi -->
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Kỳ thi</label>
+          <select id="filter-exam" onchange="applyFilters()" class="text-sm border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary outline-none bg-white">
+            <option value="all">Tất cả</option>
+            <option value="ielts">IELTS</option>
+            <option value="toefl">TOEFL</option>
+            <option value="toeic">TOEIC</option>
+          </select>
+        </div>
+        <!-- Kỹ năng -->
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Kỹ năng</label>
+          <select id="filter-skill" onchange="applyFilters()" class="text-sm border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary outline-none bg-white">
+            <option value="all">Tất cả</option>
+            <option value="listening">Listening</option>
+            <option value="reading">Reading</option>
+            <option value="writing">Writing</option>
+            <option value="speaking">Speaking</option>
+            <option value="full">Full Test</option>
+          </select>
+        </div>
+        <!-- Độ khó -->
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Độ khó</label>
+          <select id="filter-level" onchange="applyFilters()" class="text-sm border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary outline-none bg-white">
+            <option value="all">Tất cả</option>
+            <option value="easy">Dễ</option>
+            <option value="medium">Trung bình</option>
+            <option value="hard">Khó</option>
+          </select>
+        </div>
+        <!-- Search -->
+        <div class="flex flex-col gap-1 flex-grow">
+          <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Tìm kiếm</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+            <input id="filter-search" oninput="applyFilters()" type="text" placeholder="Tên đề, chủ đề..." class="w-full text-sm border border-outline-variant rounded-lg pl-9 pr-4 py-2 focus:border-secondary focus:ring-1 focus:ring-secondary outline-none" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1 justify-end">
+          <label class="text-xs opacity-0">x</label>
+          <button onclick="resetFilters()" class="text-sm text-on-surface-variant border border-outline-variant rounded-lg px-3 py-2 hover:bg-surface-low transition-colors">Đặt lại</button>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant mt-2" id="result-count">Đang tải...</p>
+    </section>
+
+    <!-- PRACTICE GRID -->
+    <section class="max-w-container mx-auto px-4 md:px-16 pb-16">
+      <div id="practice-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- dynamically populated -->
+      </div>
+
+      <!-- Loading state -->
+      <div id="loading-state" class="text-center py-20">
+        <p class="text-on-surface-variant text-sm">Đang tải bộ đề...</p>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden text-center py-20">
+        <span class="material-symbols-outlined text-5xl text-outline-variant block mb-3">search_off</span>
+        <p class="text-on-surface-variant font-medium">Không tìm thấy bộ đề nào phù hợp</p>
+        <button onclick="resetFilters()" class="mt-3 text-sm text-secondary hover:underline">Đặt lại bộ lọc</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-primary text-white py-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 text-center text-xs text-blue-200">
+      © 2026 EngPro English Systems.
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+
+    // ── helpers ──────────────────────────────────────────────
+    const EXAM_BADGE = {
+      ielts:  '<span class="text-xs font-bold text-primary bg-blue-50 px-2 py-0.5 rounded">IELTS</span>',
+      toefl:  '<span class="text-xs font-bold text-white bg-accent px-2 py-0.5 rounded">TOEFL</span>',
+      toeic:  '<span class="text-xs font-bold text-white bg-secondary px-2 py-0.5 rounded">TOEIC</span>',
+    };
+    const EXAM_BTN = {
+      ielts:  'bg-primary',
+      toefl:  'bg-accent',
+      toeic:  'bg-secondary',
+    };
+    const SKILL_LABEL = {
+      listening: 'Listening', reading: 'Reading',
+      writing: 'Writing', speaking: 'Speaking', full: 'Full Test',
+    };
+    const DIFF_BADGE = {
+      easy:   '<span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded">Dễ</span>',
+      medium: '<span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">Trung bình</span>',
+      hard:   '<span class="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">Khó</span>',
+    };
+
+    function buildCard(t) {
+      const examKey  = (t.category_name || '').toLowerCase();   // ielts / toefl / toeic
+      const skillKey = t.skill || '';
+      const diffKey  = t.difficulty || '';
+      const examBadge = EXAM_BADGE[examKey] || `<span class="text-xs font-bold bg-gray-100 text-on-surface px-2 py-0.5 rounded">${t.category_name || 'Khác'}</span>`;
+      const diffBadge = DIFF_BADGE[diffKey] || '';
+      const skillBadge = skillKey ? `<span class="text-xs font-semibold text-secondary bg-blue-50 px-2 py-0.5 rounded">${SKILL_LABEL[skillKey] || skillKey}</span>` : '';
+      const btnCls = EXAM_BTN[examKey] || 'bg-primary';
+      return `
+        <div class="practice-card bg-white rounded-xl border border-outline-variant/50 shadow-sm hover:shadow-md transition-shadow p-5"
+          data-exam="${examKey}" data-skill="${skillKey}" data-level="${diffKey}">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex gap-2 flex-wrap">
+              ${examBadge}
+              ${skillBadge}
+            </div>
+            ${diffBadge}
+          </div>
+          <h3 class="font-bold text-primary text-sm mb-1" data-title="${t.title}">${t.title}</h3>
+          <p class="text-xs text-on-surface-variant mb-3">${t.description || ''}</p>
+          <div class="flex items-center gap-3 text-xs text-on-surface-variant mb-4">
+            <span>${t.num_questions} câu</span>
+            <span>·</span>
+            <span>${t.duration_minutes} phút</span>
+          </div>
+          <button onclick="startPractice(${t.id})"
+            class="w-full ${btnCls} text-white font-semibold py-2 rounded-lg hover:opacity-90 transition-opacity text-xs">
+            Làm bài
+          </button>
+        </div>`;
+    }
+
+    async function loadPractice() {
+      try {
+        const res  = await fetch('/api/public/admin-tests?type=luyen_de');
+        const json = await res.json();
+        document.getElementById('loading-state').classList.add('hidden');
+        if (!json.success || !json.data.length) {
+          document.getElementById('result-count').textContent = '0 bộ đề';
+          document.getElementById('empty-state').classList.remove('hidden');
+          return;
+        }
+        document.getElementById('practice-grid').innerHTML = json.data.map(buildCard).join('');
+        applyFilters();
+      } catch {
+        document.getElementById('loading-state').innerHTML = '<p class="text-sm text-error">Không thể tải dữ liệu. Vui lòng thử lại.</p>';
+      }
+    }
+
+    function applyFilters() {
+      const exam   = document.getElementById('filter-exam').value;
+      const skill  = document.getElementById('filter-skill').value;
+      const level  = document.getElementById('filter-level').value;
+      const search = document.getElementById('filter-search').value.toLowerCase();
+
+      const cards = document.querySelectorAll('.practice-card');
+      let visible = 0;
+      cards.forEach(card => {
+        const matchExam   = exam  === 'all' || card.dataset.exam  === exam;
+        const matchSkill  = skill === 'all' || card.dataset.skill === skill;
+        const matchLevel  = level === 'all' || card.dataset.level === level;
+        const title = card.querySelector('[data-title]')?.dataset.title?.toLowerCase() || '';
+        const matchSearch = search === '' || title.includes(search);
+        card.style.display = (matchExam && matchSkill && matchLevel && matchSearch) ? '' : 'none';
+        if (matchExam && matchSkill && matchLevel && matchSearch) visible++;
+      });
+      document.getElementById('result-count').textContent = `Hiển thị ${visible} bộ đề`;
+      document.getElementById('empty-state').classList.toggle('hidden', visible > 0);
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-exam').value  = 'all';
+      document.getElementById('filter-skill').value = 'all';
+      document.getElementById('filter-level').value = 'all';
+      document.getElementById('filter-search').value = '';
+      applyFilters();
+    }
+
+    function startPractice(id) {
+      if (!window.__engproUser) {
+        if (confirm('Bạn cần đăng nhập để làm bài luyện đề.\nChuyển đến trang đăng nhập?')) {
+          window.location.href = 'login.html';
+        }
+        return;
+      }
+      window.location.href = 'test-take.html?source=admin&id=' + id;
+    }
+
+    loadPractice();
+  </script>
+  <script src="../js/auth-nav.js"></script>
+</body>
+</html>

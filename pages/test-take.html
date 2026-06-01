@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Làm bài – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d',
+            secondary: '#0061a5', accent: '#e07b28',
+            surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .opt-label {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px 16px; border-radius: 12px; cursor: pointer;
+      border: 1.5px solid #c4c6cf; background: white;
+      transition: border-color .15s, background .15s;
+    }
+    .opt-label:hover { border-color: #0061a5; background: #f0f7ff; }
+    .opt-label.selected { border-color: #0061a5; background: #e8f1fb; }
+    .opt-label.correct  { border-color: #16a34a; background: #f0fdf4; }
+    .opt-label.wrong    { border-color: #ba1a1a; background: #fff0f0; }
+    .opt-label.show-correct { border-color: #16a34a; background: #f0fdf4; }
+    .opt-label { user-select: none; }
+    .opt-key {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+      border: 1.5px solid #c4c6cf; display: flex; align-items: center;
+      justify-content: center; font-size: 13px; font-weight: 700;
+      color: #43474e; background: white; transition: all .15s;
+    }
+    .opt-label.selected  .opt-key { background: #0061a5; border-color: #0061a5; color: white; }
+    .opt-label.correct   .opt-key { background: #16a34a; border-color: #16a34a; color: white; }
+    .opt-label.wrong     .opt-key { background: #ba1a1a; border-color: #ba1a1a; color: white; }
+    .opt-label.show-correct .opt-key { background: #16a34a; border-color: #16a34a; color: white; }
+    .qnav-btn {
+      width: 32px; height: 32px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid #c4c6cf; color: #43474e; background: white;
+      cursor: pointer; transition: all .15s; flex-shrink: 0;
+    }
+    .qnav-btn.answered   { background: #0061a5; border-color: #0061a5; color: white; }
+    .qnav-btn.current    { background: #002045; border-color: #002045; color: white; }
+    .qnav-btn:hover:not(.current) { border-color: #0061a5; color: #0061a5; }
+  </style>
+</head>
+<body class="bg-surface-low min-h-screen flex flex-col">
+
+<!-- ── LOADING ───────────────────────────────────────────── -->
+<div id="view-loading" class="flex-grow flex items-center justify-center">
+  <p class="text-on-surface-variant text-sm">Đang tải đề thi...</p>
+</div>
+
+<!-- ── ERROR ─────────────────────────────────────────────── -->
+<div id="view-error" class="hidden flex-grow flex flex-col items-center justify-center gap-4 px-4 text-center">
+  <p class="text-5xl">📋</p>
+  <p class="font-bold text-primary text-xl" id="err-title">Không thể tải bài thi</p>
+  <p class="text-on-surface-variant text-sm" id="err-msg"></p>
+  <a id="err-back" href="courses.html"
+    class="mt-2 px-6 py-2.5 bg-secondary text-white font-semibold rounded-xl text-sm hover:opacity-90">
+    Quay lại
+  </a>
+</div>
+
+<!-- ── TEST VIEW ──────────────────────────────────────────── -->
+<div id="view-test" class="hidden flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-primary text-white sticky top-0 z-40 shrink-0">
+    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
+      <button onclick="confirmExit()"
+        class="text-blue-200 hover:text-white text-sm transition-colors shrink-0">Thoát</button>
+      <p class="flex-grow text-sm font-semibold truncate text-center" id="hdr-title"></p>
+      <div class="shrink-0 text-right">
+        <span id="hdr-timer" class="text-base font-bold tabular-nums"></span>
+        <span id="hdr-notimer" class="text-blue-200 text-xs hidden">Không giới hạn</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex-grow max-w-3xl mx-auto w-full px-4 py-6 flex flex-col gap-5">
+
+    <!-- Progress + answered count -->
+    <div class="flex items-center justify-between text-sm">
+      <span class="text-on-surface-variant">
+        Câu <span id="q-idx" class="font-bold text-primary">1</span>
+        / <span id="q-total" class="font-semibold">0</span>
+      </span>
+      <span class="text-on-surface-variant text-xs">
+        Đã trả lời: <span id="ans-count" class="font-bold text-secondary">0</span>
+      </span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="h-1.5 bg-outline-variant/40 rounded-full overflow-hidden -mt-2">
+      <div id="progress-bar" class="h-full bg-secondary rounded-full transition-all duration-300" style="width:0%"></div>
+    </div>
+
+    <!-- Question nav grid -->
+    <div id="qnav-grid" class="flex flex-wrap gap-1.5"></div>
+
+    <!-- Question card -->
+    <div class="bg-white rounded-2xl border border-outline-variant/40 p-6 flex-grow">
+      <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3"
+         id="q-label">Câu 1</p>
+      <p class="text-base font-semibold text-on-surface mb-5 leading-relaxed" id="q-text"></p>
+      <div id="q-options" class="space-y-2.5"></div>
+    </div>
+
+    <!-- Navigation buttons -->
+    <div class="flex items-center gap-3">
+      <button onclick="goQuestion(_cur - 1)"
+        class="px-4 py-2.5 border border-outline-variant text-sm font-semibold rounded-xl
+               hover:bg-white transition-colors disabled:opacity-40" id="btn-prev">
+        Câu trước
+      </button>
+      <div class="flex-grow"></div>
+      <button onclick="goQuestion(_cur + 1)"
+        class="px-4 py-2.5 border border-outline-variant text-sm font-semibold rounded-xl
+               hover:bg-white transition-colors disabled:opacity-40" id="btn-next">
+        Câu sau
+      </button>
+      <button onclick="handleSubmit()"
+        class="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl
+               hover:opacity-90 transition-opacity">
+        Nộp bài
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── RESULT VIEW ────────────────────────────────────────── -->
+<div id="view-result" class="hidden flex-grow flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-primary text-white shrink-0">
+    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center">
+      <p class="text-sm font-semibold truncate" id="res-hdr-title"></p>
+    </div>
+  </header>
+
+  <div class="max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
+
+    <!-- Score card -->
+    <div class="bg-white rounded-2xl border border-outline-variant/40 p-8 text-center">
+      <!-- Big score circle -->
+      <div class="mx-auto w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center mb-4"
+           id="score-circle">
+        <span class="text-3xl font-bold" id="res-score-pct"></span>
+        <span class="text-xs font-semibold opacity-70">điểm</span>
+      </div>
+      <p class="font-bold text-xl mb-1" id="res-status-text"></p>
+      <p class="text-sm text-on-surface-variant" id="res-detail"></p>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl border border-outline-variant/40 p-4 text-center">
+        <p class="text-2xl font-bold text-green-600" id="res-correct"></p>
+        <p class="text-xs text-on-surface-variant mt-1">Câu đúng</p>
+      </div>
+      <div class="bg-white rounded-xl border border-outline-variant/40 p-4 text-center">
+        <p class="text-2xl font-bold text-error" id="res-wrong"></p>
+        <p class="text-xs text-on-surface-variant mt-1">Câu sai</p>
+      </div>
+      <div class="bg-white rounded-xl border border-outline-variant/40 p-4 text-center">
+        <p class="text-2xl font-bold text-on-surface-variant" id="res-pass-pct"></p>
+        <p class="text-xs text-on-surface-variant mt-1">Điểm đạt</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <button onclick="toggleReview()"
+        class="flex-1 py-2.5 border border-secondary text-secondary font-semibold text-sm rounded-xl hover:bg-blue-50 transition-colors"
+        id="btn-review">Xem đáp án</button>
+      <a id="btn-back" href="#"
+        class="flex-1 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl
+               hover:opacity-90 transition-opacity text-center">Học tiếp</a>
+    </div>
+
+    <!-- Review section -->
+    <div id="review-section" class="hidden space-y-4 pb-8">
+      <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Xem lại đáp án</p>
+      <div id="review-list" class="space-y-5"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── CONFIRM SUBMIT MODAL ───────────────────────────────── -->
+<div id="modal-submit" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+    <p class="font-bold text-primary text-lg mb-2">Nộp bài?</p>
+    <p class="text-sm text-on-surface-variant mb-2" id="submit-msg"></p>
+    <p class="text-xs text-on-surface-variant mb-6" id="submit-unanswered"></p>
+    <div class="flex gap-3">
+      <button onclick="closeSubmitModal()"
+        class="flex-1 py-2.5 border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low">
+        Làm tiếp
+      </button>
+      <button onclick="doSubmit()" id="btn-confirm-submit"
+        class="flex-1 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90">
+        Nộp bài
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────
+  const params   = new URLSearchParams(location.search);
+  const _source  = params.get('source'); // 'course' | 'admin'
+  const _id      = params.get('id');
+  let _test      = null;
+  let _questions = [];
+  let _answers   = {};   // { qId: 'A'/'B'/'C'/'D' }
+  let _cur       = 0;
+  let _timer     = null;
+  let _timeLeft  = 0;
+  let _submitted = false;
+  let _reviewData = [];  // from submit response
+
+  // ── Utilities ─────────────────────────────────────────────
+  function showView(name) {
+    ['loading','error','test','result'].forEach(v =>
+      document.getElementById('view-' + v).classList.toggle('hidden', v !== name)
+    );
+    if (name !== 'loading') document.getElementById('view-loading').classList.add('hidden');
+  }
+
+  function showError(title, msg, backUrl) {
+    document.getElementById('err-title').textContent = title;
+    document.getElementById('err-msg').textContent   = msg;
+    const backEl = document.getElementById('err-back');
+    if (backUrl) backEl.href = backUrl;
+    showView('error');
+  }
+
+  function fmtTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  // ── Load test ─────────────────────────────────────────────
+  async function loadTest() {
+    if (!_source || !_id) { showError('Thiếu tham số', 'URL không hợp lệ.'); return; }
+    const url = _source === 'course'
+      ? '/api/user/tests/' + _id
+      : '/api/user/admin-tests/' + _id;
+    try {
+      const res  = await fetch(url, { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) {
+        if (res.status === 401)
+          return showError('Chưa đăng nhập', 'Vui lòng đăng nhập để làm bài.', 'login.html');
+        if (res.status === 403)
+          return showError('Chưa đăng ký khóa học', json.message, 'courses.html');
+        if (res.status === 422)
+          return showError('Bài thi chưa sẵn sàng', json.message, _source === 'course' ? 'profile.html' : 'mock-test.html');
+        return showError('Không tìm thấy', json.message || 'Bài thi không tồn tại.');
+      }
+      _test      = json.data.test;
+      _questions = json.data.questions;
+      initTest();
+    } catch {
+      showError('Lỗi kết nối', 'Không thể kết nối đến máy chủ. Vui lòng thử lại.');
+    }
+  }
+
+  // ── Init test UI ──────────────────────────────────────────
+  function initTest() {
+    document.title = _test.title + ' – EngPro';
+    document.getElementById('hdr-title').textContent = _test.title;
+    document.getElementById('q-total').textContent   = _questions.length;
+
+    // Timer
+    if (_test.duration_minutes > 0) {
+      _timeLeft = _test.duration_minutes * 60;
+      document.getElementById('hdr-timer').textContent = fmtTime(_timeLeft);
+      _timer = setInterval(tickTimer, 1000);
+    } else {
+      document.getElementById('hdr-notimer').classList.remove('hidden');
+    }
+
+    // Nav grid
+    buildNavGrid();
+    showView('test');
+    goQuestion(0);
+
+    // Warn on exit
+    window.onbeforeunload = () => _submitted ? undefined : 'Bài thi đang làm. Bạn có chắc muốn rời trang?';
+  }
+
+  function tickTimer() {
+    _timeLeft--;
+    if (_timeLeft <= 0) {
+      clearInterval(_timer);
+      _timeLeft = 0;
+      document.getElementById('hdr-timer').textContent = '00:00';
+      document.getElementById('hdr-timer').classList.add('text-error');
+      doSubmit();
+      return;
+    }
+    const el = document.getElementById('hdr-timer');
+    el.textContent = fmtTime(_timeLeft);
+    if (_timeLeft <= 300) el.classList.add('text-orange-300');
+    if (_timeLeft <= 60)  el.classList.replace('text-orange-300','text-red-300');
+  }
+
+  // ── Question navigation ───────────────────────────────────
+  function buildNavGrid() {
+    const grid = document.getElementById('qnav-grid');
+    grid.innerHTML = _questions.map((q, i) => `
+      <button class="qnav-btn" id="qnav-${i}" onclick="goQuestion(${i})">${i+1}</button>
+    `).join('');
+  }
+
+  function updateNavBtn(i) {
+    const btn = document.getElementById('qnav-' + i);
+    if (!btn) return;
+    btn.classList.remove('answered','current');
+    if (i === _cur) btn.classList.add('current');
+    else if (_answers[_questions[i].id]) btn.classList.add('answered');
+  }
+
+  function goQuestion(idx) {
+    if (idx < 0 || idx >= _questions.length) return;
+    const prev = _cur;
+    _cur = idx;
+    updateNavBtn(prev);
+    updateNavBtn(idx);
+    renderQuestion();
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const answered = Object.keys(_answers).length;
+    const total    = _questions.length;
+    document.getElementById('ans-count').textContent  = answered;
+    document.getElementById('progress-bar').style.width = (answered / total * 100) + '%';
+    document.getElementById('q-idx').textContent = _cur + 1;
+    document.getElementById('btn-prev').disabled = _cur === 0;
+    document.getElementById('btn-next').disabled = _cur === _questions.length - 1;
+  }
+
+  // ── HTML escape (tránh XSS khi dùng innerHTML) ───────────
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Render question ───────────────────────────────────────
+  function renderQuestion() {
+    const q   = _questions[_cur];
+    const ans = _answers[q.id] || null;
+
+    document.getElementById('q-label').textContent = 'Câu ' + (_cur + 1);
+    document.getElementById('q-text').textContent  = q.question_text;
+
+    const opts = [
+      { key: 'A', text: q.option_a },
+      { key: 'B', text: q.option_b },
+      { key: 'C', text: q.option_c },
+      { key: 'D', text: q.option_d },
+    ];
+
+    const container = document.getElementById('q-options');
+    // Dùng <div> + data-key, KHÔNG dùng onclick với this.closest (tránh lỗi CSS selector escape)
+    container.innerHTML = opts.map(o => `
+      <div class="opt-label${ans === o.key ? ' selected' : ''}" data-key="${o.key}">
+        <span class="opt-key">${o.key}</span>
+        <span class="text-sm text-on-surface leading-snug">${esc(o.text)}</span>
+      </div>
+    `).join('');
+
+    // Gắn event listener trực tiếp (không qua onclick attribute)
+    container.querySelectorAll('.opt-label').forEach(div => {
+      div.addEventListener('click', () => {
+        _answers[q.id] = div.dataset.key;
+        // Cập nhật class selected cho tất cả options
+        container.querySelectorAll('.opt-label').forEach(d =>
+          d.classList.toggle('selected', d.dataset.key === div.dataset.key)
+        );
+        updateNavBtn(_cur);
+        updateProgress();
+      });
+    });
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+  function handleSubmit() {
+    const answered   = Object.keys(_answers).length;
+    const total      = _questions.length;
+    const unanswered = total - answered;
+    document.getElementById('submit-msg').textContent =
+      `Bạn đã trả lời ${answered} / ${total} câu hỏi.`;
+    document.getElementById('submit-unanswered').textContent =
+      unanswered > 0 ? `Còn ${unanswered} câu chưa trả lời sẽ bị tính sai.` : '';
+    document.getElementById('modal-submit').classList.remove('hidden');
+  }
+
+  function closeSubmitModal() {
+    document.getElementById('modal-submit').classList.add('hidden');
+  }
+
+  async function doSubmit() {
+    if (_submitted) return;
+    _submitted = true;
+    window.onbeforeunload = null;
+    clearInterval(_timer);
+    closeSubmitModal();
+
+    const btn = document.getElementById('btn-confirm-submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Đang nộp...'; }
+
+    const url = _source === 'course'
+      ? '/api/user/tests/' + _id + '/submit'
+      : '/api/user/admin-tests/' + _id + '/submit';
+
+    // Build answers object: { "qId": "A", ... }
+    const answersPayload = {};
+    _questions.forEach(q => {
+      if (_answers[q.id]) answersPayload[q.id] = _answers[q.id];
+    });
+
+    try {
+      const res  = await fetch(url, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: answersPayload }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert('Nộp bài thất bại: ' + (json.message || 'Lỗi không xác định'));
+        _submitted = false;
+        return;
+      }
+      showResult(json.data);
+    } catch {
+      alert('Không thể kết nối server. Vui lòng thử lại.');
+      _submitted = false;
+    }
+  }
+
+  // ── Result ────────────────────────────────────────────────
+  function showResult(data) {
+    _reviewData = data.review || [];
+    const passed = data.passed;
+
+    document.getElementById('res-hdr-title').textContent = _test.title;
+
+    // Score circle
+    const circle = document.getElementById('score-circle');
+    if (passed) {
+      circle.classList.add('border-green-500', 'text-green-600');
+    } else {
+      circle.classList.add('border-red-500', 'text-error');
+    }
+    document.getElementById('res-score-pct').textContent = data.score + '%';
+
+    // Status
+    const statusEl = document.getElementById('res-status-text');
+    statusEl.textContent = passed ? 'Đạt yêu cầu' : 'Chưa đạt';
+    statusEl.classList.add(passed ? 'text-green-600' : 'text-error');
+
+    document.getElementById('res-detail').textContent =
+      `${data.correct} / ${data.total} câu đúng`;
+
+    document.getElementById('res-correct').textContent  = data.correct;
+    document.getElementById('res-wrong').textContent    = data.total - data.correct;
+    document.getElementById('res-pass-pct').textContent = (data.pass_percent || 60) + '%';
+
+    // Back link ("Học tiếp")
+    let backUrl;
+    if (_source === 'course') {
+      // Khi có lecture_id: truyền from=LECTURE_ID để course-learn tự chọn bài tiếp theo
+      backUrl = 'course-learn.html?id=' + _test.course_id
+              + (_test.lecture_id ? '&from=' + _test.lecture_id : '');
+    } else {
+      backUrl = _test.type === 'luyen_de' ? 'practice.html' : 'mock-test.html';
+    }
+    document.getElementById('btn-back').href = backUrl;
+
+    showView('result');
+  }
+
+  // ── Review answers ────────────────────────────────────────
+  let _reviewOpen = false;
+  function toggleReview() {
+    _reviewOpen = !_reviewOpen;
+    const section = document.getElementById('review-section');
+    const btn     = document.getElementById('btn-review');
+    section.classList.toggle('hidden', !_reviewOpen);
+    btn.textContent = _reviewOpen ? 'Ẩn đáp án' : 'Xem đáp án';
+    if (_reviewOpen && !section.dataset.rendered) {
+      renderReview();
+      section.dataset.rendered = '1';
+    }
+  }
+
+  function renderReview() {
+    const reviewMap = {};
+    _reviewData.forEach(r => { reviewMap[r.id] = r; });
+
+    document.getElementById('review-list').innerHTML = _questions.map((q, i) => {
+      const rv   = reviewMap[q.id] || {};
+      const opts = [
+        { key: 'A', text: q.option_a },
+        { key: 'B', text: q.option_b },
+        { key: 'C', text: q.option_c },
+        { key: 'D', text: q.option_d },
+      ];
+      const optHtml = opts.map(o => {
+        let cls = 'opt-label';
+        const isCorrectOpt  = o.key === rv.correct_answer;
+        const isWrongChosen = o.key === rv.chosen && !rv.is_correct;
+        if (isCorrectOpt)  cls += ' show-correct';
+        if (isWrongChosen) cls += ' wrong';
+        const badge = isCorrectOpt
+          ? '<span class="ml-auto text-xs font-bold text-green-600 shrink-0">Đúng</span>'
+          : (isWrongChosen ? '<span class="ml-auto text-xs font-bold text-error shrink-0">Bạn chọn</span>' : '');
+        return `<div class="${cls}" style="pointer-events:none;cursor:default">
+          <span class="opt-key">${o.key}</span>
+          <span class="text-sm text-on-surface leading-snug flex-grow">${esc(o.text)}</span>
+          ${badge}
+        </div>`;
+      }).join('');
+
+      const isCorrect = rv.is_correct;
+      const noAnswer  = !rv.chosen;
+      const borderCls = isCorrect ? 'border-green-200' : (noAnswer ? 'border-outline-variant/40' : 'border-red-200');
+      const numCls    = isCorrect ? 'bg-green-100 text-green-700' : (noAnswer ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-error');
+      return `
+        <div class="bg-white rounded-2xl border ${borderCls} p-5">
+          <div class="flex items-start gap-3 mb-4">
+            <span class="shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${numCls}">
+              ${i + 1}
+            </span>
+            <p class="text-sm font-semibold text-on-surface leading-snug">${esc(q.question_text)}</p>
+          </div>
+          <div class="space-y-2">${optHtml}</div>
+          ${noAnswer ? '<p class="text-xs text-on-surface-variant mt-2">Bạn không trả lời câu này.</p>' : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // ── Confirm exit ──────────────────────────────────────────
+  function confirmExit() {
+    if (_submitted) { history.back(); return; }
+    if (confirm('Bài thi đang làm. Bạn có chắc muốn thoát?\nKết quả sẽ không được lưu.')) {
+      window.onbeforeunload = null;
+      history.back();
+    }
+  }
+
+  // ── Start ─────────────────────────────────────────────────
+  loadTest();
+</script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khóa học – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d', 'on-primary': '#ffffff',
+            secondary: '#0061a5', 'secondary-container': '#66affe', 'on-secondary': '#ffffff',
+            accent: '#e07b28', surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'surface-container': '#ebeef0', 'on-surface': '#181c1e',
+            'on-surface-variant': '#43474e', outline: '#74777f', 'outline-variant': '#c4c6cf',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-8">
+        <a href="courses.html" class="text-secondary font-bold border-b-2 border-secondary pb-0.5 text-sm">Khóa học</a>
+        <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
+        <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden items-center gap-2 shrink-0">
+        <a id="dash-link" href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">dashboard</span>
+        </a>
+        <button onclick="doLogout()" title="Đăng xuất" class="p-2 rounded-xl hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined text-xl">logout</span>
+        </button>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-secondary font-bold text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-2">
+        <a id="dash-link-mobile" href="#" class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div><p class="text-sm font-bold text-primary" id="user-name-mobile">...</p><p class="text-xs text-on-surface-variant">Vào Dashboard</p></div>
+        </a>
+        <button onclick="doLogout()" class="text-sm font-semibold text-error border border-error/40 rounded-lg px-4 py-2 text-center w-full hover:bg-red-50 transition-colors flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-base">logout</span>Đăng xuất
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+
+    <!-- PAGE HEADER -->
+    <section class="bg-primary-container py-12">
+      <div class="max-w-container mx-auto px-4 md:px-16">
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Khám Phá Khóa Học</h1>
+        <p class="text-blue-200 text-sm max-w-xl">Chọn chứng chỉ và band điểm phù hợp. Học theo lộ trình bài bản — từng bước chinh phục mục tiêu.</p>
+        <a href="placement-test.html" class="inline-flex items-center gap-2 mt-4 bg-accent text-white font-semibold px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity text-sm">
+          <span class="material-symbols-outlined text-base">quiz</span> Chưa biết band? Làm test xếp loại
+        </a>
+      </div>
+    </section>
+
+    <!-- FILTER TABS -->
+    <section class="max-w-container mx-auto px-4 md:px-16 py-8">
+      <div class="flex gap-2 flex-wrap mb-8" id="filter-tabs">
+        <button onclick="filterCourses('all')" data-filter="all" class="filter-tab active px-5 py-2 rounded-full text-sm font-semibold bg-primary text-white transition-all">Tất cả</button>
+        <button onclick="filterCourses('ielts')" data-filter="ielts" class="filter-tab px-5 py-2 rounded-full text-sm font-semibold bg-surface-low text-on-surface-variant border border-outline-variant hover:border-secondary hover:text-secondary transition-all">IELTS</button>
+        <button onclick="filterCourses('toefl')" data-filter="toefl" class="filter-tab px-5 py-2 rounded-full text-sm font-semibold bg-surface-low text-on-surface-variant border border-outline-variant hover:border-secondary hover:text-secondary transition-all">TOEFL</button>
+        <button onclick="filterCourses('toeic')" data-filter="toeic" class="filter-tab px-5 py-2 rounded-full text-sm font-semibold bg-surface-low text-on-surface-variant border border-outline-variant hover:border-secondary hover:text-secondary transition-all">TOEIC</button>
+      </div>
+
+      <!-- Banner chờ duyệt -->
+      <div id="enroll-success-banner" class="hidden mb-6 bg-green-50 border border-green-200 rounded-2xl px-5 py-3.5">
+        <p class="font-bold text-green-800">Đăng ký thành công!</p>
+      </div>
+
+      <!-- COURSE GRID -->
+      <div id="course-grid" class="min-h-64 flex flex-col items-center justify-center text-center py-20">
+        <span class="material-symbols-outlined text-5xl text-outline-variant animate-spin mb-4">sync</span>
+        <p class="text-sm text-on-surface-variant">Đang tải khóa học...</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL ĐĂNG KÝ / THANH TOÁN -->
+  <div id="band-modal" class="hidden fixed inset-0 bg-primary/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+
+      <!-- STEP 1: Thông tin khóa học -->
+      <div id="modal-step1">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-secondary" id="modal-type">IELTS</p>
+            <h3 class="text-xl font-bold text-primary mt-1" id="modal-title">Tên khóa học</h3>
+          </div>
+          <button onclick="closeBandModal()" class="text-on-surface-variant hover:text-primary">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="bg-surface-low rounded-xl p-4 mb-6">
+          <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Học phí</p>
+          <p class="text-2xl font-bold text-primary" id="modal-price">Miễn phí</p>
+        </div>
+        <div class="space-y-2 mb-6 text-sm text-on-surface-variant">
+          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-base">check_circle</span> Video bài giảng không giới hạn</div>
+          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-base">check_circle</span> Bài kiểm tra sau mỗi video</div>
+          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-base">check_circle</span> Tài liệu học đính kèm</div>
+          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-base">check_circle</span> Theo dõi tiến độ học tập</div>
+        </div>
+        <div id="modal-err" class="hidden mb-4 text-sm text-error bg-red-50 rounded-lg px-3 py-2"></div>
+        <div class="flex gap-3">
+          <button onclick="closeBandModal()" class="flex-1 border border-outline-variant text-on-surface-variant font-semibold py-3 rounded-lg hover:bg-surface-low transition-colors text-sm">Hủy</button>
+          <button id="btn-confirm-enroll" onclick="confirmEnroll()"
+            class="flex-1 bg-primary text-white font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-base">payments</span>Xác nhận thanh toán
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: QR thanh toán -->
+      <div id="modal-step2" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-primary">Thanh toán khóa học</h3>
+          <button onclick="closeBandModal()" class="text-on-surface-variant hover:text-primary">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="flex justify-center mb-4">
+          <img id="qr-image" src="" alt="QR thanh toán"
+            class="w-52 h-52 rounded-xl border border-outline-variant object-contain" />
+        </div>
+        <div class="bg-surface-low rounded-xl p-4 mb-4 space-y-2.5 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="text-on-surface-variant">Ngân hàng</span>
+            <span class="font-semibold text-on-surface">VCB (Vietcombank)</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-on-surface-variant">Số tài khoản</span>
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-on-surface">1040615283</span>
+              <button onclick="copyText('1040615283', this)" class="text-xs text-secondary hover:underline">Sao chép</button>
+            </div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-on-surface-variant">Số tiền</span>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-on-surface" id="payment-amount">—</span>
+              <button onclick="copyText(document.getElementById('payment-amount').textContent, this)" class="text-xs text-secondary hover:underline">Sao chép</button>
+            </div>
+          </div>
+          <div class="flex justify-between items-start gap-2">
+            <span class="text-on-surface-variant shrink-0">Nội dung CK</span>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-semibold text-on-surface break-all text-right" id="payment-note">—</span>
+              <button onclick="copyText(document.getElementById('payment-note').textContent, this)" class="text-xs text-secondary hover:underline shrink-0">Sao chép</button>
+            </div>
+          </div>
+        </div>
+        <p class="text-xs text-on-surface-variant text-center mb-5">Sau khi chuyển khoản, vui lòng chờ Admin xác nhận trong vòng 24h.</p>
+        <button onclick="confirmPaymentDone()" class="w-full bg-primary text-white font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity text-sm">
+          Xác nhận đã thanh toán
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-primary text-white py-8 mt-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 text-center text-xs text-blue-200">
+      © 2026 EngPro English Systems.
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    });
+
+    let _activeFilter = 'all';
+
+    function filterCourses(type) {
+      _activeFilter = type;
+      document.querySelectorAll('.filter-tab').forEach(t => {
+        t.classList.remove('bg-primary', 'text-white');
+        t.classList.add('bg-surface-low', 'text-on-surface-variant', 'border', 'border-outline-variant');
+      });
+      const active = document.querySelector(`[data-filter="${type}"]`);
+      if (active) {
+        active.classList.add('bg-primary', 'text-white');
+        active.classList.remove('bg-surface-low', 'text-on-surface-variant', 'border', 'border-outline-variant');
+      }
+      document.querySelectorAll('.course-card').forEach(card => {
+        card.style.display = (type === 'all' || card.dataset.type === type) ? '' : 'none';
+      });
+    }
+
+    const TYPE_COLOR = {
+      IELTS: 'bg-blue-100 text-blue-700',
+      TOEFL: 'bg-purple-100 text-purple-700',
+      TOEIC: 'bg-green-100 text-green-700',
+    };
+
+    async function loadCourses() {
+      const grid = document.getElementById('course-grid');
+      try {
+        const res  = await fetch('/api/courses', { credentials: 'include' });
+        const json = await res.json();
+        if (!json.success || !json.data.length) {
+          grid.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-20 text-center">
+              <span class="material-symbols-outlined text-6xl text-outline-variant mb-4">menu_book</span>
+              <h3 class="text-lg font-bold text-primary mb-2">Chưa có khóa học nào</h3>
+              <p class="text-sm text-on-surface-variant max-w-sm">Các khóa học IELTS, TOEFL và TOEIC sẽ xuất hiện tại đây sau khi được giảng viên thêm vào và được phê duyệt.</p>
+            </div>`;
+          return;
+        }
+        const courses = json.data;
+        grid.innerHTML = `<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">` +
+          courses.map(c => {
+            const typeKey  = (c.category_type || '').toUpperCase();
+            const badge    = TYPE_COLOR[typeKey] || 'bg-gray-100 text-gray-600';
+            const price    = c.price > 0 ? Number(c.price).toLocaleString('vi-VN') + 'đ' : 'Miễn phí';
+            const priceClr = c.price > 0 ? 'text-accent font-bold' : 'text-green-600 font-bold';
+            return `
+            <div class="course-card bg-white rounded-2xl border border-outline-variant/40 overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+                 data-type="${typeKey.toLowerCase()}">
+              <div class="h-2 ${typeKey === 'IELTS' ? 'bg-blue-500' : typeKey === 'TOEFL' ? 'bg-purple-500' : 'bg-green-500'}"></div>
+              <div class="p-5 flex flex-col flex-grow">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badge}">${c.category_name || typeKey}</span>
+                  <span class="${priceClr} text-sm">${price}</span>
+                </div>
+                <h3 class="font-bold text-primary text-base mb-1 line-clamp-2">${c.title}</h3>
+                <p class="text-xs text-on-surface-variant mb-3 line-clamp-2">${c.description || 'Khóa học luyện thi ' + (c.category_name || typeKey)}</p>
+                <div class="mt-auto">
+                  <div class="flex items-center gap-3 text-xs text-on-surface-variant mb-4 pt-3 border-t border-outline-variant/20">
+                    <span>${c.teacher_name || 'Giảng viên'}</span>
+                    <span class="ml-auto">${c.student_count} học viên</span>
+                    <span>${c.lecture_count} bài giảng</span>
+                  </div>
+                  ${c.enroll_status === 'active' || c.enroll_status === 'completed'
+                    ? `<a href="course-learn.html?id=${c.id}" class="block w-full py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity text-center">Tiếp tục học</a>`
+                    : c.enroll_status === 'pending'
+                    ? `<button disabled class="w-full py-2.5 bg-outline-variant text-on-surface-variant text-sm font-semibold rounded-xl cursor-not-allowed">Chờ Admin duyệt...</button>`
+                    : c.enroll_status === 'rejected'
+                    ? `<button onclick="handleEnroll(${c.id}, '${c.title.replace(/'/g,"\\'")}', '${typeKey}', '${price}', ${c.price || 0})" class="w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">Đăng ký lại</button>`
+                    : `<button onclick="handleEnroll(${c.id}, '${c.title.replace(/'/g,"\\'")}', '${typeKey}', '${price}', ${c.price || 0})" class="w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">Đăng ký học</button>`
+                  }
+                </div>
+              </div>
+            </div>`;
+          }).join('') + `</div>`;
+
+        // Áp lại filter đang chọn
+        filterCourses(_activeFilter);
+      } catch (e) {
+        grid.innerHTML = `<p class="py-20 text-center text-sm text-error">Không thể tải khóa học. Vui lòng thử lại.</p>`;
+      }
+    }
+
+    let _enrollCourseId = null;
+    let _enrollPriceRaw = 0;
+
+    function handleEnroll(id, title, type, price, priceRaw) {
+      const user = window.__engproUser;
+      if (!user) {
+        sessionStorage.setItem('after_login', 'courses.html');
+        window.location.href = 'login.html';
+        return;
+      }
+      _enrollCourseId = id;
+      _enrollPriceRaw = priceRaw || 0;
+      document.getElementById('modal-type').textContent  = type;
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-price').textContent = price;
+      document.getElementById('modal-err').classList.add('hidden');
+      // reset về step1
+      document.getElementById('modal-step1').classList.remove('hidden');
+      document.getElementById('modal-step2').classList.add('hidden');
+      document.getElementById('band-modal').classList.remove('hidden');
+    }
+
+    function confirmEnroll() {
+      if (!_enrollCourseId) return;
+      // Chỉ hiển thị QR thanh toán — chưa gọi API
+      showPaymentStep();
+    }
+
+    function showPaymentStep() {
+      const user      = window.__engproUser;
+      const email     = (user && user.email) ? user.email : 'user@mail.com';
+      const title     = document.getElementById('modal-title').textContent;
+      const titleKey  = title.replace(/\s+/g, '');
+      const note      = email + '_' + titleKey;
+      const priceText = document.getElementById('modal-price').textContent;
+
+      // VietQR dynamic URL
+      const qrUrl = `https://img.vietqr.io/image/VCB-1040615283-qr_only.jpg`
+        + `?amount=${_enrollPriceRaw}`
+        + `&addInfo=${encodeURIComponent(note)}`
+        + `&accountName=EngPro`;
+
+      document.getElementById('qr-image').src       = qrUrl;
+      document.getElementById('payment-amount').textContent = priceText;
+      document.getElementById('payment-note').textContent   = note;
+
+      document.getElementById('modal-step1').classList.add('hidden');
+      document.getElementById('modal-step2').classList.remove('hidden');
+    }
+
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (btn) { const orig = btn.textContent; btn.textContent = 'Đã sao chép!'; setTimeout(() => btn.textContent = orig, 1500); }
+      });
+    }
+
+    function closeBandModal() {
+      document.getElementById('band-modal').classList.add('hidden');
+      // reset về step1 cho lần mở tiếp
+      document.getElementById('modal-step1').classList.remove('hidden');
+      document.getElementById('modal-step2').classList.add('hidden');
+    }
+
+    async function confirmPaymentDone() {
+      const btn = event.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Đang xử lý...';
+      try {
+        const res  = await fetch('/api/user/enroll/' + _enrollCourseId, {
+          method: 'POST', credentials: 'include'
+        });
+        const json = await res.json();
+        if (json.success) {
+          const d = json.data;
+          closeBandModal();
+          if (d.already && d.status === 'active') {
+            window.location.href = 'course-learn.html?id=' + _enrollCourseId;
+          } else {
+            showEnrollSuccess();
+            // reload để cập nhật trạng thái nút
+            setTimeout(() => loadCourses(), 500);
+          }
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Xác nhận đã thanh toán';
+          alert(json.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+        }
+      } catch {
+        btn.disabled = false;
+        btn.textContent = 'Xác nhận đã thanh toán';
+        alert('Không thể kết nối server.');
+      }
+    }
+
+    function showEnrollSuccess() {
+      const banner = document.getElementById('enroll-success-banner');
+      banner.classList.remove('hidden');
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => banner.classList.add('hidden'), 4000);
+    }
+
+    // Load khóa học ngay khi trang mở
+    loadCourses();
+
+    // Filter từ URL param (?type=ielts)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('type')) filterCourses(params.get('type'));
+
+  </script>
+  <script src="../js/auth-nav.js"></script>
+</body>
+</html>

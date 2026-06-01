@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng ký – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d',
+            secondary: '#0061a5', accent: '#e07b28',
+            surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .role-card input:checked ~ .role-label {
+      border-color: #0061a5;
+      background-color: #f0f7ff;
+    }
+    .role-card input:checked ~ .role-label .role-check {
+      display: flex;
+    }
+  </style>
+</head>
+<body class="bg-surface min-h-screen flex flex-col">
+
+  <!-- Top bar -->
+  <div class="w-full px-6 py-4">
+    <a href="../index.html" class="flex items-center gap-2 w-fit">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <span class="material-symbols-outlined text-white text-lg">school</span>
+      </div>
+      <span class="text-lg font-bold text-primary">EngPro</span>
+    </a>
+  </div>
+
+  <main class="flex-grow flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md">
+
+      <!-- Steps indicator -->
+      <div class="flex items-center justify-center gap-2 mb-6">
+        <div class="flex items-center gap-1.5">
+          <div id="step1-dot" class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</div>
+          <span class="text-xs font-medium text-primary">Thông tin</span>
+        </div>
+        <div class="h-px w-8 bg-outline-variant"></div>
+        <div class="flex items-center gap-1.5">
+          <div id="step2-dot" class="w-7 h-7 rounded-full bg-outline-variant text-white flex items-center justify-center text-xs font-bold">2</div>
+          <span class="text-xs font-medium text-on-surface-variant" id="step2-label">Vai trò</span>
+        </div>
+        <div class="h-px w-8 bg-outline-variant"></div>
+        <div class="flex items-center gap-1.5">
+          <div id="step3-dot" class="w-7 h-7 rounded-full bg-outline-variant text-white flex items-center justify-center text-xs font-bold">3</div>
+          <span class="text-xs font-medium text-on-surface-variant" id="step3-label">Hoàn tất</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-outline-variant/40 shadow-sm p-8">
+
+        <!-- STEP 1: Thông tin cơ bản -->
+        <div id="step-1">
+          <div class="text-center mb-7">
+            <h1 class="text-2xl font-bold text-primary">Tạo tài khoản</h1>
+            <p class="text-sm text-on-surface-variant mt-1">Điền thông tin để bắt đầu học tập</p>
+          </div>
+
+          <div id="step1-error" class="hidden mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-error text-sm">error</span>
+            <p class="text-xs text-error font-medium" id="step1-error-msg"></p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-on-surface mb-1.5 uppercase tracking-wider">Họ và tên</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">person</span>
+                <input id="reg-name" type="text" placeholder="Nguyễn Văn A" required
+                  class="w-full pl-10 pr-4 py-3 text-sm border border-outline-variant rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-on-surface mb-1.5 uppercase tracking-wider">Email</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">mail</span>
+                <input id="reg-email" type="email" placeholder="email@example.com" required
+                  class="w-full pl-10 pr-4 py-3 text-sm border border-outline-variant rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-on-surface mb-1.5 uppercase tracking-wider">Mật khẩu</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">lock</span>
+                <input id="reg-password" type="password" placeholder="Tối thiểu 6 ký tự" required
+                  class="w-full pl-10 pr-12 py-3 text-sm border border-outline-variant rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all" />
+                <button type="button" onclick="togglePwd('reg-password','eye1')" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
+                  <span class="material-symbols-outlined text-lg" id="eye1">visibility</span>
+                </button>
+              </div>
+              <!-- Password strength -->
+              <div class="mt-2 flex gap-1" id="strength-bars">
+                <div class="h-1 flex-1 rounded-full bg-outline-variant/40" id="bar1"></div>
+                <div class="h-1 flex-1 rounded-full bg-outline-variant/40" id="bar2"></div>
+                <div class="h-1 flex-1 rounded-full bg-outline-variant/40" id="bar3"></div>
+                <div class="h-1 flex-1 rounded-full bg-outline-variant/40" id="bar4"></div>
+              </div>
+              <p class="text-xs text-on-surface-variant mt-1" id="strength-label"></p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-on-surface mb-1.5 uppercase tracking-wider">Xác nhận mật khẩu</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">lock_reset</span>
+                <input id="reg-confirm" type="password" placeholder="Nhập lại mật khẩu" required
+                  class="w-full pl-10 pr-12 py-3 text-sm border border-outline-variant rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all" />
+                <button type="button" onclick="togglePwd('reg-confirm','eye2')" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
+                  <span class="material-symbols-outlined text-lg" id="eye2">visibility</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="goStep2()"
+            class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm mt-6 flex items-center justify-center gap-2">
+            Tiếp theo <span class="material-symbols-outlined text-base">arrow_forward</span>
+          </button>
+
+          <p class="text-center text-xs text-on-surface-variant mt-5">
+            Đã có tài khoản? <a href="login.html" class="text-secondary font-semibold hover:underline">Đăng nhập</a>
+          </p>
+        </div>
+
+        <!-- STEP 2: Chọn vai trò -->
+        <div id="step-2" class="hidden">
+          <div class="text-center mb-7">
+            <h2 class="text-2xl font-bold text-primary">Bạn là ai?</h2>
+            <p class="text-sm text-on-surface-variant mt-1">Chọn vai trò để EngPro cá nhân hóa trải nghiệm</p>
+          </div>
+
+          <div class="space-y-3 mb-6">
+            <!-- Người học -->
+            <label class="role-card block cursor-pointer">
+              <input type="radio" name="role" value="user" class="hidden" checked />
+              <div class="role-label border-2 border-secondary bg-blue-50 rounded-xl p-4 flex items-center gap-4 transition-all relative">
+                <div class="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-accent text-2xl">menu_book</span>
+                </div>
+                <div class="flex-grow">
+                  <p class="font-bold text-primary text-sm">Người học</p>
+                  <p class="text-xs text-on-surface-variant mt-0.5">Học các khóa IELTS, TOEFL, TOEIC theo lộ trình band</p>
+                </div>
+                <div class="role-check w-5 h-5 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-white text-xs">check</span>
+                </div>
+              </div>
+            </label>
+
+            <!-- Giảng viên -->
+            <label class="role-card block cursor-pointer">
+              <input type="radio" name="role" value="gv" class="hidden" />
+              <div class="role-label border-2 border-outline-variant rounded-xl p-4 flex items-center gap-4 transition-all relative">
+                <div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-secondary text-2xl">school</span>
+                </div>
+                <div class="flex-grow">
+                  <p class="font-bold text-primary text-sm">Giảng viên</p>
+                  <p class="text-xs text-on-surface-variant mt-0.5">Tạo và quản lý khóa học, bài giảng, bài kiểm tra</p>
+                </div>
+                <div class="role-check hidden w-5 h-5 rounded-full bg-secondary items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-white text-xs">check</span>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <!-- CV Upload – chỉ hiện khi chọn Giảng viên -->
+          <div id="cv-upload-section" class="hidden mb-5">
+            <div class="bg-blue-50 border border-secondary/30 rounded-xl p-4">
+              <p class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base">description</span>
+                Nộp CV / Hồ sơ giảng dạy
+              </p>
+              <!-- Drop zone -->
+              <label id="cv-drop-zone"
+                class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-secondary/40 rounded-xl p-6 cursor-pointer hover:border-secondary hover:bg-white transition-all">
+                <span class="material-symbols-outlined text-3xl text-secondary/60">upload_file</span>
+                <span class="text-xs font-semibold text-secondary">Nhấn để chọn file hoặc kéo thả vào đây</span>
+                <span class="text-xs text-on-surface-variant">PDF, DOC, DOCX – tối đa 10 MB</span>
+                <input id="cv-file" type="file" accept=".pdf,.doc,.docx" class="hidden" onchange="onCVChange(this)" />
+              </label>
+              <!-- Preview tên file -->
+              <div id="cv-preview" class="hidden mt-3 flex items-center gap-2 bg-white border border-outline-variant rounded-xl px-3 py-2.5">
+                <span class="material-symbols-outlined text-secondary text-lg">description</span>
+                <span class="text-sm font-medium text-on-surface flex-grow" id="cv-filename">file.pdf</span>
+                <button type="button" onclick="clearCV()" class="text-error hover:bg-red-50 rounded-lg p-0.5">
+                  <span class="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
+              <p id="cv-error" class="hidden mt-2 text-xs text-error font-medium"></p>
+            </div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6 flex items-start gap-2">
+            <span class="material-symbols-outlined text-amber-600 text-sm shrink-0 mt-0.5">info</span>
+            <p class="text-xs text-amber-800">Tài khoản giảng viên cần được <strong>Admin phê duyệt</strong> trước khi kích hoạt đầy đủ tính năng.</p>
+          </div>
+
+          <div class="flex gap-3">
+            <button onclick="goStep1()"
+              class="flex-1 border border-outline-variant text-on-surface-variant font-semibold py-3 rounded-xl hover:bg-surface-low transition-colors text-sm">
+              ← Quay lại
+            </button>
+            <button onclick="goStep3()"
+              class="flex-1 bg-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm">
+              Đăng ký →
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Hoàn tất -->
+        <div id="step-3" class="hidden text-center py-4">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+            <span class="material-symbols-outlined text-green-600 text-4xl">check_circle</span>
+          </div>
+          <h2 class="text-2xl font-bold text-primary mb-2">Đăng ký thành công!</h2>
+          <p class="text-sm text-on-surface-variant mb-1">Tài khoản đã được tạo cho</p>
+          <p class="font-bold text-primary text-base mb-1" id="done-name"></p>
+          <p class="text-xs text-on-surface-variant mb-6" id="done-email"></p>
+
+          <div class="bg-surface-low rounded-xl p-4 mb-6 text-left">
+            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Thông tin tài khoản</p>
+            <div class="flex items-center gap-2 text-sm">
+              <span class="material-symbols-outlined text-secondary text-base">badge</span>
+              <span class="text-on-surface-variant">Vai trò:</span>
+              <span class="font-semibold text-primary" id="done-role"></span>
+            </div>
+          </div>
+
+          <a href="login.html"
+            class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-base">login</span>
+            Đăng nhập ngay
+          </a>
+          <a href="../index.html" class="block text-xs text-secondary hover:underline mt-3">Về trang chủ</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Password strength
+    document.getElementById('reg-password').addEventListener('input', function() {
+      const val = this.value;
+      const bars = ['bar1','bar2','bar3','bar4'];
+      const label = document.getElementById('strength-label');
+      const colors = ['bg-error','bg-orange-400','bg-yellow-400','bg-green-500'];
+      const labels = ['','Yếu','Trung bình','Khá','Mạnh'];
+      let strength = 0;
+      if (val.length >= 6) strength++;
+      if (val.length >= 10) strength++;
+      if (/[A-Z]/.test(val) || /[0-9]/.test(val)) strength++;
+      if (/[!@#$%^&*]/.test(val)) strength++;
+
+      bars.forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.className = 'h-1 flex-1 rounded-full ' + (i < strength ? colors[strength - 1] : 'bg-outline-variant/40');
+      });
+      label.textContent = val ? `Độ mạnh: ${labels[strength] || labels[1]}` : '';
+    });
+
+    function togglePwd(inputId, iconId) {
+      const inp = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      icon.textContent = inp.type === 'password' ? 'visibility' : 'visibility_off';
+    }
+
+    // Role card highlight + hiện/ẩn CV upload
+    document.querySelectorAll('.role-card input').forEach(radio => {
+      radio.addEventListener('change', function() {
+        document.querySelectorAll('.role-card').forEach(card => {
+          const lbl = card.querySelector('.role-label');
+          const chk = card.querySelector('.role-check');
+          lbl.classList.remove('border-secondary','bg-blue-50');
+          lbl.classList.add('border-outline-variant');
+          chk.classList.add('hidden');
+          chk.classList.remove('flex');
+        });
+        const lbl = this.closest('.role-card').querySelector('.role-label');
+        const chk = this.closest('.role-card').querySelector('.role-check');
+        lbl.classList.add('border-secondary','bg-blue-50');
+        lbl.classList.remove('border-outline-variant');
+        chk.classList.remove('hidden');
+        chk.classList.add('flex');
+
+        // Hiện CV upload khi chọn Giảng viên
+        const cvSection = document.getElementById('cv-upload-section');
+        if (this.value === 'gv') {
+          cvSection.classList.remove('hidden');
+        } else {
+          cvSection.classList.add('hidden');
+          clearCV();
+        }
+      });
+    });
+
+    // CV file handling
+    function onCVChange(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        document.getElementById('cv-error').textContent = 'File quá lớn, tối đa 10 MB.';
+        document.getElementById('cv-error').classList.remove('hidden');
+        input.value = '';
+        return;
+      }
+      document.getElementById('cv-error').classList.add('hidden');
+      document.getElementById('cv-filename').textContent = file.name;
+      document.getElementById('cv-preview').classList.remove('hidden');
+      document.getElementById('cv-drop-zone').classList.add('border-secondary', 'bg-white');
+    }
+
+    function clearCV() {
+      document.getElementById('cv-file').value = '';
+      document.getElementById('cv-preview').classList.add('hidden');
+      document.getElementById('cv-error').classList.add('hidden');
+      document.getElementById('cv-drop-zone').classList.remove('border-secondary', 'bg-white');
+    }
+
+    // Drag & drop
+    const dropZone = document.getElementById('cv-drop-zone');
+    if (dropZone) {
+      dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-secondary','bg-white'); });
+      dropZone.addEventListener('dragleave', () => { if (!document.getElementById('cv-file').files[0]) dropZone.classList.remove('border-secondary','bg-white'); });
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          document.getElementById('cv-file').files = e.dataTransfer.files;
+          onCVChange(document.getElementById('cv-file'));
+        }
+      });
+    }
+
+    function goStep1() {
+      document.getElementById('step-2').classList.add('hidden');
+      document.getElementById('step-1').classList.remove('hidden');
+      setStep(1);
+    }
+
+    function goStep2() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pwd = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+      const errEl = document.getElementById('step1-error');
+      const errMsg = document.getElementById('step1-error-msg');
+
+      if (!name) { showStep1Error('Vui lòng nhập họ tên.'); return; }
+      if (!email || !/\S+@\S+\.\S+/.test(email)) { showStep1Error('Email không hợp lệ.'); return; }
+      if (pwd.length < 6) { showStep1Error('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
+      if (pwd !== confirm) { showStep1Error('Mật khẩu xác nhận không khớp.'); return; }
+
+      errEl.classList.add('hidden');
+      document.getElementById('step-1').classList.add('hidden');
+      document.getElementById('step-2').classList.remove('hidden');
+      setStep(2);
+    }
+
+    async function goStep3() {
+      const name     = document.getElementById('reg-name').value.trim();
+      const email    = document.getElementById('reg-email').value.trim().toLowerCase();
+      const password = document.getElementById('reg-password').value;
+      const roleEl   = document.querySelector('input[name="role"]:checked');
+      const role     = roleEl ? roleEl.value : 'user';
+      const roleNames = { user: 'Người học', gv: 'Giảng viên' };
+
+      // Validate CV nếu là GV
+      if (role === 'gv') {
+        const cvFile = document.getElementById('cv-file').files[0];
+        if (!cvFile) {
+          showStep2Error('Vui lòng nộp CV để đăng ký tài khoản giảng viên.');
+          return;
+        }
+      }
+
+      // Loading state
+      const btn = document.querySelector('#step-2 .flex.gap-3 button:last-child');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Đang tạo...';
+
+      try {
+        // Dùng FormData để gửi kèm file CV
+        const formData = new FormData();
+        formData.append('name',     name);
+        formData.append('email',    email);
+        formData.append('password', password);
+        formData.append('role',     role);
+        const cvFile = document.getElementById('cv-file').files[0];
+        if (cvFile) formData.append('cv', cvFile);
+
+        const res  = await fetch('/api/auth/register', {
+          method: 'POST',
+          body:   formData,   // KHÔNG set Content-Type — browser tự set multipart/form-data
+        });
+        const json = await res.json();
+
+        if (!json.success) {
+          showStep2Error(json.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+          btn.disabled = false; btn.textContent = origText;
+          return;
+        }
+
+        // Hiển thị màn hình thành công
+        document.getElementById('done-name').textContent  = name;
+        document.getElementById('done-email').textContent = email;
+        document.getElementById('done-role').textContent  = roleNames[role] || 'Người học';
+
+        // Nếu là GV: thêm ghi chú chờ duyệt
+        if (role === 'gv') {
+          const note = document.createElement('p');
+          note.className = 'text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-2';
+          note.textContent = 'Tài khoản giảng viên đang chờ Admin phê duyệt. Bạn sẽ nhận thông báo khi được kích hoạt.';
+          document.getElementById('done-role').closest('.bg-surface-low').after(note);
+        }
+
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('step-3').classList.remove('hidden');
+        setStep(3);
+
+      } catch (err) {
+        showStep2Error('Không thể kết nối server. Kiểm tra XAMPP đã chạy chưa.');
+        btn.disabled = false; btn.textContent = origText;
+      }
+    }
+
+    function showStep2Error(msg) {
+      // Tái dùng step1-error cho step2 hoặc alert đơn giản
+      let errEl = document.getElementById('step2-error');
+      if (!errEl) {
+        errEl = document.createElement('div');
+        errEl.id = 'step2-error';
+        errEl.className = 'mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2';
+        errEl.innerHTML = '<span class="material-symbols-outlined text-error text-sm">error</span><p class="text-xs text-error font-medium"></p>';
+        document.getElementById('step-2').prepend(errEl);
+      }
+      errEl.querySelector('p').textContent = msg;
+      errEl.classList.remove('hidden');
+    }
+
+    function showStep1Error(msg) {
+      document.getElementById('step1-error-msg').textContent = msg;
+      document.getElementById('step1-error').classList.remove('hidden');
+    }
+
+    function setStep(n) {
+      [1,2,3].forEach(i => {
+        const dot = document.getElementById(`step${i}-dot`);
+        if (i < n) {
+          dot.className = 'w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold';
+          dot.innerHTML = '<span class="material-symbols-outlined text-sm">check</span>';
+        } else if (i === n) {
+          dot.className = 'w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold';
+          dot.textContent = i;
+        } else {
+          dot.className = 'w-7 h-7 rounded-full bg-outline-variant text-white flex items-center justify-center text-xs font-bold';
+          dot.textContent = i;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

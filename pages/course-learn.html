@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Học khóa học – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d',
+            secondary: '#0061a5', accent: '#e07b28',
+            surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .lecture-item.active { background: rgba(0,96,165,0.12); border-left: 3px solid #0061a5; }
+    .lecture-item:not(.active) { border-left: 3px solid transparent; }
+    .video-embed { aspect-ratio: 16/9; }
+  </style>
+</head>
+<body class="bg-surface-low text-on-surface min-h-screen flex flex-col">
+
+<!-- TOPBAR -->
+<header class="bg-primary text-white h-14 flex items-center px-4 gap-4 shrink-0 sticky top-0 z-30">
+  <a href="courses.html" class="flex items-center gap-1.5 text-blue-200 hover:text-white transition-colors text-sm">
+    <span class="material-symbols-outlined text-base">arrow_back</span> Khóa học
+  </a>
+  <div class="w-px h-5 bg-white/20"></div>
+  <div class="flex-grow min-w-0">
+    <p class="font-semibold text-sm truncate" id="course-title-bar">Đang tải...</p>
+    <p class="text-blue-300 text-xs" id="course-cat-bar"></p>
+  </div>
+  <a href="profile.html" class="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors shrink-0">
+    <span class="material-symbols-outlined text-base">person</span>
+    <span class="hidden sm:inline">Hồ sơ</span>
+  </a>
+</header>
+
+<div class="flex flex-grow overflow-hidden" style="height: calc(100vh - 3.5rem)">
+
+  <!-- SIDEBAR: Danh sách bài giảng -->
+  <aside id="lecture-sidebar"
+    class="w-72 shrink-0 bg-white border-r border-outline-variant/30 flex flex-col overflow-hidden">
+    <div class="px-4 py-3 border-b border-outline-variant/20">
+      <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nội dung khóa học</p>
+      <p class="text-xs text-on-surface-variant mt-0.5" id="lecture-count-label">0 bài giảng</p>
+    </div>
+    <div class="flex-grow overflow-y-auto" id="lecture-list">
+      <!-- Bài giảng render vào đây -->
+      <div class="flex flex-col items-center justify-center py-16 text-center px-4">
+        <span class="material-symbols-outlined text-4xl text-outline-variant animate-spin mb-3">sync</span>
+        <p class="text-sm text-on-surface-variant">Đang tải...</p>
+      </div>
+    </div>
+    <!-- Tiến độ -->
+    <div class="px-4 py-3 border-t border-outline-variant/20 bg-surface-low">
+      <div class="flex justify-between text-xs text-on-surface-variant mb-1.5">
+        <span>Tiến độ</span><span id="progress-pct">0%</span>
+      </div>
+      <div class="h-1.5 bg-outline-variant/30 rounded-full overflow-hidden">
+        <div id="progress-bar" class="h-full bg-secondary rounded-full transition-all" style="width:0%"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN: Video + thông tin bài giảng -->
+  <main class="flex-grow overflow-y-auto flex flex-col">
+
+    <!-- Placeholder khi chưa chọn bài -->
+    <div id="player-placeholder" class="flex-grow flex flex-col items-center justify-center text-center px-8 py-20">
+      <span class="material-symbols-outlined text-7xl text-outline-variant mb-5">play_circle</span>
+      <h2 class="text-xl font-bold text-primary mb-2">Chọn bài giảng để bắt đầu</h2>
+      <p class="text-sm text-on-surface-variant max-w-sm">Chọn một bài giảng từ danh sách bên trái để bắt đầu học.</p>
+    </div>
+
+    <!-- Video player + info -->
+    <div id="player-area" class="hidden flex-col flex-grow">
+      <!-- Video -->
+      <div class="bg-black video-embed w-full">
+        <iframe id="video-iframe" class="w-full h-full" src="" allow="autoplay; fullscreen"
+          allowfullscreen frameborder="0"></iframe>
+      </div>
+      <!-- Thông tin bài giảng -->
+      <div class="p-6 max-w-3xl">
+        <div class="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <span id="lecture-skill-badge"
+              class="inline-block px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold mb-2">Listening</span>
+            <h2 class="text-xl font-bold text-primary" id="lecture-title-main">Tiêu đề bài giảng</h2>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-xs text-on-surface-variant">Thời lượng</p>
+            <p class="text-sm font-semibold text-on-surface" id="lecture-duration">—</p>
+          </div>
+        </div>
+        <p class="text-sm text-on-surface-variant leading-relaxed" id="lecture-desc"></p>
+
+        <!-- Tài liệu & Bài kiểm tra của bài giảng -->
+        <div id="lecture-resources" class="mt-6 grid sm:grid-cols-2 gap-4 hidden"></div>
+
+        <!-- Điều hướng prev/next -->
+        <div class="flex gap-3 mt-6">
+          <button id="btn-prev" onclick="goPrev()"
+            class="flex items-center gap-2 px-4 py-2.5 border border-outline-variant rounded-xl text-sm font-semibold hover:bg-surface-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            <span class="material-symbols-outlined text-base">arrow_back</span> Bài trước
+          </button>
+          <button id="btn-next"
+            class="flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed ml-auto">
+            Bài tiếp theo <span class="material-symbols-outlined text-base">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trường hợp không có bài giảng -->
+    <div id="no-lectures" class="hidden flex-grow flex flex-col items-center justify-center text-center px-8 py-20">
+      <span class="material-symbols-outlined text-7xl text-outline-variant mb-5">video_library</span>
+      <h2 class="text-xl font-bold text-primary mb-2">Chưa có bài giảng nào</h2>
+      <p class="text-sm text-on-surface-variant max-w-sm">Giảng viên chưa thêm bài giảng. Vui lòng quay lại sau.</p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const params         = new URLSearchParams(window.location.search);
+  const COURSE_ID      = params.get('id');
+  const FROM_LECTURE_ID = params.get('from'); // từ test-take: mở bài tiếp theo sau bài này
+
+  let _lectures      = [];
+  let _tests         = [];
+  let _materials     = [];
+  let _feedback      = [];   // nhận xét GV, keyed by lecture_id
+  let _passedTestIds = new Set(); // ID các bài kiểm tra đã pass
+  let _currentIdx    = 0;
+
+  if (!COURSE_ID) {
+    window.location.href = 'courses.html';
+  }
+
+  async function loadCourse() {
+    try {
+      const res  = await fetch('/api/user/courses/' + COURSE_ID, { credentials: 'include' });
+      const json = await res.json();
+
+      if (!json.success) {
+        // Chưa đăng nhập hoặc chưa enroll
+        if (res.status === 401) { window.location.href = 'login.html'; return; }
+        if (res.status === 403) { window.location.href = 'courses.html'; return; }
+        return;
+      }
+
+      const { course, lectures, tests, materials, enrollment, passed_test_ids } = json.data;
+
+      // Cập nhật topbar
+      document.getElementById('course-title-bar').textContent = course.title;
+      document.getElementById('course-cat-bar').textContent   = course.category_name || '';
+      document.title = course.title + ' – EngPro';
+
+      // Tiến độ
+      const pct = enrollment.progress_percent || 0;
+      document.getElementById('progress-pct').textContent = pct + '%';
+      document.getElementById('progress-bar').style.width = pct + '%';
+
+      _lectures      = lectures;
+      _tests         = tests    || [];
+      _materials     = materials || [];
+      _passedTestIds = new Set((passed_test_ids || []).map(Number));
+
+      // Load nhận xét GV trước, sau đó mới render để đảm bảo hiện đúng ngay lần đầu
+      await loadCourseFeedback();
+      renderLectureList(lectures);
+
+      if (lectures.length === 0) {
+        document.getElementById('player-placeholder').classList.add('hidden');
+        document.getElementById('no-lectures').classList.remove('hidden');
+      } else {
+        // Nếu có tham số ?from=LECTURE_ID (từ test-take.html "Học tiếp"):
+        // mở bài TIẾP THEO sau bài có ID đó; nếu không có bài tiếp → mở chính bài đó
+        if (FROM_LECTURE_ID) {
+          const fromIdx = lectures.findIndex(l => l.id == FROM_LECTURE_ID);
+          const targetIdx = (fromIdx >= 0 && fromIdx + 1 < lectures.length)
+            ? fromIdx + 1  // bài tiếp theo
+            : (fromIdx >= 0 ? fromIdx : 0);  // bài hiện tại hoặc bài đầu
+          selectLecture(targetIdx);
+        } else {
+          selectLecture(0);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Bài giảng idx được mở khi: idx=0, HOẶC bài trước không có test, HOẶC test bài trước đã pass
+  function isLectureUnlocked(idx) {
+    if (idx === 0) return true;
+    const prevLec  = _lectures[idx - 1];
+    const prevTest = _tests.find(t => t.lecture_id == prevLec.id);
+    if (!prevTest) return true;              // bài trước không có test → mở
+    return _passedTestIds.has(prevTest.id);  // đã pass test bài trước → mở
+  }
+
+  function renderLectureList(lectures) {
+    const list = document.getElementById('lecture-list');
+    document.getElementById('lecture-count-label').textContent = lectures.length + ' bài giảng';
+
+    if (!lectures.length) {
+      list.innerHTML = `<p class="text-center text-sm text-on-surface-variant py-8">Chưa có bài giảng</p>`;
+      return;
+    }
+
+    list.innerHTML = lectures.map((l, i) => {
+      const hasTest  = _tests.some(t => t.lecture_id == l.id);
+      const hasMat   = _materials.some(m => m.lecture_id == l.id);
+      const unlocked = isLectureUnlocked(i);
+      const thisTest = _tests.find(t => t.lecture_id == l.id);
+      const done     = thisTest ? _passedTestIds.has(thisTest.id) : false;
+      return `
+      <div class="lecture-item px-4 py-3 ${unlocked ? 'cursor-pointer hover:bg-surface-low' : 'opacity-40 cursor-not-allowed'} transition-colors"
+           id="lec-item-${i}" onclick="selectLecture(${i})">
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5
+            ${done ? 'bg-green-500' : 'bg-surface-low border border-outline-variant/40'}">
+            <span class="text-xs font-bold ${done ? 'text-white' : 'text-on-surface-variant'}">${i + 1}</span>
+          </div>
+          <div class="flex-grow min-w-0">
+            <p class="text-sm font-medium ${unlocked ? 'text-on-surface' : 'text-on-surface-variant'} leading-snug">${l.title}</p>
+            <p class="text-xs text-on-surface-variant mt-0.5 flex items-center gap-1.5">
+              <span>${l.skill}</span>
+              ${l.duration_minutes ? `<span>·</span><span>${l.duration_minutes} phút</span>` : ''}
+              ${hasTest ? '<span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" title="Có bài kiểm tra"></span>' : ''}
+              ${hasMat  ? '<span class="inline-block w-1.5 h-1.5 rounded-full bg-secondary"  title="Có tài liệu"></span>'   : ''}
+            </p>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function showToast(msg, type = 'info') {
+    const existing = document.getElementById('toast-msg');
+    if (existing) existing.remove();
+    const t = document.createElement('div');
+    t.id = 'toast-msg';
+    const bg = { success:'bg-green-600', error:'bg-error', info:'bg-secondary' }[type] || 'bg-secondary';
+    t.className = `fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white flex items-center gap-2 ${bg}`;
+    t.innerHTML = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  async function markLectureComplete(lectureId) {
+    try {
+      const res  = await fetch('/api/user/lectures/' + lectureId + '/complete', {
+        method: 'POST', credentials: 'include'
+      });
+      const json = await res.json();
+      if (json.success) {
+        const pct = json.data.progress_percent;
+        document.getElementById('progress-pct').textContent = pct + '%';
+        document.getElementById('progress-bar').style.width = pct + '%';
+        // Re-render sidebar để cập nhật trạng thái checkmark
+        renderLectureList(_lectures);
+        // Giữ highlight bài hiện tại
+        document.querySelectorAll('.lecture-item').forEach((el, i) => {
+          el.classList.toggle('active', i === _currentIdx);
+        });
+      }
+    } catch {}
+  }
+
+  function selectLecture(idx) {
+    if (idx < 0 || idx >= _lectures.length) return;
+    // Kiểm tra bài có bị khóa không
+    if (!isLectureUnlocked(idx)) {
+      const prevLec  = _lectures[idx - 1];
+      const prevTest = _tests.find(t => t.lecture_id == prevLec.id);
+      showToast(`Hoàn thành bài kiểm tra "${prevTest?.title || 'bài trước'}" để mở khóa`, 'error');
+      return;
+    }
+    _currentIdx = idx;
+    const l = _lectures[idx];
+
+    // Highlight sidebar
+    document.querySelectorAll('.lecture-item').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+    });
+    document.getElementById('lec-item-' + idx)?.scrollIntoView({ block: 'nearest' });
+
+    // Ẩn placeholder, hiện player
+    document.getElementById('player-placeholder').classList.add('hidden');
+    document.getElementById('no-lectures').classList.add('hidden');
+    document.getElementById('player-area').classList.remove('hidden');
+    document.getElementById('player-area').classList.add('flex');
+
+    // Điền thông tin
+    document.getElementById('lecture-title-main').textContent  = l.title;
+    document.getElementById('lecture-skill-badge').textContent = l.skill;
+    document.getElementById('lecture-desc').textContent        = l.description || '';
+    document.getElementById('lecture-duration').textContent    = l.duration_minutes ? l.duration_minutes + ' phút' : '—';
+
+    // Nhúng video
+    const iframe = document.getElementById('video-iframe');
+    if (l.video_url) {
+      iframe.src = embedUrl(l.video_url);
+      iframe.parentElement.classList.remove('hidden');
+    } else {
+      iframe.src = '';
+      iframe.parentElement.classList.add('hidden');
+    }
+
+    // Tài liệu & bài kiểm tra gắn với bài giảng này
+    const test = _tests.find(t => t.lecture_id == l.id);
+    const mat  = _materials.find(m => m.lecture_id == l.id);
+    const fb   = _feedback.find(f => f.lecture_id == l.id);
+    const resEl = document.getElementById('lecture-resources');
+    if (test || mat || fb) {
+      resEl.classList.remove('hidden');
+      resEl.innerHTML = '';
+      if (mat) {
+        const ext = (mat.filename || '').split('.').pop().toLowerCase();
+        const size = mat.filesize ? (mat.filesize > 1048576 ? (mat.filesize/1048576).toFixed(1)+'MB' : Math.ceil(mat.filesize/1024)+'KB') : '';
+        resEl.innerHTML += `
+          <a href="/${mat.filepath}" download="${mat.filename}"
+             class="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-2xl hover:bg-blue-100 transition-colors group">
+            <div class="flex-grow min-w-0">
+              <p class="text-xs font-bold text-secondary uppercase tracking-wider mb-0.5">Tài liệu bài học</p>
+              <p class="text-sm font-semibold text-on-surface truncate">${mat.filename}</p>
+              ${mat.description ? `<p class="text-xs text-on-surface-variant mt-0.5">${mat.description}</p>` : ''}
+              ${size ? `<p class="text-xs text-on-surface-variant mt-0.5">${size}</p>` : ''}
+            </div>
+            <span class="material-symbols-outlined text-secondary text-xl shrink-0 group-hover:scale-110 transition-transform">download</span>
+          </a>`;
+      }
+      if (test) {
+        const hasQ = (test.num_questions || 0) > 0;
+        resEl.innerHTML += `
+          <div class="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+            <div class="flex-grow min-w-0">
+              <p class="text-xs font-bold text-amber-700 uppercase tracking-wider mb-0.5">Bài kiểm tra</p>
+              <p class="text-sm font-semibold text-on-surface">${test.title}</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">${test.num_questions} câu · ${test.duration_minutes} phút · Đạt ${test.pass_percent}%</p>
+            </div>
+            ${hasQ
+              ? `<a href="test-take.html?source=course&id=${test.id}"
+                   class="shrink-0 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-xl transition-colors">
+                   Làm bài
+                 </a>`
+              : `<span class="shrink-0 text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-xl">Chưa có câu hỏi</span>`
+            }
+          </div>`;
+      }
+      if (fb) {
+        const date = new Date(fb.updated_at).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+        resEl.innerHTML += `
+          <div class="sm:col-span-2 p-4 bg-surface-low border border-outline-variant/40 rounded-2xl">
+            <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Nhận xét của giảng viên</p>
+            <p class="text-sm text-on-surface leading-relaxed whitespace-pre-line border-l-2 border-secondary pl-3">${fb.content}</p>
+            <p class="text-xs text-on-surface-variant mt-2">${fb.teacher_name} · ${date}</p>
+          </div>`;
+      }
+    } else {
+      resEl.classList.add('hidden');
+      resEl.innerHTML = '';
+    }
+
+    // Prev/Next buttons
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    btnPrev.disabled = (idx === 0);
+    const isLast = (idx === _lectures.length - 1);
+    // Kiểm tra bài hiện tại có test chưa pass không
+    const curTest     = _tests.find(t => t.lecture_id == l.id);
+    const testBlocked = curTest && !_passedTestIds.has(curTest.id);
+    if (isLast) {
+      btnNext.disabled = true;
+      btnNext.innerHTML = 'Bài tiếp theo <span class="material-symbols-outlined text-base">arrow_forward</span>';
+    } else if (testBlocked) {
+      btnNext.disabled = false;
+      btnNext.innerHTML = 'Làm bài kiểm tra trước';
+      btnNext.onclick = () => {
+        showToast(`Cần hoàn thành bài kiểm tra "${curTest.title}" để tiếp tục`, 'error');
+        // Scroll đến bài kiểm tra
+        const resEl = document.getElementById('lecture-resources');
+        resEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+    } else {
+      btnNext.disabled = false;
+      btnNext.innerHTML = 'Bài tiếp theo <span class="material-symbols-outlined text-base">arrow_forward</span>';
+      btnNext.onclick = () => goNext();
+    }
+
+    // Nếu bài không có test → tự động đánh dấu đã xem
+    if (!curTest) {
+      markLectureComplete(l.id);
+    }
+  }
+
+  function embedUrl(url) {
+    // YouTube: chuyển sang embed
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (ytMatch) return 'https://www.youtube.com/embed/' + ytMatch[1] + '?autoplay=0';
+    // Google Drive: chuyển sang preview
+    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    if (driveMatch) return 'https://drive.google.com/file/d/' + driveMatch[1] + '/preview';
+    return url;
+  }
+
+  async function loadCourseFeedback() {
+    try {
+      const res  = await fetch('/api/user/courses/' + COURSE_ID + '/feedback', { credentials: 'include' });
+      const json = await res.json();
+      if (json.success) _feedback = json.data;
+    } catch {}
+  }
+
+  function goPrev() { selectLecture(_currentIdx - 1); }
+  function goNext() {
+    const cur     = _lectures[_currentIdx];
+    const curTest = _tests.find(t => t.lecture_id == cur.id);
+    if (curTest && !_passedTestIds.has(curTest.id)) {
+      showToast(`Cần hoàn thành bài kiểm tra "${curTest.title}" để tiếp tục`, 'error');
+      return;
+    }
+    selectLecture(_currentIdx + 1);
+  }
+
+  // Bắt đầu load
+  loadCourse();
+</script>
+</body>
+</html>

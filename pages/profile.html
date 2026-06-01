@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hồ sơ – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d',
+            secondary: '#0061a5', accent: '#e07b28',
+            surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface-low min-h-screen">
+
+<!-- HEADER -->
+<header class="bg-primary text-white">
+  <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+    <a href="courses.html" class="text-blue-200 hover:text-white text-sm transition-colors">Quay lại khóa học</a>
+    <a href="../index.html" class="font-bold text-base tracking-tight">EngPro</a>
+    <button onclick="doLogout()" class="text-blue-200 hover:text-white text-sm transition-colors">Đăng xuất</button>
+  </div>
+</header>
+
+<div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+
+  <!-- Avatar + tên -->
+  <div class="bg-white rounded-2xl border border-outline-variant/40 p-6 flex items-center gap-5">
+    <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center shrink-0">
+      <span class="text-white text-2xl font-bold" id="p-initial">?</span>
+    </div>
+    <div>
+      <h1 class="text-xl font-bold text-primary" id="p-name">Đang tải...</h1>
+      <p class="text-sm text-on-surface-variant" id="p-email"></p>
+      <span class="inline-block mt-1 text-xs font-semibold bg-blue-50 text-secondary px-2.5 py-0.5 rounded-full">Học viên</span>
+    </div>
+    <div class="ml-auto grid grid-cols-3 gap-4 text-center">
+      <div>
+        <p class="text-2xl font-bold text-primary" id="stat-total">–</p>
+        <p class="text-xs text-on-surface-variant mt-0.5">Đã đăng ký</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-secondary" id="stat-active">–</p>
+        <p class="text-xs text-on-surface-variant mt-0.5">Đang học</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-green-600" id="stat-done">–</p>
+        <p class="text-xs text-on-surface-variant mt-0.5">Hoàn thành</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-6">
+
+    <!-- Chỉnh sửa thông tin -->
+    <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+      <h2 class="font-bold text-primary mb-4">Thông tin cá nhân</h2>
+      <div id="info-msg" class="hidden mb-3 text-sm px-3 py-2 rounded-xl"></div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Họ và tên</label>
+          <input id="f-name" type="text"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Email</label>
+          <input id="f-email" type="text" disabled
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant/40 bg-surface-low rounded-xl text-on-surface-variant cursor-not-allowed" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Số điện thoại</label>
+          <input id="f-phone" type="tel" placeholder="Chưa cập nhật"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+      </div>
+      <button onclick="saveInfo()"
+        class="mt-4 w-full py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">
+        Lưu thay đổi
+      </button>
+    </div>
+
+    <!-- Đổi mật khẩu -->
+    <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+      <h2 class="font-bold text-primary mb-4">Đổi mật khẩu</h2>
+      <div id="pwd-msg" class="hidden mb-3 text-sm px-3 py-2 rounded-xl"></div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Mật khẩu hiện tại</label>
+          <input id="pwd-cur" type="password"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Mật khẩu mới</label>
+          <input id="pwd-new" type="password" placeholder="Tối thiểu 6 ký tự"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Xác nhận mật khẩu mới</label>
+          <input id="pwd-cfm" type="password"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+      </div>
+      <button onclick="changePassword()"
+        class="mt-4 w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">
+        Đổi mật khẩu
+      </button>
+    </div>
+  </div>
+
+  <!-- Khóa học của tôi -->
+  <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-bold text-primary">Khóa học của tôi</h2>
+      <a href="courses.html" class="text-sm font-semibold text-secondary hover:underline">Đăng ký thêm</a>
+    </div>
+    <div id="courses-list">
+      <p class="text-sm text-on-surface-variant text-center py-8">Đang tải...</p>
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+  const STATUS = {
+    pending:   { label: 'Chờ duyệt',   cls: 'bg-amber-100 text-amber-700' },
+    active:    { label: 'Đang học',     cls: 'bg-green-100 text-green-700' },
+    completed: { label: 'Hoàn thành',   cls: 'bg-blue-100 text-blue-700'   },
+    rejected:  { label: 'Bị từ chối',   cls: 'bg-red-100 text-error'       },
+    paused:    { label: 'Tạm dừng',     cls: 'bg-gray-100 text-gray-600'   },
+  };
+
+  async function loadProfile() {
+    try {
+      const res  = await fetch('/api/user/profile', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) { window.location.href = 'login.html'; return; }
+      const u = json.data;
+      // Chỉ học viên (role='user') mới được vào trang này
+      if (u.role === 'admin') { window.location.href = 'dashboard-admin.html'; return; }
+      if (u.role === 'gv')    { window.location.href = 'dashboard-gv.html';    return; }
+      document.title = u.name + ' – EngPro';
+      document.getElementById('p-initial').textContent = (u.name || '?').charAt(0).toUpperCase();
+      document.getElementById('p-name').textContent    = u.name;
+      document.getElementById('p-email').textContent   = u.email;
+      document.getElementById('f-name').value          = u.name;
+      document.getElementById('f-email').value         = u.email;
+      document.getElementById('f-phone').value         = u.phone || '';
+      document.getElementById('stat-total').textContent  = u.stats.total || 0;
+      document.getElementById('stat-active').textContent = u.stats.active_count || 0;
+      document.getElementById('stat-done').textContent   = u.stats.completed_count || 0;
+    } catch { window.location.href = 'login.html'; }
+  }
+
+  async function loadCourses() {
+    try {
+      const res  = await fetch('/api/user/courses', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) return;
+      const list = json.data;
+      const el   = document.getElementById('courses-list');
+      if (!list.length) {
+        el.innerHTML = '<p class="text-sm text-on-surface-variant text-center py-8">Bạn chưa đăng ký khóa học nào. <a href="courses.html" class="text-secondary font-semibold underline">Xem khóa học</a></p>';
+        return;
+      }
+      el.innerHTML = '<div class="divide-y divide-outline-variant/20">' + list.map(c => {
+        const st      = STATUS[c.enroll_status] || { label: c.enroll_status, cls: 'bg-gray-100 text-gray-600' };
+        const canLearn = c.enroll_status === 'active' || c.enroll_status === 'completed';
+        const pct      = c.progress_percent || 0;
+        return `
+        <div class="py-4 flex items-center gap-4">
+          <div class="flex-grow min-w-0">
+            <div class="flex items-center gap-2 mb-0.5">
+              <p class="font-semibold text-on-surface text-sm truncate">${c.title}</p>
+              <span class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}">${st.label}</span>
+            </div>
+            <p class="text-xs text-on-surface-variant">${c.category_name || ''} · ${c.teacher_name || ''} · ${c.lecture_count} bài giảng</p>
+            ${canLearn ? `
+            <div class="flex items-center gap-2 mt-1.5">
+              <div class="flex-grow h-1.5 bg-surface-low rounded-full overflow-hidden">
+                <div class="h-full bg-secondary rounded-full" style="width:${pct}%"></div>
+              </div>
+              <span class="text-xs text-on-surface-variant shrink-0">${pct}%</span>
+            </div>` : ''}
+          </div>
+          ${canLearn
+            ? `<a href="course-learn.html?id=${c.id}" class="shrink-0 px-4 py-2 bg-secondary text-white text-xs font-semibold rounded-xl hover:opacity-90 transition-opacity">${pct > 0 ? 'Tiếp tục' : 'Bắt đầu'}</a>`
+            : c.enroll_status === 'pending'
+              ? `<span class="shrink-0 text-xs text-on-surface-variant px-4 py-2 bg-surface-low rounded-xl">Chờ duyệt</span>`
+              : `<span class="shrink-0 text-xs text-error px-4 py-2 bg-red-50 rounded-xl">Bị từ chối</span>`
+          }
+        </div>`;
+      }).join('') + '</div>';
+    } catch {}
+  }
+
+  function showMsg(id, msg, ok) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = `mb-3 text-sm px-3 py-2 rounded-xl ${ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-error'}`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+  }
+
+  async function saveInfo() {
+    const name  = document.getElementById('f-name').value.trim();
+    const phone = document.getElementById('f-phone').value.trim();
+    if (!name) return showMsg('info-msg', 'Tên không được để trống', false);
+    try {
+      const res  = await fetch('/api/user/profile', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        document.getElementById('p-name').textContent    = name;
+        document.getElementById('p-initial').textContent = name.charAt(0).toUpperCase();
+        showMsg('info-msg', 'Cập nhật thành công', true);
+      } else showMsg('info-msg', json.message || 'Thất bại', false);
+    } catch { showMsg('info-msg', 'Không thể kết nối server', false); }
+  }
+
+  async function changePassword() {
+    const cur = document.getElementById('pwd-cur').value;
+    const nw  = document.getElementById('pwd-new').value;
+    const cfm = document.getElementById('pwd-cfm').value;
+    if (!cur || !nw)  return showMsg('pwd-msg', 'Vui lòng điền đầy đủ', false);
+    if (nw !== cfm)   return showMsg('pwd-msg', 'Mật khẩu xác nhận không khớp', false);
+    if (nw.length < 6) return showMsg('pwd-msg', 'Mật khẩu mới phải có ít nhất 6 ký tự', false);
+    try {
+      const res  = await fetch('/api/user/password', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password: cur, new_password: nw }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        ['pwd-cur','pwd-new','pwd-cfm'].forEach(id => document.getElementById(id).value = '');
+        showMsg('pwd-msg', 'Đổi mật khẩu thành công', true);
+      } else showMsg('pwd-msg', json.message || 'Thất bại', false);
+    } catch { showMsg('pwd-msg', 'Không thể kết nối server', false); }
+  }
+
+  async function doLogout() {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = 'login.html';
+  }
+
+  loadProfile();
+  loadCourses();
+</script>
+</body>
+</html>

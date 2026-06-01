@@ -1,0 +1,21 @@
+{
+  "name": "engpro",
+  "version": "1.0.0",
+  "description": "EngPro – English Learning Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --watch --env-file-if-exists=.env server.js"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "express": "^4.18.3",
+    "express-session": "^1.17.3",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.9.1",
+    "xlsx": "^0.18.5"
+  }
+}
