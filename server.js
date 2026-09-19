@@ -1490,6 +1490,18 @@ app.get('/api/admin/stats', async (req, res) => {
   } catch (e) { console.error(e); err(res, 'Lỗi hệ thống', 500); }
 });
 
+// GET /api/admin/pending-counts — số việc đang chờ admin xử lý, hiện thành con số trên menu bên trái
+app.get('/api/admin/pending-counts', async (req, res) => {
+  if (!roleRequired(req, res, 'admin')) return;
+  try {
+    const [[counts]] = await pool.query(`
+      SELECT (SELECT COUNT(*) FROM courses          WHERE status='pending') AS courses,
+             (SELECT COUNT(*) FROM enrollments      WHERE status='pending') AS enrollments,
+             (SELECT COUNT(*) FROM contact_messages WHERE status='new')     AS contact`);
+    ok(res, counts);
+  } catch (e) { err(res, 'Lỗi hệ thống', 500); }
+});
+
 // ═════════════════════════════════════════════════════════════
 //  ADMIN – USERS
 // ═════════════════════════════════════════════════════════════

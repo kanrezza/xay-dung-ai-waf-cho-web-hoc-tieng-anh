@@ -41,7 +41,7 @@
 <body class="bg-surface-low text-on-surface flex h-screen overflow-hidden">
 
 <!-- ===== SIDEBAR ===== -->
-<aside id="sidebar" class="w-60 shrink-0 bg-primary flex flex-col h-full overflow-y-auto fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0">
+<aside id="sidebar" class="w-64 shrink-0 bg-primary flex flex-col h-full overflow-y-auto fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0">
   <div class="px-4 py-5 border-b border-white/10 flex items-center gap-2.5">
     <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
       <span class="material-symbols-outlined text-white text-lg">school</span>
@@ -74,21 +74,23 @@
       <span class="material-symbols-outlined text-xl">menu_book</span> Khóa học
     </div>
     <div id="nav-approve" onclick="showSection('approve')"
-      class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
+      class="flex items-center gap-3 whitespace-nowrap px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
       <span class="material-symbols-outlined text-xl">verified</span>
       Duyệt khóa học
+      <span id="approve-badge" class="hidden ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-bold leading-5 text-center"></span>
     </div>
     <div id="nav-enrollments" onclick="showSection('enrollments')"
-      class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
+      class="flex items-center gap-3 whitespace-nowrap px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
       <span class="material-symbols-outlined text-xl">how_to_reg</span>
       Duyệt đăng ký học
+      <span id="enrollments-badge" class="hidden ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-bold leading-5 text-center"></span>
     </div>
     <div id="nav-categories" onclick="showSection('categories')"
       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
       <span class="material-symbols-outlined text-xl">category</span> Danh mục môn
     </div>
     <div id="nav-contact" onclick="showSection('contact')"
-      class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
+      class="flex items-center gap-3 whitespace-nowrap px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
       <span class="material-symbols-outlined text-xl">mail</span> Liên hệ
       <span id="contact-badge" class="hidden ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-bold leading-5 text-center"></span>
     </div>
@@ -133,8 +135,10 @@
   <!-- Topbar -->
   <header class="bg-white border-b border-outline-variant/30 px-4 md:px-6 h-16 flex items-center justify-between gap-3 shrink-0">
     <div class="flex items-center gap-2 min-w-0">
-      <button type="button" onclick="toggleSidebar(true)" class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-surface-low" aria-label="Mở menu">
+      <button type="button" onclick="toggleSidebar(true)" class="relative lg:hidden p-2 -ml-2 rounded-lg hover:bg-surface-low" aria-label="Mở menu">
         <span class="material-symbols-outlined text-on-surface-variant">menu</span>
+        <!-- Trên điện thoại menu bị ẩn: chấm cam báo còn việc chờ xử lý -->
+        <span id="menu-dot" class="hidden absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white"></span>
       </button>
       <h1 class="text-base font-bold text-primary truncate" id="page-title">Tổng quan</h1>
     </div>
@@ -1471,10 +1475,25 @@
     }
   }
 
-  function setContactBadge(unread) {
-    const badge = document.getElementById('contact-badge');
-    badge.textContent = unread > 99 ? '99+' : unread;
-    badge.classList.toggle('hidden', !unread);
+  // Số việc đang chờ xử lý hiện ngay trên menu bên trái: khóa chờ duyệt, đăng ký chờ duyệt, tin nhắn liên hệ mới
+  const NAV_BADGES = ['approve-badge', 'enrollments-badge', 'contact-badge'];
+  function setNavBadge(id, count) {
+    const badge = document.getElementById(id);
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.classList.toggle('hidden', !count);
+    const anyPending = NAV_BADGES.some(b => !document.getElementById(b).classList.contains('hidden'));
+    document.getElementById('menu-dot').classList.toggle('hidden', !anyPending);
+  }
+  function setContactBadge(unread) { setNavBadge('contact-badge', unread); }
+
+  async function refreshNavBadges() {
+    try {
+      const json = await fetch('/api/admin/pending-counts', { credentials: 'include' }).then(r => r.json());
+      if (!json.success) return;
+      setNavBadge('approve-badge', json.data.courses);
+      setNavBadge('enrollments-badge', json.data.enrollments);
+      setNavBadge('contact-badge', json.data.contact);
+    } catch {}
   }
 
   async function setContactStatus(id, status) {
@@ -1488,9 +1507,11 @@
     loadContactMessages();
   }
 
-  // Số tin nhắn chưa xử lý hiện ngay trên menu khi mở trang
-  fetch('/api/admin/contact-messages?status=new', { credentials: 'include' })
-    .then(r => r.json()).then(json => { if (json.success) setContactBadge(json.data.unread); }).catch(() => {});
+  // Hiện số ngay khi mở trang, rồi cứ mỗi phút cập nhật lại: học viên đăng ký hay giảng viên gửi duyệt
+  // trong lúc admin đang mở trang thì con số tự tăng mà không cần tải lại
+  refreshNavBadges();
+  setInterval(() => { if (document.visibilityState === 'visible') refreshNavBadges(); }, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshNavBadges(); });
 
   function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
   function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -1843,6 +1864,7 @@
       const list    = json.data.rows;
       const container = document.getElementById('approve-list');
       document.getElementById('approve-count').textContent = list.length + ' khóa chờ duyệt';
+      setNavBadge('approve-badge', json.data.total ?? list.length);
       if (!list.length) {
         container.innerHTML = `
           <div class="bg-white rounded-2xl border border-outline-variant/40 p-12 flex flex-col items-center justify-center text-center">
@@ -2327,6 +2349,7 @@
       if (!json.success) return;
       const rows = json.data;
       count.textContent = rows.length + ' yêu cầu chờ duyệt';
+      setNavBadge('enrollments-badge', rows.length);
       if (!rows.length) {
         list.innerHTML = `
           <div class="bg-white rounded-2xl border border-outline-variant/40 p-12 flex flex-col items-center justify-center text-center">
