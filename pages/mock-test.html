@@ -8,6 +8,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <script>
+  // Thoát ký tự HTML cho dữ liệu người dùng nhập trước khi chèn vào innerHTML (chống XSS)
+  function esc(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
     tailwind.config = {
       theme: {
         extend: {
@@ -37,50 +41,54 @@
         </div>
         <span class="text-xl font-bold text-primary">EngPro</span>
       </a>
-      <nav class="hidden md:flex items-center gap-8">
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
         <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
         <a href="mock-test.html" class="text-secondary font-bold border-b-2 border-secondary pb-0.5 text-sm">Bài test thử</a>
         <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+        <a href="writing.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện viết AI</a>
       </nav>
       <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
         <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
         <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
       </div>
-      <div id="auth-user" class="hidden items-center gap-2 shrink-0">
-        <a id="dash-link" href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
             <span class="text-white text-xs font-bold" id="user-initial">?</span>
           </div>
           <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
-          <span class="material-symbols-outlined text-on-surface-variant text-base">dashboard</span>
-        </a>
-        <button onclick="doLogout()" title="Đăng xuất" class="p-2 rounded-xl hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors">
-          <span class="material-symbols-outlined text-xl">logout</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
         </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
       </div>
-      <button id="mobile-menu-btn" class="md:hidden text-on-surface-variant">
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
         <span class="material-symbols-outlined text-3xl">menu</span>
       </button>
     </div>
-    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
       <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
       <a href="mock-test.html" class="text-secondary font-bold text-base py-1">Bài test thử</a>
       <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <a href="writing.html" class="text-on-surface-variant text-base py-1">Luyện viết AI</a>
       <hr class="border-outline-variant/30" />
       <div id="auth-guest-mobile" class="hidden flex-col gap-2">
         <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
         <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
       </div>
-      <div id="auth-user-mobile" class="hidden flex-col gap-2">
-        <a id="dash-link-mobile" href="#" class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
             <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
           </div>
-          <div><p class="text-sm font-bold text-primary" id="user-name-mobile">...</p><p class="text-xs text-on-surface-variant">Vào Dashboard</p></div>
-        </a>
-        <button onclick="doLogout()" class="text-sm font-semibold text-error border border-error/40 rounded-lg px-4 py-2 text-center w-full hover:bg-red-50 flex items-center justify-center gap-1">
-          <span class="material-symbols-outlined text-base">logout</span>Đăng xuất
-        </button>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
+          </div>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
       </div>
     </div>
   </header>
@@ -91,36 +99,37 @@
     <section class="bg-primary-container py-12">
       <div class="max-w-container mx-auto px-4 md:px-16 text-center">
         <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Trung Tâm Thi Thử</h1>
-        <p class="text-blue-200 text-sm max-w-xl mx-auto">Trải nghiệm đề thi thật với đầy đủ kỹ năng. Mỗi loại chứng chỉ có <strong class="text-white">1 bài test chuẩn</strong> để bạn làm quen cấu trúc trước khi thi thật.</p>
+        <p class="text-blue-200 text-sm max-w-xl mx-auto">Làm bài thi có tính giờ theo cấu trúc IELTS, TOEFL, TOEIC. Nộp bài xong bạn xem ngay điểm, đáp án từng câu và điểm quy đổi ước tính theo thang của kỳ thi.</p>
       </div>
     </section>
 
-    <!-- NOTICE -->
-    <section class="max-w-container mx-auto px-4 md:px-16 py-6">
+    <!-- NOTICE + FILTER -->
+    <section class="max-w-container mx-auto px-4 md:px-16 py-6 space-y-4">
       <div class="bg-blue-50 border border-secondary/30 rounded-xl p-4 flex items-start gap-3">
         <span class="material-symbols-outlined text-secondary text-xl shrink-0 mt-0.5">info</span>
         <p class="text-sm text-on-surface-variant">
-          <strong class="text-primary">Lưu ý:</strong> Mỗi bài test thử bên dưới là <strong>1 đề duy nhất</strong> phản ánh đúng cấu trúc kỳ thi thật.
-          Nếu bạn muốn luyện tập với nhiều đề hơn, hãy vào <a href="practice.html" class="text-secondary font-semibold hover:underline">Kho Luyện Đề</a>.
+          <strong class="text-primary">Lưu ý:</strong> đề thi thử thường giới hạn số lượt làm để điểm phản ánh đúng trình độ, nên hãy làm trong môi trường yên tĩnh và đủ thời gian.
+          Muốn luyện một dạng bài nhiều lần, hãy vào <a href="practice.html" class="text-secondary font-semibold hover:underline">Kho Luyện Đề</a>.
         </p>
       </div>
+      <div id="exam-tabs" class="flex flex-wrap gap-2" role="tablist" aria-label="Lọc theo kỳ thi"></div>
     </section>
 
-    <!-- TEST CARDS (dynamic) -->
+    <!-- TEST CARDS -->
     <section class="max-w-container mx-auto px-4 md:px-16 pb-16">
       <div id="mock-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- loading placeholder -->
         <div class="col-span-full text-center py-16 text-sm text-on-surface-variant" id="mock-loading">Đang tải bài test thử...</div>
       </div>
     </section>
   </main>
 
   <!-- MODAL XÁC NHẬN BẮT ĐẦU -->
-  <div id="start-modal" class="hidden fixed inset-0 bg-primary/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+  <div id="start-modal" class="hidden fixed inset-0 bg-primary/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="start-modal-title">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 sm:p-8 text-center">
       <span class="material-symbols-outlined text-5xl text-primary mb-3 block">assignment</span>
-      <h3 class="text-xl font-bold text-primary mb-2" id="start-modal-title">Bắt đầu IELTS Full Test?</h3>
-      <p class="text-sm text-on-surface-variant mb-6">Hãy đảm bảo bạn có đủ thời gian và môi trường yên tĩnh. Bài test sẽ được tính giờ tự động.</p>
+      <h3 class="text-xl font-bold text-primary mb-2" id="start-modal-title"></h3>
+      <ul id="start-modal-info" class="text-sm text-on-surface-variant mb-4 space-y-1"></ul>
+      <p class="text-xs text-on-surface-variant mb-6">Bài được tính giờ trên máy chủ và tự lưu đáp án. Nếu lỡ tải lại trang, bạn làm tiếp được lượt đang dở.</p>
       <div class="flex gap-3">
         <button onclick="closeStartModal()" class="flex-1 border border-outline-variant text-on-surface-variant font-semibold py-3 rounded-xl hover:bg-surface-low transition-colors text-sm">Hủy</button>
         <button onclick="confirmStart()" class="flex-1 bg-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm">Bắt đầu</button>
@@ -129,8 +138,12 @@
   </div>
 
   <footer class="bg-primary text-white py-8 mt-8">
-    <div class="max-w-container mx-auto px-4 md:px-16 text-center text-xs text-blue-200">
-      © 2026 EngPro English Systems.
+    <div class="max-w-container mx-auto px-4 md:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+      <span>© 2026 EngPro English Systems.</span>
+      <nav class="flex gap-5">
+        <a href="help.html" class="hover:text-white">Trung tâm trợ giúp</a>
+        <a href="contact.html" class="hover:text-white">Liên hệ</a>
+      </nav>
     </div>
   </footer>
 
@@ -139,89 +152,137 @@
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
 
-    const HEADER_COLOR = { ielts: 'bg-primary', toefl: 'bg-accent', toeic: 'bg-secondary' };
-    const HEADER_ICON  = { ielts: 'school', toefl: 'public', toeic: 'work' };
-    const BTN_COLOR    = { ielts: 'bg-primary', toefl: 'bg-accent', toeic: 'bg-secondary' };
+    const EXAM_STYLE = {
+      IELTS: { header: 'bg-primary',   icon: 'school' },
+      TOEFL: { header: 'bg-accent',    icon: 'public' },
+      TOEIC: { header: 'bg-secondary', icon: 'work' },
+    };
+    const SKILL_LABEL = { listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking', full: 'Full Test' };
+    let _tests = [];
+    let _exam = 'all';
+    let _current = null;
 
-    let currentTestId = null;
-    let currentTestTitle = '';
+    const durationText = t => (t.duration_minutes > 0 ? `${t.duration_minutes} phút` : 'Không giới hạn giờ');
+    const attemptsLeft = t => (t.max_attempts > 0 ? Math.max(0, t.max_attempts - (t.attempts_used || 0)) : null);
 
     function buildMockCard(t) {
-      const examKey   = (t.category_name || '').toLowerCase();
-      const hdrColor  = HEADER_COLOR[examKey] || 'bg-primary';
-      const btnColor  = BTN_COLOR[examKey]    || 'bg-primary';
-      const icon      = HEADER_ICON[examKey]  || 'assignment';
-      const skillLbl  = t.skill ? ` · ${t.skill.charAt(0).toUpperCase() + t.skill.slice(1)}` : '';
-      const catLabel  = (t.category_name || 'Bài test').toUpperCase();
+      const exam = (t.category_type || '').toUpperCase();
+      const style = EXAM_STYLE[exam] || { header: 'bg-primary', icon: 'assignment' };
+      const parts = [];
+      if (t.listening_sections) parts.push('Phần nghe');
+      if (t.reading_sections) parts.push('Phần đọc');
+      const logged = t.attempts_used !== undefined;
+      const left = attemptsLeft(t);
+      const exhausted = logged && left === 0 && !t.in_progress;
+      let mine = '';
+      if (logged && (t.attempts_used || t.in_progress)) {
+        mine = `
+          <div class="border border-outline-variant/40 rounded-lg px-3 py-2 mb-4 text-xs text-on-surface-variant space-y-0.5">
+            ${t.in_progress ? '<p class="font-semibold text-amber-700">Bạn đang làm dở đề này</p>' : ''}
+            ${t.attempts_used ? `<p>Đã làm ${t.attempts_used}${t.max_attempts ? '/' + t.max_attempts : ''} lượt · cao nhất <strong class="text-on-surface">${Math.round(t.best_score)}%</strong></p>
+            <p>Lần gần nhất: <strong class="${t.last_passed ? 'text-green-700' : 'text-error'}">${Math.round(t.last_score)}% (${t.last_passed ? 'đạt' : 'chưa đạt'})</strong></p>` : ''}
+          </div>`;
+      }
+      const label = t.in_progress ? 'Làm tiếp' : t.attempts_used ? 'Thi lại' : 'Bắt đầu thi thử';
       return `
         <div class="bg-white rounded-2xl border border-outline-variant/50 shadow-sm overflow-hidden flex flex-col">
-          <div class="${hdrColor} px-6 py-8 text-white">
+          <div class="${style.header} px-6 py-7 text-white">
             <div class="flex items-center justify-between mb-4">
-              <span class="text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">${catLabel}</span>
-              <span class="material-symbols-outlined text-3xl opacity-50">${icon}</span>
+              <span class="text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">${esc(exam || 'Bài test')}</span>
+              <span class="material-symbols-outlined text-3xl opacity-50">${style.icon}</span>
             </div>
-            <h2 class="text-xl font-bold mb-1">${t.title}</h2>
-            <p class="text-white/70 text-xs">${t.category_name || ''}${skillLbl}</p>
+            <h2 class="text-xl font-bold mb-1">${esc(t.title)}</h2>
+            <p class="text-white/75 text-xs">${esc(t.category_name || '')}${t.skill ? ' · ' + esc(SKILL_LABEL[t.skill] || t.skill) : ''}</p>
           </div>
           <div class="p-6 flex flex-col flex-grow">
-            ${t.description ? `<p class="text-sm text-on-surface-variant mb-4">${t.description}</p>` : ''}
-            <div class="bg-surface-low rounded-lg p-3 mb-5 flex flex-wrap gap-4">
-              <div class="flex items-center gap-1.5 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-base">help_outline</span>
-                <span class="font-semibold text-on-surface">${t.num_questions}</span> câu
-              </div>
-              <div class="flex items-center gap-1.5 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-base">schedule</span>
-                <span class="font-semibold text-on-surface">${t.duration_minutes}</span> phút
-              </div>
+            ${t.description ? `<p class="text-sm text-on-surface-variant mb-4">${esc(t.description)}</p>` : ''}
+            <div class="bg-surface-low rounded-lg p-3 mb-4 grid grid-cols-2 gap-2 text-sm text-on-surface-variant">
+              <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-base">help_outline</span><strong class="text-on-surface">${t.question_count}</strong> câu</span>
+              <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-base">schedule</span>${durationText(t)}</span>
+              <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-base">flag</span>Đạt từ ${t.pass_percent}%</span>
+              <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-base">replay</span>${t.max_attempts ? t.max_attempts + ' lượt' : 'Không giới hạn lượt'}</span>
             </div>
-            <div class="mt-auto">
-              <button onclick="startTest(${t.id}, '${t.title.replace(/'/g,"&#39;")}')"
-                class="w-full ${btnColor} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-base">play_arrow</span> Bắt đầu thi thử
-              </button>
+            <p class="text-xs text-on-surface-variant mb-4">${parts.length ? parts.join(' · ') + ' · ' : ''}${t.taker_count} người đã làm</p>
+            ${mine}
+            <div class="mt-auto space-y-2">
+              ${exhausted
+                ? `<button disabled class="w-full bg-outline-variant text-on-surface-variant font-semibold py-3 rounded-xl text-sm cursor-not-allowed">Đã dùng hết ${t.max_attempts} lượt</button>
+                   <a href="results.html" class="block text-center text-sm font-semibold text-secondary hover:underline">Xem lại kết quả</a>`
+                : `<button onclick="startTest(${t.id})"
+                    class="w-full ${style.header} text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">${t.in_progress ? 'resume' : 'play_arrow'}</span> ${label}
+                  </button>`}
             </div>
           </div>
         </div>`;
+    }
+
+    function renderTabs() {
+      const exams = ['all', ...['IELTS', 'TOEFL', 'TOEIC'].filter(e => _tests.some(t => (t.category_type || '').toUpperCase() === e))];
+      document.getElementById('exam-tabs').innerHTML = exams.length > 2 ? exams.map(e => {
+        const count = e === 'all' ? _tests.length : _tests.filter(t => (t.category_type || '').toUpperCase() === e).length;
+        const active = e === _exam;
+        return `<button type="button" role="tab" aria-selected="${active}" onclick="selectExam('${e}')"
+          class="px-4 py-2 rounded-full text-sm font-semibold transition-colors ${active ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'}">
+          ${e === 'all' ? 'Tất cả' : e} <span class="${active ? 'text-blue-200' : 'text-outline'}">${count}</span></button>`;
+      }).join('') : '';
+    }
+
+    function selectExam(exam) {
+      _exam = exam;
+      renderTabs();
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('mock-grid');
+      const list = _exam === 'all' ? _tests : _tests.filter(t => (t.category_type || '').toUpperCase() === _exam);
+      grid.innerHTML = list.length
+        ? list.map(buildMockCard).join('')
+        : '<div class="col-span-full text-center py-16 text-sm text-on-surface-variant">Chưa có bài test thử nào. Vui lòng quay lại sau.</div>';
     }
 
     async function loadMockTests() {
       try {
         const res  = await fetch('/api/public/admin-tests?type=test_thu');
         const json = await res.json();
-        const grid = document.getElementById('mock-grid');
-        if (!json.success || !json.data.length) {
-          grid.innerHTML = '<div class="col-span-full text-center py-16 text-sm text-on-surface-variant">Chưa có bài test thử nào. Vui lòng quay lại sau.</div>';
-          return;
-        }
-        grid.innerHTML = json.data.map(buildMockCard).join('');
+        if (!json.success) throw new Error();
+        _tests = json.data;
+        const wanted = new URLSearchParams(location.search).get('exam');
+        if (wanted && _tests.some(t => (t.category_type || '').toUpperCase() === wanted.toUpperCase())) _exam = wanted.toUpperCase();
+        renderTabs();
+        renderGrid();
       } catch {
-        document.getElementById('mock-loading').textContent = 'Không thể tải dữ liệu. Vui lòng thử lại.';
+        document.getElementById('mock-grid').innerHTML = '<div class="col-span-full text-center py-16 text-sm text-error">Không thể tải dữ liệu. Vui lòng thử lại.</div>';
       }
     }
 
-    function startTest(id, title) {
-      // Kiểm tra đăng nhập (window.__engproUser được set bởi auth-nav.js)
+    function startTest(id) {
+      // window.__engproUser do auth-nav.js đặt sau khi kiểm tra phiên đăng nhập
       if (!window.__engproUser) {
-        if (confirm('Bạn cần đăng nhập để làm bài thi thử.\nChuyển đến trang đăng nhập?')) {
-          window.location.href = 'login.html';
-        }
+        location.href = 'login.html?next=' + encodeURIComponent('mock-test.html');
         return;
       }
-      currentTestId    = id;
-      currentTestTitle = title;
-      document.getElementById('start-modal-title').textContent = `Bắt đầu "${title}"?`;
+      _current = _tests.find(t => t.id === id);
+      if (!_current) return;
+      if (_current.in_progress) { confirmStart(); return; }
+      const left = attemptsLeft(_current);
+      document.getElementById('start-modal-title').textContent = `Bắt đầu "${_current.title}"?`;
+      document.getElementById('start-modal-info').innerHTML = [
+        `${_current.question_count} câu hỏi · ${durationText(_current)}`,
+        left === null ? 'Không giới hạn số lượt làm' : `Bạn còn ${left} lượt làm, tính cả lượt này`,
+      ].map(text => `<li>${esc(text)}</li>`).join('');
       document.getElementById('start-modal').classList.remove('hidden');
     }
     function closeStartModal() {
       document.getElementById('start-modal').classList.add('hidden');
     }
     function confirmStart() {
-      window.location.href = 'test-take.html?source=admin&id=' + currentTestId;
+      window.location.href = 'test-take.html?source=admin&id=' + _current.id;
     }
 
     loadMockTests();
   </script>
-  <script src="../js/auth-nav.js"></script>
+  <script src="../js/auth-nav.js?v=20260918b"></script>
 </body>
 </html>

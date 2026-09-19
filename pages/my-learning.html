@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Học tập của tôi – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d', 'on-primary': '#ffffff',
+            secondary: '#0061a5', 'secondary-container': '#66affe', 'on-secondary': '#ffffff',
+            accent: '#e07b28', surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'surface-container': '#ebeef0', 'on-surface': '#181c1e',
+            'on-surface-variant': '#43474e', outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
+        <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
+        <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
+        <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+        <a href="writing.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện viết AI</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
+        </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
+      </div>
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <a href="writing.html" class="text-on-surface-variant text-base py-1">Luyện viết AI</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
+          </div>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <div class="max-w-container mx-auto px-4 md:px-16 py-10">
+
+      <!-- Lời chào -->
+      <section class="relative overflow-hidden bg-primary-container rounded-2xl px-6 md:px-10 py-8 text-white">
+        <div class="relative z-10 max-w-2xl">
+          <h1 class="text-2xl md:text-3xl font-bold" id="greeting">Xin chào</h1>
+          <p class="text-blue-200 mt-2 text-sm md:text-base" id="greeting-sub">Đang tải khóa học của bạn...</p>
+        </div>
+        <span class="material-symbols-outlined absolute -right-4 -bottom-10 text-[180px] text-white/10 select-none pointer-events-none">school</span>
+      </section>
+
+      <!-- Tab -->
+      <div class="mt-8 border-b border-outline-variant/50 flex flex-wrap gap-x-6" role="tablist" id="tabs"></div>
+
+      <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] items-start">
+        <!-- Danh sách khóa học của tab đang chọn -->
+        <div id="course-list" class="min-w-0 space-y-5">
+          <p class="text-sm text-on-surface-variant text-center py-10">Đang tải...</p>
+        </div>
+
+        <!-- Hoạt động học tập -->
+        <aside class="min-w-0 bg-white rounded-2xl border border-outline-variant/40">
+          <div id="deadlines-box" class="hidden p-6 border-b border-outline-variant/40">
+            <h2 class="font-bold text-primary mb-3">Hạn nộp sắp tới</h2>
+            <div id="deadlines" class="space-y-2.5"></div>
+          </div>
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-bold text-primary" id="cal-title">Tháng</h2>
+              <div class="flex gap-1">
+                <button type="button" id="cal-prev" aria-label="Tháng trước"
+                  class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-low disabled:opacity-30 disabled:cursor-not-allowed">
+                  <span class="material-symbols-outlined text-xl">chevron_left</span>
+                </button>
+                <button type="button" id="cal-next" aria-label="Tháng sau"
+                  class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-low disabled:opacity-30 disabled:cursor-not-allowed">
+                  <span class="material-symbols-outlined text-xl">chevron_right</span>
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-7 text-center text-xs font-semibold text-on-surface-variant mb-2">
+              <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+            </div>
+            <div id="cal-days" class="grid grid-cols-7 gap-y-1 text-center text-sm"></div>
+            <div class="flex flex-col gap-1.5 text-xs text-on-surface-variant mt-4">
+              <p class="flex items-center gap-2"><span class="inline-block w-4 h-0.5 bg-secondary rounded-full"></span>Ngày có học (xem video hoặc làm bài)</p>
+              <p class="flex items-center gap-2"><span class="inline-block w-4 text-center"><span class="inline-block w-1.5 h-1.5 bg-accent rounded-full"></span></span>Hạn nộp bài kiểm tra</p>
+            </div>
+          </div>
+          <div class="border-t border-outline-variant/40 p-6">
+            <h3 class="font-bold text-primary mb-4">4 tuần gần đây</h3>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-5">
+              <div><p class="text-2xl font-bold text-primary" id="st-days">–</p><p class="text-xs text-on-surface-variant mt-0.5">Ngày có học</p></div>
+              <div><p class="text-2xl font-bold text-primary" id="st-minutes">–</p><p class="text-xs text-on-surface-variant mt-0.5">Phút xem video</p></div>
+              <div><p class="text-2xl font-bold text-primary" id="st-lectures">–</p><p class="text-xs text-on-surface-variant mt-0.5">Bài giảng hoàn thành</p></div>
+              <div><p class="text-2xl font-bold text-primary" id="st-attempts">–</p><p class="text-xs text-on-surface-variant mt-0.5">Lượt làm bài</p></div>
+            </div>
+            <a href="results.html" class="mt-5 flex items-center gap-1 text-sm font-semibold text-secondary hover:underline">
+              Xem kết quả học tập <span class="material-symbols-outlined text-base">arrow_forward</span>
+            </a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-primary text-white py-8 mt-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+      <span>© 2026 EngPro English Systems.</span>
+      <nav class="flex gap-5">
+        <a href="help.html" class="hover:text-white">Trung tâm trợ giúp</a>
+        <a href="contact.html" class="hover:text-white">Liên hệ</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../js/deadline.js?v=20260918b"></script>
+  <script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+
+    const TABS = [
+      { key: 'progress',  label: 'Đang học' },
+      { key: 'completed', label: 'Đã hoàn thành' },
+      { key: 'pending',   label: 'Chờ kích hoạt' },
+    ];
+    const CATEGORY_BADGE = {
+      IELTS: 'bg-red-50 text-red-700', TOEFL: 'bg-blue-50 text-blue-700', TOEIC: 'bg-emerald-50 text-emerald-700',
+    };
+
+    let _courses = [];
+    let _tab = 'progress';
+    let _activity = null;
+    let _deadlines = [];
+    let _calMonth = null; // { y, m } — m từ 0 đến 11
+
+    function esc(value) {
+      return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    const fmtPrice = price => Number(price) > 0 ? Number(price).toLocaleString('vi-VN') + 'đ' : 'Miễn phí';
+    const isCompleted = c => c.enroll_status === 'completed'
+      || (c.enroll_status === 'active' && c.lecture_count > 0 && c.progress_percent === 100);
+    const tabOf = c => ['active', 'completed'].includes(c.enroll_status) ? (isCompleted(c) ? 'completed' : 'progress') : 'pending';
+
+    // ── Lời chào & tab ────────────────────────────────────────
+    function renderGreeting(name) {
+      const h = new Date().getHours();
+      const part = h < 11 ? 'buổi sáng' : h < 14 ? 'buổi trưa' : h < 18 ? 'buổi chiều' : 'buổi tối';
+      document.getElementById('greeting').textContent = `Chào ${part}, ${name}`;
+      const learning = _courses.filter(c => tabOf(c) === 'progress').length;
+      const done = _courses.filter(c => tabOf(c) === 'completed').length;
+      document.getElementById('greeting-sub').textContent = _courses.length
+        ? `Bạn đang học ${learning} khóa và đã hoàn thành ${done} khóa. Học đều mỗi ngày để lên band nhanh hơn.`
+        : 'Bạn chưa đăng ký khóa học nào. Chọn một khóa học phù hợp với band điểm để bắt đầu.';
+    }
+
+    function renderTabs() {
+      document.getElementById('tabs').innerHTML = TABS.map(t => {
+        const count = _courses.filter(c => tabOf(c) === t.key).length;
+        const active = t.key === _tab;
+        return `<button type="button" role="tab" aria-selected="${active}" onclick="setTab('${t.key}')"
+          class="shrink-0 pb-3 -mb-px text-sm md:text-base font-semibold border-b-[3px] transition-colors
+                 ${active ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-primary'}">
+          ${t.label}${count ? ` <span class="text-xs font-bold ${active ? 'text-secondary' : 'text-outline'}">${count}</span>` : ''}
+        </button>`;
+      }).join('');
+    }
+
+    function setTab(key) {
+      _tab = key;
+      renderTabs();
+      renderCourses();
+    }
+
+    // ── Thẻ khóa học ──────────────────────────────────────────
+    function courseHeader(c) {
+      return `
+        <div class="flex flex-wrap items-center gap-2 text-sm text-on-surface-variant">
+          ${c.category_type ? `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${CATEGORY_BADGE[c.category_type] || 'bg-surface-low'}">${esc(c.category_type)}</span>` : ''}
+          <span>${esc(c.category_name || 'Khóa học')}${c.teacher_name ? ' · Giảng viên ' + esc(c.teacher_name) : ''}</span>
+        </div>
+        <h3 class="text-lg font-bold text-primary mt-2">${esc(c.title)}</h3>`;
+    }
+
+    function progressBar(c, color) {
+      return `
+        <p class="text-sm text-on-surface-variant mt-1">Khóa học · ${c.progress_percent}% hoàn thành · ${c.done_lectures}/${c.lecture_count} bài giảng</p>
+        <div class="h-2 bg-surface-low rounded-full overflow-hidden mt-3">
+          <div class="h-full rounded-full ${color}" style="width:${c.progress_percent}%"></div>
+        </div>`;
+    }
+
+    function nextItem(c) {
+      const learnUrl = `course-learn.html?id=${c.id}`;
+      if (!c.lecture_count) {
+        return `<p class="text-sm text-on-surface-variant">Giảng viên đang cập nhật bài giảng cho khóa học này.</p>`;
+      }
+      const n = c.next;
+      const isTest = n.kind === 'test';
+      const icon = isTest ? 'quiz' : (n.has_video ? 'play_circle' : 'menu_book');
+      const title = isTest ? `Bài kiểm tra: ${esc(n.test_title)}` : `Bài ${n.number}: ${esc(n.lecture_title)}`;
+      const meta = [
+        isTest ? `Bài ${n.number}: ${esc(n.lecture_title)}` : (n.has_video ? 'Video bài giảng' : 'Bài giảng'),
+        n.duration_minutes ? `${n.duration_minutes} phút` : '',
+      ].filter(Boolean).join(' · ');
+      return `
+        <div class="flex items-center gap-4">
+          <span class="material-symbols-outlined text-3xl text-secondary shrink-0">${icon}</span>
+          <div class="flex-grow min-w-0">
+            <p class="font-semibold text-on-surface leading-snug">${title}</p>
+            <p class="text-sm text-on-surface-variant truncate">${meta}</p>
+            ${n.due_at ? `<p class="text-xs font-semibold mt-1 ${EngProDeadline.COLORS[EngProDeadline.state(n.due_at)].text}">
+              Hạn nộp: ${EngProDeadline.format(n.due_at)} · ${EngProDeadline.relative(n.due_at)}</p>` : ''}
+          </div>
+          <a href="${learnUrl}&lecture=${n.lecture_id}"
+             class="shrink-0 px-5 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">
+            ${c.done_lectures === 0 ? 'Bắt đầu' : 'Tiếp tục'}
+          </a>
+        </div>`;
+    }
+
+    function progressCard(c) {
+      return `
+        <article class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+          ${courseHeader(c)}
+          ${progressBar(c, 'bg-secondary')}
+          <div class="mt-5 bg-surface rounded-xl border border-outline-variant/40 p-4">${nextItem(c)}</div>
+        </article>`;
+    }
+
+    function completedCard(c) {
+      const waiting = c.enroll_status !== 'completed';
+      return `
+        <article class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+          ${courseHeader(c)}
+          ${progressBar(c, 'bg-green-500')}
+          <div class="mt-5 bg-green-50 rounded-xl border border-green-200 p-4 flex flex-wrap items-center gap-4">
+            <span class="material-symbols-outlined text-3xl text-green-600 shrink-0">workspace_premium</span>
+            <div class="flex-grow min-w-[12rem]">
+              <p class="font-semibold text-on-surface">Bạn đã học xong tất cả bài giảng</p>
+              <p class="text-sm text-on-surface-variant">${waiting ? 'Đang chờ giảng viên xác nhận hoàn thành khóa học.' : 'Giảng viên đã xác nhận bạn hoàn thành khóa học.'}</p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+              <a href="results.html" class="px-4 py-2.5 border border-outline-variant bg-white text-sm font-semibold rounded-xl hover:bg-surface-low">Xem kết quả</a>
+              <a href="course-learn.html?id=${c.id}" class="px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90">Ôn lại</a>
+            </div>
+          </div>
+        </article>`;
+    }
+
+    function pendingCard(c) {
+      const paid = Number(c.price) > 0;
+      const date = new Date(c.enrolled_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const state = {
+        pending:  { cls: 'bg-amber-50 border-amber-200', icon: 'hourglass_top', color: 'text-amber-600',
+                    title: paid ? 'Đang chờ xác nhận chuyển khoản' : 'Đang chờ duyệt đăng ký',
+                    text: paid ? 'Khóa học sẽ được kích hoạt sau khi trung tâm xác nhận đã nhận học phí.' : 'Khóa học sẽ được kích hoạt sau khi trung tâm duyệt.' },
+        rejected: { cls: 'bg-red-50 border-red-200', icon: 'block', color: 'text-error',
+                    title: 'Đăng ký bị từ chối', text: 'Nếu bạn đã chuyển khoản, hãy liên hệ trung tâm để được hỗ trợ.' },
+        paused:   { cls: 'bg-surface-low border-outline-variant/60', icon: 'pause_circle', color: 'text-on-surface-variant',
+                    title: 'Khóa học đang tạm dừng', text: 'Liên hệ trung tâm để tiếp tục học.' },
+      }[c.enroll_status] || { cls: 'bg-surface-low border-outline-variant/60', icon: 'info', color: 'text-on-surface-variant', title: c.enroll_status, text: '' };
+      return `
+        <article class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+          ${courseHeader(c)}
+          <p class="text-sm text-on-surface-variant mt-1">Đăng ký ngày ${date} · Học phí ${fmtPrice(c.price)}</p>
+          <div class="mt-5 rounded-xl border p-4 flex flex-wrap items-center gap-4 ${state.cls}">
+            <span class="material-symbols-outlined text-3xl shrink-0 ${state.color}">${state.icon}</span>
+            <div class="flex-grow min-w-[12rem]">
+              <p class="font-semibold text-on-surface">${esc(state.title)}</p>
+              <p class="text-sm text-on-surface-variant">${state.text}</p>
+            </div>
+            ${paid ? `<a href="purchases.html" class="shrink-0 px-4 py-2.5 bg-white border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low">Xem thanh toán</a>` : ''}
+          </div>
+        </article>`;
+    }
+
+    function renderCourses() {
+      const list = _courses.filter(c => tabOf(c) === _tab);
+      const el = document.getElementById('course-list');
+      if (!list.length) {
+        const empty = {
+          progress:  ['Bạn không có khóa học nào đang học.', 'Khám phá khóa học'],
+          completed: ['Bạn chưa hoàn thành khóa học nào. Cố lên nhé!', ''],
+          pending:   ['Không có đăng ký nào đang chờ kích hoạt.', ''],
+        }[_tab];
+        el.innerHTML = `
+          <div class="bg-white rounded-2xl border border-outline-variant/40 p-10 text-center">
+            <span class="material-symbols-outlined text-5xl text-outline-variant">local_library</span>
+            <p class="text-sm text-on-surface-variant mt-2">${empty[0]}</p>
+            ${empty[1] ? `<a href="courses.html" class="inline-block mt-4 px-5 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90">${empty[1]}</a>` : ''}
+          </div>`;
+        return;
+      }
+      const card = { progress: progressCard, completed: completedCard, pending: pendingCard }[_tab];
+      el.innerHTML = list.map(card).join('');
+    }
+
+    // ── Hạn nộp ───────────────────────────────────────────────
+    // Ngày (theo giờ Việt Nam) dạng YYYY-MM-DD để so với ô lịch
+    const vnDay = iso => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(iso));
+
+    function renderDeadlines() {
+      const box = document.getElementById('deadlines-box');
+      // Quá hạn và trong 14 ngày tới; quá hạn luôn hiện trước (danh sách đã sắp theo hạn)
+      const soonLimit = Date.now() + 14 * 24 * 3600 * 1000;
+      const list = _deadlines.filter(d => new Date(d.due_at).getTime() <= soonLimit).slice(0, 5);
+      box.classList.toggle('hidden', !list.length);
+      document.getElementById('deadlines').innerHTML = list.map(d => {
+        const state = EngProDeadline.state(d.due_at);
+        const c = EngProDeadline.COLORS[state];
+        return `
+          <a href="course-learn.html?id=${d.course_id}&lecture=${d.lecture_id}"
+             class="block rounded-xl border px-3 py-2.5 hover:shadow-sm transition-shadow ${c.bg} ${c.border}">
+            <p class="text-sm font-semibold text-on-surface leading-snug">${esc(d.test_title)}</p>
+            <p class="text-xs text-on-surface-variant truncate">Tuần ${d.week} · ${esc(d.course_title)}</p>
+            <p class="text-xs font-semibold mt-1 ${c.text}">${EngProDeadline.format(d.due_at)} · ${EngProDeadline.relative(d.due_at)}</p>
+          </a>`;
+      }).join('');
+    }
+
+    // ── Lịch hoạt động ────────────────────────────────────────
+    function monthKey(y, m) { return y * 12 + m; }
+
+    function renderCalendar() {
+      const { y, m } = _calMonth;
+      const [ty, tm, td] = _activity.today.split('-').map(Number);
+      const active = new Set(_activity.days);
+      const dueDays = new Set(_deadlines.map(d => vnDay(d.due_at)));
+      document.getElementById('cal-title').textContent = `Tháng ${m + 1}, ${y}`;
+
+      const firstWeekday = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7; // Thứ Hai = 0
+      const daysInMonth = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      let html = '<span></span>'.repeat(firstWeekday);
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = y === ty && m === tm - 1 && d === td;
+        const learned = active.has(key);
+        const due = dueDays.has(key);
+        html += `
+          <span class="h-10 flex flex-col items-center justify-center relative" ${due ? 'title="Có hạn nộp bài kiểm tra"' : ''}>
+            ${due ? '<span class="absolute top-0.5 right-1.5 w-1.5 h-1.5 bg-accent rounded-full"></span>' : ''}
+            <span class="w-8 h-8 flex items-center justify-center rounded-full
+                         ${isToday ? 'border-2 border-primary font-bold text-primary' : ''}
+                         ${learned ? 'font-bold text-secondary' : 'text-on-surface-variant'}">${d}</span>
+            <span class="w-4 h-0.5 rounded-full ${learned ? 'bg-secondary' : ''}"></span>
+          </span>`;
+      }
+      document.getElementById('cal-days').innerHTML = html;
+
+      const current = monthKey(ty, tm - 1);
+      document.getElementById('cal-next').disabled = monthKey(y, m) >= current;
+      document.getElementById('cal-prev').disabled = monthKey(y, m) <= current - 11;
+    }
+
+    function shiftMonth(delta) {
+      const total = monthKey(_calMonth.y, _calMonth.m) + delta;
+      _calMonth = { y: Math.floor(total / 12), m: total % 12 };
+      renderCalendar();
+    }
+    document.getElementById('cal-prev').addEventListener('click', () => shiftMonth(-1));
+    document.getElementById('cal-next').addEventListener('click', () => shiftMonth(1));
+
+    function renderStats() {
+      const s = _activity.last28;
+      document.getElementById('st-days').textContent     = s.active_days;
+      document.getElementById('st-minutes').textContent  = s.video_minutes;
+      document.getElementById('st-lectures').textContent = s.lectures_completed;
+      document.getElementById('st-attempts').textContent = s.attempts;
+    }
+
+    // ── Tải dữ liệu ───────────────────────────────────────────
+    async function loadLearning() {
+      try {
+        const [res, meRes] = await Promise.all([
+          fetch('/api/user/learning', { credentials: 'include' }),
+          fetch('/api/auth/me', { credentials: 'include' }),
+        ]);
+        if (res.status === 401) { window.location.href = 'login.html'; return; }
+        const json = await res.json();
+        if (!json.success) {
+          document.getElementById('course-list').innerHTML =
+            `<p class="text-sm text-on-surface-variant text-center py-10">${res.status === 403 ? 'Trang này dành cho học viên.' : esc(json.message)}</p>`;
+          return;
+        }
+        const me = (await meRes.json()).data;
+        _courses = json.data.courses;
+        _activity = json.data.activity;
+        _deadlines = json.data.deadlines || [];
+        const [ty, tm] = _activity.today.split('-').map(Number);
+        _calMonth = { y: ty, m: tm - 1 };
+        // Không có khóa đang học mà có khóa chờ kích hoạt thì mở sẵn tab đó
+        if (!_courses.some(c => tabOf(c) === 'progress') && _courses.some(c => tabOf(c) === 'pending')) _tab = 'pending';
+        renderGreeting(me?.name || 'bạn');
+        renderTabs();
+        renderCourses();
+        renderDeadlines();
+        renderCalendar();
+        renderStats();
+      } catch {
+        document.getElementById('course-list').innerHTML = '<p class="text-sm text-error text-center py-10">Không thể kết nối server.</p>';
+      }
+    }
+
+    loadLearning();
+  </script>
+  <script src="../js/auth-nav.js?v=20260918b"></script>
+</body>
+</html>

@@ -3,3 +3,6 @@ uploads/
 .env
 *.env
 .DS_Store
+
+# Cấu hình riêng của công cụ Claude trên máy (có thể chứa token cá nhân), không đưa lên GitHub
+.claude/

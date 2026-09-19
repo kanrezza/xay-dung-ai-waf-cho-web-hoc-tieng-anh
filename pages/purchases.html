@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thanh toán – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d', 'on-primary': '#ffffff',
+            secondary: '#0061a5', 'secondary-container': '#66affe', 'on-secondary': '#ffffff',
+            accent: '#e07b28', surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'surface-container': '#ebeef0', 'on-surface': '#181c1e',
+            'on-surface-variant': '#43474e', outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
+        <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
+        <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
+        <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+        <a href="writing.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện viết AI</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
+        </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
+      </div>
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <a href="writing.html" class="text-on-surface-variant text-base py-1">Luyện viết AI</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
+          </div>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <div class="max-w-container mx-auto px-4 md:px-16 py-10">
+      <h1 class="text-3xl font-bold text-primary">Thanh toán</h1>
+      <p class="text-on-surface-variant mt-2">
+        Học phí được thanh toán bằng chuyển khoản ngân hàng. Khóa học được kích hoạt sau khi trung tâm xác nhận đã nhận tiền.
+        Xem các khóa học bạn đang học tại <a href="my-learning.html" class="text-secondary font-semibold hover:underline">Học tập của tôi</a>.
+      </p>
+
+      <!-- Tab -->
+      <div class="mt-8 border-b border-outline-variant/50 flex gap-6">
+        <span class="pb-3 -mb-px text-base font-semibold border-b-[3px] border-primary text-primary">Lịch sử thanh toán</span>
+      </div>
+
+      <!-- Tổng tiền -->
+      <div id="summary" class="hidden mt-6 flex flex-wrap gap-4">
+        <div class="bg-white rounded-2xl border border-outline-variant/40 px-5 py-4 min-w-[12rem]">
+          <p class="text-xs text-on-surface-variant">Đã thanh toán</p>
+          <p class="text-xl font-bold text-green-600 mt-0.5" id="sum-paid">0đ</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-outline-variant/40 px-5 py-4 min-w-[12rem]">
+          <p class="text-xs text-on-surface-variant">Đang chờ xác nhận</p>
+          <p class="text-xl font-bold text-amber-600 mt-0.5" id="sum-pending">0đ</p>
+        </div>
+      </div>
+
+      <div id="payments" class="mt-6">
+        <p class="text-sm text-on-surface-variant py-8">Đang tải...</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-primary text-white py-8 mt-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+      <span>© 2026 EngPro English Systems.</span>
+      <nav class="flex gap-5">
+        <a href="help.html" class="hover:text-white">Trung tâm trợ giúp</a>
+        <a href="contact.html" class="hover:text-white">Liên hệ</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../js/payment-info.js?v=20260918b"></script>
+  <script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+
+    const STATUS = {
+      active:    { label: 'Đã thanh toán',      cls: 'bg-green-100 text-green-700' },
+      completed: { label: 'Đã thanh toán',      cls: 'bg-green-100 text-green-700' },
+      pending:   { label: 'Chờ xác nhận',       cls: 'bg-amber-100 text-amber-700' },
+      rejected:  { label: 'Bị từ chối',         cls: 'bg-red-50 text-error' },
+      paused:    { label: 'Tạm dừng',           cls: 'bg-surface-low text-on-surface-variant' },
+    };
+
+    let _email = '';
+
+    function esc(value) {
+      return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    const fmtPrice = price => Number(price).toLocaleString('vi-VN') + 'đ';
+    const fmtDate = d => new Date(d).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Đã sao chép';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+      });
+    }
+
+    // Khoản chờ xác nhận: hiện lại mã QR và thông tin chuyển khoản như lúc đăng ký
+    function transferInfo(c) {
+      const note = EngProPayment.transferNote(_email, c.title);
+      const row = (label, value, copy) => `
+        <div class="flex justify-between items-center gap-3">
+          <span class="text-on-surface-variant shrink-0">${label}</span>
+          <span class="flex items-center gap-2 min-w-0">
+            <span class="font-semibold text-on-surface break-all text-right">${esc(value)}</span>
+            ${copy ? `<button type="button" data-copy="${esc(value)}" onclick="copyText(this.dataset.copy, this)" class="text-xs text-secondary hover:underline shrink-0">Sao chép</button>` : ''}
+          </span>
+        </div>`;
+      return `
+        <div id="transfer-${c.enrollment_id}" class="hidden mt-4 bg-surface rounded-xl border border-outline-variant/40 p-4 flex flex-col sm:flex-row gap-5 items-center">
+          <img src="${EngProPayment.qrUrl(Math.round(Number(c.price)), note)}" alt="QR chuyển khoản"
+               class="w-40 h-40 rounded-xl border border-outline-variant bg-white object-contain shrink-0" loading="lazy" />
+          <div class="w-full space-y-2.5 text-sm">
+            ${row('Ngân hàng', EngProPayment.BANK.name)}
+            ${row('Số tài khoản', EngProPayment.BANK.account, true)}
+            ${row('Số tiền', String(Math.round(Number(c.price))), true)}
+            ${row('Nội dung CK', note, true)}
+            <p class="text-xs text-on-surface-variant pt-1">Chuyển đúng số tiền và nội dung để trung tâm xác nhận nhanh hơn (thường trong 24 giờ).</p>
+          </div>
+        </div>`;
+    }
+
+    function toggleTransfer(id, btn) {
+      const box = document.getElementById('transfer-' + id);
+      const open = box.classList.toggle('hidden') === false;
+      btn.querySelector('[data-label]').textContent = open ? 'Ẩn thông tin chuyển khoản' : 'Xem thông tin chuyển khoản';
+      btn.querySelector('[data-icon]').textContent = open ? 'expand_less' : 'expand_more';
+    }
+
+    function render(list) {
+      const paidList = list.filter(c => Number(c.price) > 0); // khóa miễn phí không có giao dịch thanh toán
+      const el = document.getElementById('payments');
+      if (!paidList.length) {
+        el.innerHTML = `
+          <p class="text-on-surface py-4">Bạn chưa có giao dịch thanh toán nào.
+            <a href="courses.html" class="text-secondary font-semibold hover:underline">Khám phá các khóa học đang mở.</a></p>`;
+        return;
+      }
+      const sum = statuses => paidList.filter(c => statuses.includes(c.enroll_status)).reduce((s, c) => s + Number(c.price), 0);
+      document.getElementById('sum-paid').textContent = fmtPrice(sum(['active', 'completed']));
+      document.getElementById('sum-pending').textContent = fmtPrice(sum(['pending']));
+      document.getElementById('summary').classList.remove('hidden');
+
+      el.innerHTML = `
+        <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-hidden">
+          <div class="hidden md:grid grid-cols-[minmax(0,1fr)_9rem_11rem_9rem_9rem] gap-4 px-6 py-3 bg-surface-low text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+            <span>Khóa học</span><span>Mã đăng ký</span><span>Ngày đăng ký</span><span class="text-right">Học phí</span><span class="text-right">Trạng thái</span>
+          </div>
+          <div class="divide-y divide-outline-variant/30">
+            ${paidList.map(c => {
+              const st = STATUS[c.enroll_status] || { label: c.enroll_status, cls: 'bg-surface-low text-on-surface-variant' };
+              return `
+                <div class="px-6 py-4">
+                  <div class="grid gap-x-4 gap-y-1 md:grid-cols-[minmax(0,1fr)_9rem_11rem_9rem_9rem] md:items-center">
+                    <div class="min-w-0">
+                      <p class="font-semibold text-on-surface">${esc(c.title)}</p>
+                      <p class="text-xs text-on-surface-variant">${esc(c.category_name || '')}${c.teacher_name ? ' · ' + esc(c.teacher_name) : ''}</p>
+                    </div>
+                    <span class="text-sm text-on-surface-variant"><span class="md:hidden">Mã đăng ký: </span>#${c.enrollment_id}</span>
+                    <span class="text-sm text-on-surface-variant">${fmtDate(c.enrolled_at)}</span>
+                    <span class="text-sm font-bold text-on-surface md:text-right">${fmtPrice(c.price)}</span>
+                    <span class="md:text-right"><span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${st.cls}">${st.label}</span></span>
+                  </div>
+                  ${c.vnpay_status === 'paid' ? `
+                    <p class="mt-2 text-xs text-on-surface-variant">Thanh toán qua VNPay · mã giao dịch ${esc(c.vnpay_transaction_no || c.vnpay_txn_ref)}</p>` : ''}
+                  ${c.enroll_status === 'pending' && c.vnpay_status === 'failed' ? `
+                    <p class="mt-2 text-xs text-error">Lần thanh toán VNPay gần nhất chưa thành công.</p>` : ''}
+                  ${c.enroll_status === 'pending' && _vnpayEnabled ? `
+                    <button type="button" onclick="payWithVnpay(${c.id}, this)"
+                      class="mt-3 mr-4 inline-flex items-center gap-1 px-3 py-1.5 bg-[#005baa] text-white text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50">
+                      <span class="material-symbols-outlined text-base">credit_card</span>Thanh toán qua VNPay
+                    </button>` : ''}
+                  ${c.enroll_status === 'pending' ? `
+                    <button type="button" onclick="toggleTransfer(${c.enrollment_id}, this)"
+                      class="mt-3 flex items-center gap-1 text-sm font-semibold text-secondary hover:underline">
+                      <span data-label>Xem thông tin chuyển khoản</span><span class="material-symbols-outlined text-base" data-icon>expand_more</span>
+                    </button>
+                    ${transferInfo(c)}` : ''}
+                  ${c.enroll_status === 'rejected' ? `
+                    <p class="mt-2 text-xs text-on-surface-variant">Nếu bạn đã chuyển khoản cho đăng ký này, hãy liên hệ trung tâm để được hỗ trợ.</p>` : ''}
+                </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
+
+    let _vnpayEnabled = false;
+    async function payWithVnpay(courseId, btn) {
+      btn.disabled = true;
+      try {
+        const json = await (await fetch('/api/payments/vnpay/create', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ course_id: courseId }),
+        })).json();
+        if (!json.success) throw new Error(json.message);
+        window.location.href = json.data.payment_url;
+      } catch (e) {
+        alert(e.message || 'Không tạo được giao dịch VNPay');
+        btn.disabled = false;
+      }
+    }
+
+    async function loadPayments() {
+      try {
+        _vnpayEnabled = await fetch('/api/payments/config').then(r => r.json()).then(j => !!j.data?.vnpay).catch(() => false);
+        const [res, meRes] = await Promise.all([
+          fetch('/api/user/courses', { credentials: 'include' }),
+          fetch('/api/auth/me', { credentials: 'include' }),
+        ]);
+        if (res.status === 401) { window.location.href = 'login.html'; return; }
+        const json = await res.json();
+        if (!json.success) {
+          document.getElementById('payments').innerHTML = `<p class="text-sm text-on-surface-variant py-8">${esc(json.message)}</p>`;
+          return;
+        }
+        _email = (await meRes.json()).data?.email || '';
+        render(json.data);
+      } catch {
+        document.getElementById('payments').innerHTML = '<p class="text-sm text-error py-8">Không thể kết nối server.</p>';
+      }
+    }
+
+    loadPayments();
+  </script>
+  <script src="../js/auth-nav.js?v=20260918b"></script>
+</body>
+</html>

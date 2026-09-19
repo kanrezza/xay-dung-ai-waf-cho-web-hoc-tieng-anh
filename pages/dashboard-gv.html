@@ -8,6 +8,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <script>
+  // Thoát ký tự HTML cho dữ liệu người dùng nhập trước khi chèn vào innerHTML (chống XSS)
+  function esc(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
     tailwind.config = {
       theme: {
         extend: {
@@ -36,7 +40,7 @@
 <body class="bg-surface-low text-on-surface flex h-screen overflow-hidden">
 
 <!-- ===== SIDEBAR ===== -->
-<aside class="w-60 shrink-0 bg-primary flex flex-col h-full overflow-y-auto">
+<aside id="sidebar" class="w-60 shrink-0 bg-primary flex flex-col h-full overflow-y-auto fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0">
   <div class="px-4 py-5 border-b border-white/10 flex items-center gap-2.5">
     <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
       <span class="material-symbols-outlined text-white text-lg">school</span>
@@ -84,7 +88,12 @@
     </div>
     <div id="nav-feedback" onclick="showSection('feedback')"
       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
-      <span class="material-symbols-outlined text-xl">forum</span> Phản hồi
+      <span class="material-symbols-outlined text-xl">rate_review</span> Phản hồi
+    </div>
+    <div id="nav-qa" onclick="showSection('qa')"
+      class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all">
+      <span class="material-symbols-outlined text-xl">forum</span> Hỏi đáp
+      <span id="qa-nav-badge" class="hidden ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-bold leading-5 text-center"></span>
     </div>
   </nav>
 
@@ -102,27 +111,34 @@
   </div>
 </aside>
 
+<!-- Nền mờ khi mở menu trên điện thoại -->
+<div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/40 z-30 lg:hidden" onclick="toggleSidebar(false)"></div>
+
 <!-- ===== MAIN ===== -->
-<div class="flex-grow flex flex-col overflow-hidden">
+<div class="flex-grow flex flex-col overflow-hidden min-w-0">
 
   <!-- Topbar -->
-  <header class="bg-white border-b border-outline-variant/30 px-6 h-16 flex items-center justify-between shrink-0">
-    <h1 class="text-base font-bold text-primary" id="page-title">Tổng quan</h1>
-    <div class="flex items-center gap-3">
-      <button class="relative p-2 rounded-xl hover:bg-surface-low transition-colors">
-        <span class="material-symbols-outlined text-on-surface-variant text-xl">notifications</span>
+  <header class="bg-white border-b border-outline-variant/30 px-4 md:px-6 h-16 flex items-center justify-between gap-3 shrink-0">
+    <div class="flex items-center gap-2 min-w-0">
+      <button type="button" onclick="toggleSidebar(true)" class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-surface-low" aria-label="Mở menu">
+        <span class="material-symbols-outlined text-on-surface-variant">menu</span>
       </button>
+      <h1 class="text-base font-bold text-primary truncate" id="page-title">Tổng quan</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Chuông thông báo (js/notifications.js): câu hỏi mới của học viên -->
+      <div data-notifications></div>
       <div class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white font-bold text-sm" id="topbar-initial">?</div>
     </div>
   </header>
 
   <!-- Content -->
-  <main class="flex-grow overflow-y-auto p-6">
+  <main class="flex-grow overflow-y-auto p-4 md:p-6">
 
     <!-- ===== TỔNG QUAN & THỐNG KÊ ===== -->
     <div id="sec-overview" class="section active">
       <!-- Stat cards -->
-      <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         <div class="bg-white rounded-2xl border border-outline-variant/40 p-5">
           <div class="flex items-start justify-between mb-3">
             <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Học sinh</p>
@@ -166,9 +182,9 @@
       </div>
 
       <!-- Per-course bars + Quick actions -->
-      <div class="grid grid-cols-3 gap-6 mb-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Per-course breakdown -->
-        <div class="col-span-2 bg-white rounded-2xl border border-outline-variant/40 p-5">
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-outline-variant/40 p-5">
           <h2 class="font-bold text-primary text-sm mb-4">Số học sinh theo khóa</h2>
           <div id="stats-course-bars" class="space-y-3">
             <p class="text-sm text-on-surface-variant text-center py-6">Đang tải...</p>
@@ -184,7 +200,7 @@
                 class="w-full flex items-center gap-3 px-4 py-3 bg-secondary text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
                 <span class="material-symbols-outlined text-base">add_circle</span> Thêm bài giảng mới
               </button>
-              <button onclick="showSection('tests'); openModal('modal-test')"
+              <button onclick="showSection('tests'); openTestModal()"
                 class="w-full flex items-center gap-3 px-4 py-3 bg-surface border border-outline-variant/50 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-low transition-colors">
                 <span class="material-symbols-outlined text-base text-secondary">quiz</span> Tạo bài kiểm tra
               </button>
@@ -198,10 +214,10 @@
               </button>
             </div>
           </div>
-          <!-- Trạng thái chờ duyệt -->
-          <div class="bg-white rounded-2xl border border-outline-variant/40 p-5 flex flex-col items-center text-center py-8">
-            <span class="material-symbols-outlined text-3xl text-outline-variant mb-2">verified</span>
-            <p class="text-xs font-semibold text-on-surface-variant">Không có khóa học chờ duyệt.</p>
+          <!-- Trạng thái các khóa học: bản nháp, chờ duyệt, cần chỉnh sửa -->
+          <div class="bg-white rounded-2xl border border-outline-variant/40 p-5">
+            <h2 class="font-bold text-primary text-sm mb-3">Trạng thái khóa học</h2>
+            <div id="ov-course-status" class="space-y-2 text-sm text-on-surface-variant">Đang tải...</div>
           </div>
         </div>
       </div>
@@ -227,7 +243,12 @@
 
     <!-- ===== KHÓA HỌC CỦA TÔI ===== -->
     <div id="sec-courses" class="section">
-      <div class="flex items-center justify-between mb-6">
+      <div class="bg-blue-50 border border-secondary/20 rounded-2xl px-4 py-3 mb-5 flex items-start gap-3 text-sm text-on-surface">
+        <span class="material-symbols-outlined text-secondary shrink-0">route</span>
+        <p><strong>Quy trình:</strong> tạo bản nháp, soạn đủ bài giảng, tài liệu và bài kiểm tra, rồi bấm <strong>Gửi duyệt</strong>.
+          Admin xem toàn bộ nội dung trước khi công khai; nếu cần sửa, admin ghi lý do để bạn chỉnh và gửi lại.</p>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <p id="gv-courses-count" class="text-sm text-on-surface-variant">0 khóa học</p>
         <button onclick="openModal('modal-course')"
           class="flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
@@ -247,10 +268,126 @@
       </div>
     </div>
 
+    <!-- ===== SOẠN KHÓA HỌC (mở từ thẻ khóa học, địa chỉ #course-ID) ===== -->
+    <div id="sec-course-edit" class="section">
+      <button type="button" onclick="showSection('courses')" class="inline-flex items-center gap-1 text-sm font-semibold text-secondary hover:underline mb-4">
+        <span class="material-symbols-outlined text-base">arrow_back</span>Khóa học của tôi
+      </button>
+      <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <h2 id="ce-title" class="text-lg md:text-xl font-bold text-primary break-words"></h2>
+            <span id="ce-status"></span>
+          </div>
+          <p id="ce-meta" class="text-sm text-on-surface-variant"></p>
+        </div>
+        <a id="ce-preview" href="#" target="_blank" rel="noopener"
+          class="inline-flex items-center gap-1.5 px-3 py-2 border border-outline-variant rounded-xl text-sm font-semibold text-primary hover:bg-white">
+          <span class="material-symbols-outlined text-base">visibility</span>Xem trang khóa học
+        </a>
+      </div>
+      <div id="ce-banner" class="mb-5"></div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        <div class="xl:col-span-2 space-y-6 min-w-0">
+          <!-- Nội dung theo tuần -->
+          <section class="bg-white rounded-2xl border border-outline-variant/40 p-4 md:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 class="font-bold text-primary">Nội dung khóa học</h3>
+                <p id="ce-stats" class="text-xs text-on-surface-variant mt-0.5"></p>
+              </div>
+              <button type="button" id="ce-add-lecture" onclick="ceAddLecture()"
+                class="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined text-base">add</span>Thêm bài giảng
+              </button>
+            </div>
+            <div id="ce-curriculum" class="space-y-5"></div>
+          </section>
+
+          <!-- Thông tin chung -->
+          <section class="bg-white rounded-2xl border border-outline-variant/40 p-4 md:p-5">
+            <h3 class="font-bold text-primary mb-4">Thông tin khóa học</h3>
+            <div class="space-y-4">
+              <div>
+                <label for="ce-f-title" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Tên khóa học <span class="text-error">*</span></label>
+                <input id="ce-f-title" type="text" maxlength="200" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant" />
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="ce-f-category" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Danh mục <span class="text-error">*</span></label>
+                  <select id="ce-f-category" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant"></select>
+                </div>
+                <div>
+                  <label for="ce-f-price" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Học phí (VNĐ)</label>
+                  <input id="ce-f-price" type="number" min="0" step="1000" placeholder="0 = Miễn phí" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant" />
+                </div>
+              </div>
+              <p id="ce-locked-hint" class="hidden -mt-2 text-xs text-on-surface-variant">Khóa học đã được duyệt: muốn đổi học phí hoặc danh mục, hãy liên hệ admin.</p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label for="ce-f-level" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Trình độ</label>
+                  <select id="ce-f-level" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant"><option>Cơ bản</option><option>Trung cấp</option><option>Nâng cao</option></select>
+                </div>
+                <div>
+                  <label for="ce-f-band-from" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Band đầu vào</label>
+                  <input id="ce-f-band-from" type="text" maxlength="20" placeholder="VD: 5.0" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant" />
+                </div>
+                <div>
+                  <label for="ce-f-band-to" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Band mục tiêu</label>
+                  <input id="ce-f-band-to" type="text" maxlength="20" placeholder="VD: 6.5" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant" />
+                </div>
+              </div>
+              <div>
+                <label for="ce-f-desc" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Mô tả khóa học <span class="text-error">*</span></label>
+                <textarea id="ce-f-desc" rows="5" maxlength="5000" placeholder="Khóa học dành cho ai, học theo lộ trình nào, học xong đạt được gì..." class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant resize-y"></textarea>
+                <p class="text-xs text-on-surface-variant mt-1"><span id="ce-desc-count">0</span> ký tự, cần ít nhất 30.</p>
+              </div>
+              <div>
+                <label for="ce-f-objectives" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Mục tiêu khóa học <span class="text-error">*</span></label>
+                <textarea id="ce-f-objectives" rows="4" placeholder="Mỗi dòng một mục tiêu, ví dụ:&#10;Nắm chiến lược làm Section 1 và 2&#10;Học 300 từ vựng theo chủ đề" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant resize-y"></textarea>
+                <p class="text-xs text-on-surface-variant mt-1">Hiện ở mục "Bạn sẽ học được gì" trên trang khóa học. Tối đa 12 dòng.</p>
+              </div>
+              <div id="ce-info-error" class="hidden text-xs text-error bg-red-50 px-3 py-2 rounded-xl"></div>
+              <div class="flex justify-end">
+                <button type="button" id="ce-save-info" onclick="saveCourseInfo()"
+                  class="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Lưu thông tin</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="space-y-4 xl:sticky xl:top-0">
+          <section class="bg-white rounded-2xl border border-outline-variant/40 p-4 md:p-5">
+            <h3 class="font-bold text-primary mb-3">Điều kiện gửi duyệt</h3>
+            <ul id="ce-checklist" class="space-y-3 mb-4"></ul>
+            <div id="ce-submit"></div>
+          </section>
+          <section class="bg-white rounded-2xl border border-outline-variant/40 p-4 md:p-5">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <h3 class="font-bold text-primary">Hạn nộp hằng tuần</h3>
+              <button type="button" id="ce-schedule-btn" onclick="openScheduleModal(_ceCourseId)"
+                class="text-sm font-semibold text-secondary hover:underline disabled:opacity-40 disabled:no-underline">Đặt</button>
+            </div>
+            <p id="ce-schedule" class="text-sm text-on-surface-variant"></p>
+          </section>
+          <section class="bg-white rounded-2xl border border-outline-variant/40 p-4 md:p-5">
+            <h3 class="font-bold text-primary mb-1">Giới thiệu giảng viên</h3>
+            <p class="text-xs text-on-surface-variant mb-3">Hiện ở trang của mọi khóa học bạn dạy.</p>
+            <label for="ce-bio" class="sr-only">Giới thiệu giảng viên</label>
+            <textarea id="ce-bio" rows="4" maxlength="1000" placeholder="Kinh nghiệm giảng dạy, chứng chỉ, điểm IELTS/TOEIC của bạn..." class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white disabled:bg-surface-low disabled:text-on-surface-variant resize-y"></textarea>
+            <div class="flex justify-end mt-2">
+              <button type="button" onclick="saveTeacherBio(this)" class="px-4 py-2 border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low">Lưu giới thiệu</button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+
     <!-- ===== BÀI GIẢNG ===== -->
     <div id="sec-lectures" class="section">
-      <div class="flex items-center justify-between mb-5">
-        <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex flex-wrap items-center gap-3">
           <p class="text-sm text-on-surface-variant" id="lecture-count-label2">0 bài giảng</p>
           <select id="lec-filter-course" onchange="filterGVLectures()"
             class="text-sm border border-outline-variant/50 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-secondary">
@@ -262,20 +399,21 @@
           <span class="material-symbols-outlined text-base">add</span> Thêm bài giảng
         </button>
       </div>
-      <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-hidden">
-        <table class="w-full text-sm">
+      <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-x-auto">
+        <table class="w-full text-sm min-w-[760px]">
           <thead class="bg-surface-low">
             <tr>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Tiêu đề</th>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Khóa học</th>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Kỹ năng</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Tuần</th>
+              <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Video</th>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Thời lượng</th>
-              <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Ngày tạo</th>
               <th class="px-5 py-3.5"></th>
             </tr>
           </thead>
           <tbody id="lecture-tbody" class="divide-y divide-outline-variant/20">
-            <tr><td colspan="6" class="px-5 py-12 text-center text-sm text-on-surface-variant">Đang tải...</td></tr>
+            <tr><td colspan="7" class="px-5 py-12 text-center text-sm text-on-surface-variant">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
@@ -283,8 +421,8 @@
 
     <!-- ===== TÀI LIỆU ===== -->
     <div id="sec-materials" class="section">
-      <div class="flex items-center justify-between mb-5">
-        <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex flex-wrap items-center gap-3">
           <p class="text-sm text-on-surface-variant" id="material-count-label">0 tài liệu</p>
           <select id="mat-filter-course" onchange="filterGVMaterials()"
             class="text-sm border border-outline-variant/50 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-secondary">
@@ -303,21 +441,21 @@
 
     <!-- ===== BÀI KIỂM TRA ===== -->
     <div id="sec-tests" class="section">
-      <div class="flex items-center justify-between mb-5">
-        <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex flex-wrap items-center gap-3">
           <p class="text-sm text-on-surface-variant" id="test-count-label">0 bài kiểm tra</p>
           <select id="test-filter-course" onchange="filterGVTests()"
             class="text-sm border border-outline-variant/50 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-secondary">
             <option value="">Tất cả khóa học</option>
           </select>
         </div>
-        <button onclick="openModal('modal-test')"
+        <button onclick="openTestModal()"
           class="flex items-center gap-2 px-4 py-2.5 bg-secondary text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
           <span class="material-symbols-outlined text-base">add</span> Tạo bài kiểm tra
         </button>
       </div>
-      <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-hidden">
-        <table class="w-full text-sm">
+      <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-x-auto">
+        <table class="w-full text-sm min-w-[760px]">
           <thead class="bg-surface-low">
             <tr>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Tên bài kiểm tra</th>
@@ -337,21 +475,21 @@
 
     <!-- ===== DANH SÁCH HỌC SINH ===== -->
     <div id="sec-students" class="section">
-      <div class="flex items-center gap-3 mb-5">
+      <div class="flex flex-wrap items-center gap-3 mb-5">
         <input type="text" id="student-search" placeholder="Tìm tên hoặc email..."
           oninput="filterStudentRows()"
-          class="flex-1 max-w-xs px-4 py-2.5 text-sm border border-outline-variant/50 rounded-xl bg-white focus:outline-none focus:border-secondary" />
+          class="w-full sm:flex-1 sm:max-w-xs px-4 py-2.5 text-sm border border-outline-variant/50 rounded-xl bg-white focus:outline-none focus:border-secondary" />
         <select id="student-course-filter" onchange="filterStudentRows()"
           class="text-sm border border-outline-variant/50 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-secondary">
           <option value="">Tất cả khóa học</option>
         </select>
       </div>
-      <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-hidden">
-        <div class="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
+      <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-x-auto">
+        <div class="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between min-w-[760px]">
           <p class="text-sm font-bold text-primary">Danh sách học sinh đã đăng ký</p>
           <p class="text-xs text-on-surface-variant" id="students-count">0 học sinh</p>
         </div>
-        <table class="w-full text-sm">
+        <table class="w-full text-sm min-w-[760px]">
           <thead class="bg-surface-low">
             <tr>
               <th class="text-left px-5 py-3.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Học sinh</th>
@@ -370,8 +508,27 @@
     </div>
 
     <!-- ===== KẾT QUẢ ===== -->
+    <!-- ===== HỎI ĐÁP BÀI GIẢNG ===== -->
+    <div id="sec-qa" class="section">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <p class="text-sm text-on-surface-variant">Câu hỏi của học viên dưới các bài giảng trong khóa bạn dạy.</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="qa-course-filter" class="px-3 py-2 text-sm border border-outline-variant rounded-xl bg-white focus:outline-none focus:border-secondary">
+            <option value="">Tất cả khóa học</option>
+          </select>
+          <div class="flex gap-1 p-1 bg-white border border-outline-variant/40 rounded-xl text-xs font-semibold" id="qa-status-filter">
+            <button data-status="open" class="px-3 py-1.5 rounded-lg">Chờ trả lời <span data-count="open"></span></button>
+            <button data-status="answered" class="px-3 py-1.5 rounded-lg">Đã trả lời <span data-count="answered"></span></button>
+            <button data-status="resolved" class="px-3 py-1.5 rounded-lg">Đã hiểu <span data-count="resolved"></span></button>
+            <button data-status="" class="px-3 py-1.5 rounded-lg">Tất cả</button>
+          </div>
+        </div>
+      </div>
+      <div id="gv-qa-list" class="max-w-4xl"></div>
+    </div>
+
     <div id="sec-results" class="section">
-      <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         <div class="bg-white rounded-2xl border border-outline-variant/40 p-5 text-center">
           <p class="text-3xl font-bold text-primary" id="res-total">—</p>
           <p class="text-xs text-on-surface-variant mt-1">Tổng lượt nộp bài</p>
@@ -392,7 +549,7 @@
       <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-hidden">
         <div class="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between gap-3 flex-wrap">
           <h2 class="font-bold text-primary text-sm">Kết quả bài kiểm tra</h2>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <select id="res-filter-course" onchange="filterGVResults()"
               class="text-xs border border-outline-variant rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-secondary w-44">
               <option value="">Tất cả khóa học</option>
@@ -403,7 +560,7 @@
           </div>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm min-w-[720px]">
             <thead class="bg-surface-low">
               <tr>
                 <th class="text-left px-5 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Học sinh</th>
@@ -424,7 +581,7 @@
 
     <!-- ===== PHẢN HỒI ===== -->
     <div id="sec-feedback" class="section">
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <p class="text-sm text-on-surface-variant">Viết nhận xét cho học sinh đã đăng ký khóa học của bạn</p>
         </div>
@@ -435,7 +592,7 @@
       </div>
 
       <!-- Filter bar -->
-      <div class="flex gap-2 mb-4">
+      <div class="flex flex-wrap gap-2 mb-4">
         <input id="fb-search-name" type="text" placeholder="Tìm học sinh..."
           oninput="filterGVFeedback()"
           class="w-44 px-3 py-1.5 text-sm border border-outline-variant rounded-lg focus:outline-none focus:border-secondary" />
@@ -488,14 +645,36 @@
         </div>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Đường dẫn video (YouTube / Drive)</label>
-        <input id="lec-video" type="url" placeholder="https://youtube.com/watch?v=..."
-          class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Video bài giảng (MP4 / WebM)</label>
+        <label for="lec-video-file"
+          class="flex items-center gap-3 px-4 py-3 border border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-secondary hover:bg-blue-50/40 transition-colors">
+          <span class="material-symbols-outlined text-secondary">upload_file</span>
+          <div class="min-w-0 flex-grow">
+            <p id="lec-video-name" class="text-sm font-semibold text-on-surface truncate">Chọn file video từ máy</p>
+            <p id="lec-video-meta" class="text-xs text-on-surface-variant">Có thể bỏ trống và tải video lên sau</p>
+          </div>
+        </label>
+        <input id="lec-video-file" type="file" accept="video/mp4,video/webm,.mp4,.webm" class="hidden"
+          onchange="onLectureVideoPicked(this)" />
+        <div id="lec-upload-progress" class="hidden mt-2">
+          <div class="flex justify-between text-xs text-on-surface-variant mb-1">
+            <span>Đang tải video lên...</span><span id="lec-upload-pct">0%</span>
+          </div>
+          <div class="h-1.5 bg-outline-variant/30 rounded-full overflow-hidden">
+            <div id="lec-upload-bar" class="h-full bg-secondary rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Thời lượng (phút)</label>
-        <input id="lec-duration" type="number" placeholder="30" min="1"
-          class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Thời lượng (phút)</label>
+          <input id="lec-duration" type="number" placeholder="30" min="1"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Học ở tuần</label>
+          <select id="lec-week" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white"></select>
+        </div>
       </div>
       <div>
         <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Mô tả ngắn</label>
@@ -511,12 +690,88 @@
   </div>
 </div>
 
+<!-- Modal: Hạn nộp bài hằng tuần của khóa học -->
+<div id="modal-schedule" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-schedule')"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-base font-bold text-primary">Hạn nộp bài hằng tuần</h2>
+      <button onclick="closeModal('modal-schedule')" class="p-1.5 hover:bg-surface-low rounded-lg">
+        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+      </button>
+    </div>
+    <p id="schedule-course" class="text-sm text-on-surface-variant mb-4 truncate"></p>
+    <label class="flex items-center gap-2 text-sm font-semibold text-on-surface mb-4 cursor-pointer">
+      <input id="schedule-enabled" type="checkbox" class="rounded accent-secondary" onchange="toggleScheduleFields()" />
+      Đặt hạn nộp bài kiểm tra theo tuần
+    </label>
+    <div id="schedule-fields" class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Thứ</label>
+        <select id="schedule-weekday" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl bg-white focus:outline-none focus:border-secondary"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Giờ</label>
+        <input id="schedule-time" type="time" value="21:00" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+      </div>
+    </div>
+    <div class="mt-4 text-xs text-on-surface-variant bg-surface-low rounded-xl px-3 py-2.5 leading-relaxed">
+      Hạn được tính riêng cho từng học viên theo ngày được kích hoạt vào khóa. Tuần 1 kết thúc ở mốc hạn đầu tiên cách ngày kích hoạt ít nhất 7 ngày,
+      mỗi tuần sau cộng thêm 7 ngày. Quá hạn học viên vẫn nộp được nhưng bài bị đánh dấu <strong>nộp muộn</strong>.
+      Nhớ xếp tuần cho từng bài giảng trong mục Bài giảng.
+    </div>
+    <div id="schedule-err" class="hidden mt-3 text-xs text-error bg-red-50 px-3 py-2 rounded-xl"></div>
+    <div class="flex gap-3 mt-5">
+      <button onclick="closeModal('modal-schedule')" class="flex-1 py-2.5 border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low">Hủy</button>
+      <button id="btn-save-schedule" onclick="saveSchedule()" class="flex-1 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Tải video cho bài giảng đã có -->
+<div id="modal-video-upload" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <h2 class="text-base font-bold text-primary mb-1">Tải video bài giảng</h2>
+    <p id="vu-lecture-title" class="text-sm text-on-surface-variant mb-4 truncate"></p>
+    <p id="vu-file-name" class="text-sm font-semibold text-on-surface truncate"></p>
+    <p id="vu-file-meta" class="text-xs text-on-surface-variant mb-3"></p>
+    <div class="flex justify-between text-xs text-on-surface-variant mb-1">
+      <span id="vu-status">Đang tải lên...</span><span id="vu-pct">0%</span>
+    </div>
+    <div class="h-2 bg-outline-variant/30 rounded-full overflow-hidden">
+      <div id="vu-bar" class="h-full bg-secondary rounded-full transition-all" style="width:0%"></div>
+    </div>
+    <p class="text-xs text-on-surface-variant mt-3">Không đóng trang trong khi đang tải video lên.</p>
+    <button id="vu-close" onclick="closeModal('modal-video-upload')"
+      class="hidden w-full mt-5 py-2.5 border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low transition-colors">Đóng</button>
+  </div>
+</div>
+
+<!-- Modal: Xem thử video bài giảng -->
+<div id="modal-video-preview" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeVideoPreview()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3">
+      <h2 id="vp-title" class="text-sm font-bold text-primary truncate"></h2>
+      <button onclick="closeVideoPreview()" class="p-1.5 hover:bg-surface-low rounded-lg transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+      </button>
+    </div>
+    <video id="vp-video" class="w-full aspect-video bg-black" controls controlsList="nodownload" preload="metadata"></video>
+  </div>
+</div>
+
+<!-- Input ẩn: chọn video cho bài giảng trong bảng -->
+<input id="table-video-file" type="file" accept="video/mp4,video/webm,.mp4,.webm" class="hidden"
+  onchange="onTableVideoPicked(this)" />
+
 <!-- Modal: Tạo bài kiểm tra -->
 <div id="modal-test" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
   <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-test')"></div>
   <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
     <div class="flex items-center justify-between mb-5">
-      <h2 class="text-base font-bold text-primary">Tạo bài kiểm tra</h2>
+      <h2 class="text-base font-bold text-primary" id="test-modal-title">Tạo bài kiểm tra</h2>
       <button onclick="closeModal('modal-test')" class="p-1.5 hover:bg-surface-low rounded-lg transition-colors">
         <span class="material-symbols-outlined text-on-surface-variant">close</span>
       </button>
@@ -539,22 +794,32 @@
           <option value="">-- Chọn khóa học trước --</option>
         </select>
       </div>
-      <div class="grid grid-cols-3 gap-3">
+      <input id="test-edit-id" type="hidden" value="" />
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
-          <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Thời gian (phút)</label>
-          <input id="test-duration" type="number" value="30" min="5" max="180"
-            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+          <label for="test-duration" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Thời gian (phút)</label>
+          <input id="test-duration" type="number" value="30" min="0" max="300" class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+          <p class="text-[11px] text-on-surface-variant mt-1">0 = không giới hạn</p>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Số câu hỏi</label>
-          <input id="test-num-q" type="number" value="20" min="5" max="100"
-            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+          <label for="test-max-attempts" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Số lượt làm</label>
+          <input id="test-max-attempts" type="number" value="0" min="0" max="20" class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+          <p class="text-[11px] text-on-surface-variant mt-1">0 = không giới hạn</p>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Điểm đạt (%)</label>
-          <input id="test-pass" type="number" value="60" min="50" max="100"
-            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+          <label for="test-pass" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Điểm đạt (%)</label>
+          <input id="test-pass" type="number" value="60" min="0" max="100" class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
         </div>
+      </div>
+      <div class="space-y-2 bg-surface-low rounded-xl px-4 py-3">
+        <label class="flex items-start gap-2 text-sm cursor-pointer">
+          <input id="test-shuffle-q" type="checkbox" class="mt-0.5 rounded accent-secondary" />
+          <span>Xáo thứ tự câu hỏi lẻ cho mỗi lượt làm <span class="block text-xs text-on-surface-variant">Câu trong phần nghe/đọc giữ nguyên thứ tự vì hướng dẫn thường ghi số câu.</span></span>
+        </label>
+        <label class="flex items-start gap-2 text-sm cursor-pointer">
+          <input id="test-shuffle-o" type="checkbox" class="mt-0.5 rounded accent-secondary" />
+          <span>Xáo thứ tự đáp án trắc nghiệm <span class="block text-xs text-on-surface-variant">Không nên bật nếu có đáp án kiểu "Cả A và B".</span></span>
+        </label>
       </div>
       <div id="test-err" class="hidden text-xs text-error bg-red-50 px-3 py-2 rounded-xl"></div>
     </div>
@@ -596,20 +861,39 @@
         <textarea id="course-desc" rows="3" class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary resize-none"
           placeholder="Nội dung chính, mục tiêu, đối tượng học sinh..."></textarea>
       </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label for="course-level" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Trình độ</label>
+          <select id="course-level" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary bg-white">
+            <option>Cơ bản</option><option>Trung cấp</option><option>Nâng cao</option>
+          </select>
+        </div>
+        <div>
+          <label for="course-band-from" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Band đầu vào</label>
+          <input id="course-band-from" type="text" maxlength="20" placeholder="VD: 5.0"
+            class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+        <div>
+          <label for="course-band-to" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Band mục tiêu</label>
+          <input id="course-band-to" type="text" maxlength="20" placeholder="VD: 6.5"
+            class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+      </div>
+      <p class="-mt-2 text-xs text-on-surface-variant">Trình độ giúp hệ thống gợi ý đúng khóa cho học viên sau bài test xếp loại.</p>
       <div>
         <label class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Học phí (VNĐ)</label>
         <input id="course-price" type="number" min="0" placeholder="0 = Miễn phí"
           class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
       </div>
-      <div class="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
-        <span class="material-symbols-outlined text-amber-600 text-base">info</span>
-        <p class="text-xs text-amber-700">Khóa học mới sẽ được gửi đến Admin để phê duyệt trước khi hiển thị cho học sinh.</p>
+      <div class="bg-blue-50 border border-secondary/20 rounded-xl px-3 py-2.5 flex items-start gap-2">
+        <span class="material-symbols-outlined text-secondary text-base">info</span>
+        <p class="text-xs text-on-surface">Khóa học được lưu dạng <strong>bản nháp</strong>, học viên chưa thấy. Sau đó bạn thêm bài giảng, tài liệu, bài kiểm tra và bấm Gửi duyệt khi đã đủ.</p>
       </div>
     </div>
     <div class="flex gap-3 mt-6">
       <button onclick="closeModal('modal-course')" class="flex-1 py-2.5 border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low transition-colors">Hủy</button>
       <button id="btn-submit-course" onclick="submitGVCourse()" class="flex-1 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined text-base">send</span>Gửi duyệt
+        <span class="material-symbols-outlined text-base">edit_note</span>Tạo bản nháp
       </button>
     </div>
   </div>
@@ -702,64 +986,34 @@
   </div>
 </div>
 
-<!-- Modal quản lý câu hỏi (GV) -->
+<!-- Modal soạn đề (GV): phần nghe, phần đọc, câu hỏi — nội dung do js/test-editor.js render -->
 <div id="modal-questions" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-questions')"></div>
-  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:92vh">
-    <!-- Header -->
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeQuestionsModal()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col" style="max-height:92vh">
     <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30 shrink-0">
       <div>
         <h3 class="font-bold text-primary" id="qmodal-title">Câu hỏi bài kiểm tra</h3>
         <p class="text-xs text-on-surface-variant mt-0.5" id="qmodal-count">0 câu</p>
       </div>
-      <button onclick="closeModal('modal-questions')" class="p-1.5 hover:bg-surface-low rounded-lg">
+      <button onclick="closeQuestionsModal()" class="p-1.5 hover:bg-surface-low rounded-lg">
         <span class="material-symbols-outlined text-on-surface-variant">close</span>
       </button>
     </div>
-
-    <!-- Danh sách câu hỏi -->
-    <div class="flex-grow overflow-y-auto px-6 py-4 space-y-3" id="qmodal-list">
-      <p class="text-sm text-on-surface-variant text-center py-8">Đang tải...</p>
-    </div>
-
-    <!-- Form thêm câu hỏi mới -->
-    <div class="border-t border-outline-variant/30 px-6 py-4 shrink-0 bg-surface-low/60">
-      <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Thêm câu hỏi mới</p>
-      <div class="space-y-2.5">
-        <textarea id="q-text" rows="2" placeholder="Nội dung câu hỏi *"
-          class="w-full px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary resize-none"></textarea>
-        <div class="grid grid-cols-2 gap-2">
-          <input id="q-a" type="text" placeholder="A. ..."
-            class="px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
-          <input id="q-b" type="text" placeholder="B. ..."
-            class="px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
-          <input id="q-c" type="text" placeholder="C. ..."
-            class="px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
-          <input id="q-d" type="text" placeholder="D. ..."
-            class="px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
-        </div>
-        <div class="flex items-center gap-3">
-          <label class="text-xs font-semibold text-on-surface-variant">Đáp án đúng:</label>
-          <div class="flex gap-3">
-            <label class="flex items-center gap-1 text-sm cursor-pointer"><input type="radio" name="q-ans" value="A" class="accent-secondary" /> A</label>
-            <label class="flex items-center gap-1 text-sm cursor-pointer"><input type="radio" name="q-ans" value="B" class="accent-secondary" /> B</label>
-            <label class="flex items-center gap-1 text-sm cursor-pointer"><input type="radio" name="q-ans" value="C" class="accent-secondary" /> C</label>
-            <label class="flex items-center gap-1 text-sm cursor-pointer"><input type="radio" name="q-ans" value="D" class="accent-secondary" /> D</label>
-          </div>
-          <button onclick="addGVQuestion()" id="btn-add-q"
-            class="ml-auto px-4 py-2 bg-secondary text-white text-xs font-semibold rounded-xl hover:opacity-90 transition-opacity">
-            + Thêm câu
-          </button>
-        </div>
-        <div id="q-err" class="hidden text-xs text-error bg-red-50 px-3 py-2 rounded-xl"></div>
-      </div>
-    </div>
+    <div class="flex-grow overflow-y-auto px-6 py-4 space-y-3" id="qmodal-list"></div>
+    <div class="border-t border-outline-variant/30 px-6 py-4 shrink-0 bg-surface-low/60" id="qmodal-form"></div>
   </div>
 </div>
 
 <!-- Toast -->
 <div id="toast" class="hidden fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg text-sm font-semibold text-white min-w-[240px]"></div>
 
+<script src="../js/media.js?v=20260918b"></script>
+<script src="../js/deadline.js?v=20260918b"></script>
+<script src="../js/question-import.js?v=20260918b"></script>
+<script src="../js/test-editor.js?v=20260918b"></script>
+<script src="../js/test-stats.js?v=20260918b"></script>
+<script src="../js/lecture-qa.js?v=20260918b"></script>
+<script src="../js/notifications.js?v=20260918b"></script>
 <script>
   // ── Load thông tin người dùng hiện tại ──────────────────────
   (async function loadCurrentUser() {
@@ -804,7 +1058,7 @@
         // Populate course dropdown
         const sel = document.getElementById('stats-course-select');
         sel.innerHTML = '<option value="">— Chọn khóa học —</option>'
-          + _statsPerCourse.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+          + _statsPerCourse.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('');
 
         // Render per-course bars
         const maxCount = _statsPerCourse.reduce((m, c) => Math.max(m, c.student_count), 1);
@@ -812,7 +1066,7 @@
           ? '<p class="text-sm text-on-surface-variant text-center py-6">Chưa có khóa học nào.</p>'
           : _statsPerCourse.map(c => `
               <div class="flex items-center gap-3">
-                <span class="text-xs text-on-surface-variant w-44 truncate shrink-0" title="${c.title}">${c.title}</span>
+                <span class="text-xs text-on-surface-variant w-24 sm:w-44 truncate shrink-0" title="${esc(c.title)}">${esc(c.title)}</span>
                 <div class="flex-grow bg-surface-low rounded-full h-2.5">
                   <div class="bg-secondary h-2.5 rounded-full transition-all" style="width:${maxCount ? Math.round(c.student_count/maxCount*100) : 0}%"></div>
                 </div>
@@ -830,22 +1084,32 @@
     overview: 'Tổng quan & Thống kê',
     courses: 'Khóa học của tôi', lectures: 'Bài giảng',
     materials: 'Tài liệu', tests: 'Bài kiểm tra',
-    students: 'Danh sách học sinh', results: 'Kết quả', feedback: 'Phản hồi',
+    students: 'Danh sách học sinh', results: 'Kết quả', feedback: 'Phản hồi', qa: 'Hỏi đáp bài giảng',
+    'course-edit': 'Soạn khóa học',
   };
+
+  // Menu bên trên điện thoại: trượt ra khi bấm nút menu, đóng khi chọn mục hoặc bấm ra ngoài
+  function toggleSidebar(open) {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full', !open);
+    document.getElementById('sidebar-overlay').classList.toggle('hidden', !open);
+  }
 
   const NAV_ACTIVE   = 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer bg-white/15 text-white';
   const NAV_INACTIVE = 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer text-blue-200/70 hover:bg-white/10 hover:text-white transition-all';
-  const NAV_IDS = ['overview','courses','lectures','materials','tests','students','results','feedback'];
+  const NAV_IDS = ['overview','courses','lectures','materials','tests','students','results','feedback','qa'];
 
   function showSection(id) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    const navId = id === 'course-edit' ? 'courses' : id; // trang soạn khóa học thuộc mục Khóa học của tôi
     NAV_IDS.forEach(n => {
       const el = document.getElementById('nav-' + n);
-      if (el) el.className = (n === id) ? NAV_ACTIVE : NAV_INACTIVE;
+      if (el) el.className = (n === navId) ? NAV_ACTIVE : NAV_INACTIVE;
     });
     document.getElementById('sec-' + id).classList.add('active');
     document.getElementById('page-title').textContent = pageTitles[id] || id;
-    window.scrollTo({ top: 0 });
+    document.querySelector('main').scrollTo({ top: 0 });
+    toggleSidebar(false);
+    if (id !== 'course-edit' && /^#course-\d+$/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
     if (id === 'courses')   loadGVCourses();
     if (id === 'lectures')  loadGVLectures();
     if (id === 'materials') loadGVMaterials();
@@ -853,15 +1117,104 @@
     if (id === 'students')  loadGVStudents();
     if (id === 'results')   loadGVResults();
     if (id === 'feedback')  loadGVFeedback();
+    if (id === 'qa')        loadGVQuestions();
   }
 
+  // ── Hỏi đáp bài giảng ─────────────────────────────────────
+  let _qaStatus = 'open';
+  let _gvQa = null;
+
+  function loadGVQuestions(focusId = null) {
+    document.querySelectorAll('#qa-status-filter [data-status]').forEach(btn => {
+      const active = btn.dataset.status === _qaStatus;
+      btn.classList.toggle('bg-secondary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('text-on-surface-variant', !active);
+    });
+    const params = new URLSearchParams();
+    if (_qaStatus) params.set('status', _qaStatus);
+    const courseId = document.getElementById('qa-course-filter').value;
+    if (courseId) params.set('course_id', courseId);
+    _gvQa = EngProQA.mount(document.getElementById('gv-qa-list'), {
+      showContext: true,
+      load: async () => {
+        const json = await fetch('/api/gv/questions?' + params, { credentials: 'include' }).then(r => r.json());
+        if (json.success) setQaCounts(json.data.counts);
+        return json;
+      },
+      emptyText: _qaStatus === 'open' ? 'Không có câu hỏi nào đang chờ bạn trả lời.' : 'Không có câu hỏi nào.',
+      onChange: () => refreshQaBadge(),
+    });
+    if (focusId) _gvQa.focus(focusId);
+  }
+
+  function setQaCounts(counts) {
+    document.querySelectorAll('#qa-status-filter [data-count]').forEach(el => {
+      const n = counts[el.dataset.count];
+      el.textContent = n ? `(${n})` : '';
+    });
+    const badge = document.getElementById('qa-nav-badge');
+    badge.textContent = counts.open > 99 ? '99+' : counts.open;
+    badge.classList.toggle('hidden', !counts.open);
+  }
+
+  async function refreshQaBadge() {
+    try {
+      const json = await fetch('/api/gv/questions?status=open', { credentials: 'include' }).then(r => r.json());
+      if (json.success) setQaCounts(json.data.counts);
+    } catch {}
+  }
+
+  document.querySelectorAll('#qa-status-filter [data-status]').forEach(btn =>
+    btn.addEventListener('click', () => { _qaStatus = btn.dataset.status; loadGVQuestions(); }));
+  document.getElementById('qa-course-filter').addEventListener('change', () => loadGVQuestions());
+
+  // Mở từ thông báo: dashboard-gv.html#qa-12 → mục Hỏi đáp, tất cả trạng thái, cuộn tới câu hỏi
+  function openQaFromHash() {
+    const match = location.hash.match(/^#qa-(\d+)$/);
+    if (!match) return;
+    _qaStatus = '';
+    document.getElementById('qa-course-filter').value = '';
+    showSection('qa');
+    loadGVQuestions(match[1]);
+  }
+  window.addEventListener('hashchange', openQaFromHash);
+  (async () => {
+    try {
+      const json = await fetch('/api/gv/courses', { credentials: 'include' }).then(r => r.json());
+      if (json.success) {
+        document.getElementById('qa-course-filter').innerHTML = '<option value="">Tất cả khóa học</option>'
+          + json.data.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('');
+      }
+    } catch {}
+    refreshQaBadge();
+    openQaFromHash();
+    openCourseFromHash();
+    loadGVCourses();
+  })();
+
   // ── GV Courses ────────────────────────────────────────────
+  const COURSE_STATUS = {
+    draft:    { label: 'Bản nháp',        cls: 'bg-gray-100 text-gray-700' },
+    pending:  { label: 'Chờ duyệt',       cls: 'bg-amber-100 text-amber-700' },
+    active:   { label: 'Đang hoạt động',  cls: 'bg-green-100 text-green-700' },
+    rejected: { label: 'Cần chỉnh sửa',   cls: 'bg-red-100 text-error' },
+    locked:   { label: 'Admin tạm khóa',  cls: 'bg-gray-200 text-gray-700' },
+  };
+  function courseStatusBadge(status) {
+    const x = COURSE_STATUS[status] || { label: status, cls: 'bg-gray-100 text-gray-600' };
+    return `<span class="px-2 py-0.5 ${x.cls} rounded-full text-xs font-semibold whitespace-nowrap">${esc(x.label)}</span>`;
+  }
+  const fmtDateVN = d => (d ? new Date(d).toLocaleDateString('vi-VN') : '');
+
   async function loadGVCourses() {
     try {
       const res  = await fetch('/api/gv/courses', { credentials: 'include' });
       const json = await res.json();
       if (!json.success) return;
       const list = json.data;
+      _gvCourses = list;
+      renderCourseStatusSummary(list);
       const container = document.getElementById('gv-courses-list');
       document.getElementById('gv-courses-count').textContent = list.length + ' khóa học';
       if (!list.length) {
@@ -869,36 +1222,417 @@
           <div class="bg-white rounded-2xl border border-outline-variant/40 p-12 flex flex-col items-center justify-center text-center">
             <span class="material-symbols-outlined text-5xl text-outline-variant mb-4">menu_book</span>
             <h3 class="font-bold text-primary text-base mb-1">Chưa có khóa học nào</h3>
-            <p class="text-sm text-on-surface-variant mb-5 max-w-sm">Tạo khóa học đầu tiên. Sau khi Admin phê duyệt, học sinh có thể đăng ký.</p>
+            <p class="text-sm text-on-surface-variant mb-5 max-w-sm">Tạo bản nháp, soạn bài giảng rồi gửi admin duyệt. Sau khi được duyệt, học viên có thể đăng ký.</p>
             <button onclick="openModal('modal-course')" class="flex items-center gap-2 px-5 py-2.5 bg-secondary text-white rounded-xl text-sm font-semibold hover:opacity-90">
               <span class="material-symbols-outlined text-base">add</span> Tạo khóa học mới
             </button>
           </div>`;
         return;
       }
-      const statusBadge = {
-        pending:  '<span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">Chờ duyệt</span>',
-        active:   '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Hoạt động</span>',
-        rejected: '<span class="px-2 py-0.5 bg-red-100 text-error rounded-full text-xs font-semibold">Từ chối</span>',
-        locked:   '<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">Đã khóa</span>',
-      };
-      container.innerHTML = `<div class="grid gap-4 sm:grid-cols-2">` + list.map(c => `
-        <div class="bg-white rounded-2xl border border-outline-variant/40 p-5 hover:shadow-md transition-shadow">
-          <div class="flex items-start justify-between gap-3 mb-3">
+      container.innerHTML = `<div class="grid gap-4 md:grid-cols-2">` + list.map(c => {
+        const counts = [`${c.lecture_count} bài giảng`, `${c.material_count} tài liệu`, `${c.test_count} bài kiểm tra`, `${c.student_count} học viên`];
+        const note = c.status === 'rejected' && c.reject_reason
+          ? `<p class="text-xs text-error bg-red-50 rounded-lg px-2.5 py-1.5 mt-3 line-clamp-2"><strong>Admin góp ý:</strong> ${esc(c.reject_reason)}</p>`
+          : c.status === 'pending' ? `<p class="text-xs text-amber-800 bg-amber-50 rounded-lg px-2.5 py-1.5 mt-3">Đã gửi duyệt ${fmtDateVN(c.submitted_at)}, đang chờ admin xem nội dung.</p>`
+          : c.status === 'draft' ? '<p class="text-xs text-on-surface-variant bg-surface-low rounded-lg px-2.5 py-1.5 mt-3">Học viên chưa thấy khóa học. Soạn đủ nội dung rồi gửi duyệt.</p>'
+          : '';
+        return `
+        <div class="bg-white rounded-2xl border border-outline-variant/40 p-5 hover:shadow-md transition-shadow flex flex-col">
+          <div class="flex items-start justify-between gap-3">
             <div class="flex-grow min-w-0">
-              <p class="font-bold text-primary text-sm truncate">${c.title}</p>
-              <p class="text-xs text-on-surface-variant mt-0.5">${c.category_name || '—'}</p>
+              <button onclick="openCourseEditor(${c.id})" class="font-bold text-primary text-sm text-left hover:underline line-clamp-2">${esc(c.title)}</button>
+              <p class="text-xs text-on-surface-variant mt-0.5">${esc(c.category_name || 'Chưa chọn danh mục')} · ${esc(c.level || 'Cơ bản')}</p>
             </div>
-            ${statusBadge[c.status] || c.status}
+            ${courseStatusBadge(c.status)}
           </div>
-          <div class="flex items-center gap-4 text-xs text-on-surface-variant border-t border-outline-variant/20 pt-3 mt-3">
-            <span>${c.student_count} học viên</span>
-            <span>${c.lecture_count} bài giảng</span>
-            <span class="ml-auto font-semibold text-primary">${c.price ? Number(c.price).toLocaleString('vi-VN') + 'đ' : 'Miễn phí'}</span>
+          ${note}
+          <p class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-on-surface-variant mt-3">${counts.map(t => `<span>${t}</span>`).join('')}
+            ${c.rating_count ? `<span class="text-amber-600 font-semibold">★ ${Number(c.avg_rating).toFixed(1)} (${c.rating_count})</span>` : ''}</p>
+          <p class="flex items-center gap-1.5 text-xs mt-2 ${c.due_weekday ? 'text-on-surface' : 'text-on-surface-variant'}">
+            <span class="material-symbols-outlined text-base ${c.due_weekday ? 'text-secondary' : 'text-outline'}">event</span>
+            ${c.due_weekday ? `Hạn nộp ${EngProDeadline.WEEKDAYS[c.due_weekday]} lúc ${String(c.due_time).slice(0, 5)} hằng tuần` : 'Chưa đặt hạn nộp bài'}
+          </p>
+          <div class="flex flex-wrap items-center gap-2 border-t border-outline-variant/20 pt-3 mt-auto">
+            <span class="text-sm font-semibold text-primary mr-auto">${Number(c.price) ? Number(c.price).toLocaleString('vi-VN') + 'đ' : 'Miễn phí'}</span>
+            <a href="course-detail.html?id=${c.id}" target="_blank" rel="noopener" class="px-3 py-1.5 text-xs font-semibold text-on-surface-variant border border-outline-variant rounded-lg hover:bg-surface-low">Xem trang</a>
+            <button onclick="openCourseEditor(${c.id})" class="px-3 py-1.5 text-xs font-semibold text-white bg-secondary rounded-lg hover:opacity-90">
+              ${['draft', 'rejected'].includes(c.status) ? 'Soạn nội dung' : 'Quản lý nội dung'}
+            </button>
+            ${!c.student_count && c.status !== 'active' ? `<button onclick="deleteGVCourse(${c.id}, this.dataset.title)" data-title="${esc(c.title)}" class="px-2 py-1.5 text-xs font-semibold text-error hover:underline">Xóa</button>` : ''}
           </div>
-        </div>`).join('') + `</div>`;
+        </div>`;
+      }).join('') + `</div>`;
     } catch (e) { showToast('Không thể tải khóa học', 'error'); }
   }
+
+  // Ô "Trạng thái khóa học" ở trang Tổng quan
+  function renderCourseStatusSummary(list) {
+    const box = document.getElementById('ov-course-status');
+    if (!box) return;
+    const count = st => list.filter(c => c.status === st).length;
+    const rows = [
+      ['draft', 'Bản nháp', 'edit_note', 'text-gray-600'],
+      ['rejected', 'Cần chỉnh sửa', 'error', 'text-error'],
+      ['pending', 'Chờ admin duyệt', 'hourglass_top', 'text-amber-600'],
+      ['active', 'Đang hoạt động', 'check_circle', 'text-green-600'],
+    ].filter(([st]) => count(st));
+    box.innerHTML = rows.length
+      ? rows.map(([st, label, iconName, cls]) => `
+          <button onclick="showSection('courses')" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-surface-low">
+            <span class="material-symbols-outlined text-lg ${cls}">${iconName}</span>
+            <span class="flex-1 text-left text-on-surface">${label}</span>
+            <span class="font-bold text-primary">${count(st)}</span>
+          </button>`).join('')
+      : '<p class="text-xs">Chưa có khóa học nào.</p>';
+  }
+
+  async function deleteGVCourse(id, title) {
+    if (!confirm(`Xóa khóa học "${title}"? Toàn bộ bài giảng, video, tài liệu và bài kiểm tra của khóa sẽ bị xóa.`)) return;
+    try {
+      const json = await (await fetch('/api/gv/courses/' + id, { method: 'DELETE', credentials: 'include' })).json();
+      if (!json.success) { showToast(json.message || 'Không xóa được khóa học', 'error'); return; }
+      showToast('Đã xóa khóa học', 'success');
+      if (_ceCourseId === id) showSection('courses'); else loadGVCourses();
+    } catch { showToast('Không thể kết nối server.', 'error'); }
+  }
+
+  // ── Soạn khóa học: bài giảng theo tuần, tài liệu, bài kiểm tra, thông tin chung, gửi duyệt ──
+  let _ceCourseId = null;
+  let _ceOutline = null;
+  let _ceCategories = null;
+  const SKILL_VI = { Listening: 'Nghe', Reading: 'Đọc', Writing: 'Viết', Speaking: 'Nói', Grammar: 'Ngữ pháp', Vocabulary: 'Từ vựng' };
+
+  const ceLectures = () => _ceOutline?.lectures || [];
+  const ceFindLecture = id => ceLectures().find(l => l.id === id) || null;
+  const ceFindTest = id => ceLectures().flatMap(l => l.tests).concat(_ceOutline?.unattached.tests || []).find(t => t.id === id) || null;
+
+  async function openCourseEditor(courseId) {
+    _ceCourseId = Number(courseId);
+    _ceOutline = null;
+    showSection('course-edit');
+    if (location.hash !== '#course-' + courseId) history.replaceState(null, '', '#course-' + courseId);
+    document.getElementById('ce-title').textContent = 'Đang tải...';
+    document.getElementById('ce-curriculum').innerHTML = '';
+    await refreshCourseEditor(true);
+  }
+
+  // fillForm = true: điền lại form thông tin (lần mở đầu hoặc sau khi lưu); các lần làm mới khác giữ nội dung đang gõ
+  async function refreshCourseEditor(fillForm = false) {
+    if (!_ceCourseId || !document.getElementById('sec-course-edit').classList.contains('active')) return;
+    try {
+      const json = await (await fetch(`/api/gv/courses/${_ceCourseId}/outline`, { credentials: 'include' })).json();
+      if (!json.success) { showToast(json.message || 'Không tải được khóa học', 'error'); showSection('courses'); return; }
+      _ceOutline = json.data;
+      if (fillForm && !_ceCategories) {
+        const cats = await (await fetch('/api/admin/categories', { credentials: 'include' })).json();
+        _ceCategories = cats.success ? cats.data : [];
+      }
+      renderCourseEditor(fillForm);
+    } catch { showToast('Không thể kết nối server.', 'error'); }
+  }
+
+  function renderCourseEditor(fillForm) {
+    const { course, lectures, unattached, stats, checklist } = _ceOutline;
+    const pending = course.status === 'pending';
+    const published = ['active', 'locked'].includes(course.status);
+
+    document.getElementById('ce-title').textContent = course.title;
+    document.getElementById('ce-status').innerHTML = courseStatusBadge(course.status);
+    document.getElementById('ce-meta').textContent = [
+      course.category_name || 'Chưa chọn danh mục',
+      Number(course.price) ? Number(course.price).toLocaleString('vi-VN') + 'đ' : 'Miễn phí',
+      course.student_count ? course.student_count + ' học viên' : null,
+    ].filter(Boolean).join(' · ');
+    document.getElementById('ce-preview').href = `course-detail.html?id=${course.id}`;
+
+    const banner = (cls, iconName, html) => `<div class="flex items-start gap-3 rounded-2xl px-4 py-3 text-sm ${cls}"><span class="material-symbols-outlined shrink-0">${iconName}</span><div>${html}</div></div>`;
+    document.getElementById('ce-banner').innerHTML = {
+      draft: banner('bg-blue-50 text-on-surface', 'edit_note', 'Đây là <strong>bản nháp</strong>, học viên chưa thấy. Soạn đủ nội dung theo danh sách <em>Điều kiện gửi duyệt</em> rồi bấm Gửi duyệt.'),
+      rejected: banner('bg-red-50 text-red-900', 'feedback', `<p class="font-semibold">Admin yêu cầu chỉnh sửa${course.reviewed_at ? ' (' + fmtDateVN(course.reviewed_at) + ')' : ''}:</p>
+        <p class="whitespace-pre-line mt-1">${esc(course.reject_reason || '')}</p><p class="mt-1 text-xs">Sửa theo góp ý rồi bấm Gửi duyệt lại.</p>`),
+      pending: banner('bg-amber-50 text-amber-900', 'hourglass_top', `Đã gửi duyệt ngày ${fmtDateVN(course.submitted_at)}. Trong lúc admin xem, nội dung được khóa lại để không thay đổi. Cần sửa thì bấm <strong>Rút yêu cầu duyệt</strong>.`),
+      active: banner('bg-green-50 text-green-900', 'verified', 'Khóa học đang hiển thị cho học viên. Bạn vẫn thêm được bài giảng mới; học phí và danh mục do admin điều chỉnh.'),
+      locked: banner('bg-gray-100 text-gray-800', 'lock', 'Admin đang tạm khóa khóa học nên học viên không thấy. Liên hệ admin để biết lý do.'),
+    }[course.status] || '';
+
+    // Thông tin chung
+    const setVal = (id, value) => { document.getElementById(id).value = value ?? ''; };
+    if (fillForm) {
+      document.getElementById('ce-f-category').innerHTML = '<option value="">-- Chọn danh mục --</option>'
+        + (_ceCategories || []).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+      setVal('ce-f-title', course.title);
+      setVal('ce-f-category', course.category_id || '');
+      setVal('ce-f-price', Number(course.price) || '');
+      setVal('ce-f-level', course.level || 'Cơ bản');
+      setVal('ce-f-band-from', course.band_from);
+      setVal('ce-f-band-to', course.band_to);
+      setVal('ce-f-desc', course.description);
+      setVal('ce-f-objectives', (course.objectives_list || []).join('\n'));
+      document.getElementById('ce-desc-count').textContent = (course.description || '').trim().length;
+      document.getElementById('ce-info-error').classList.add('hidden');
+    }
+    ['ce-f-title', 'ce-f-level', 'ce-f-band-from', 'ce-f-band-to', 'ce-f-desc', 'ce-f-objectives', 'ce-save-info']
+      .forEach(id => { document.getElementById(id).disabled = pending; });
+    ['ce-f-category', 'ce-f-price'].forEach(id => { document.getElementById(id).disabled = pending || published; });
+    document.getElementById('ce-locked-hint').classList.toggle('hidden', !published);
+
+    // Điều kiện gửi duyệt
+    document.getElementById('ce-checklist').innerHTML = checklist.items.map(item => {
+      const state = item.ok ? ['check_circle', 'text-green-600'] : item.required === false ? ['info', 'text-amber-500'] : ['radio_button_unchecked', 'text-error'];
+      return `
+        <li class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-xl shrink-0 ${state[1]}" style="font-variation-settings:'FILL' ${item.ok ? 1 : 0}">${state[0]}</span>
+          <div class="min-w-0">
+            <p class="text-sm ${item.ok ? 'text-on-surface' : 'font-semibold text-on-surface'}">${esc(item.label)}${item.required === false ? ' <span class="text-xs font-normal text-on-surface-variant">(không bắt buộc)</span>' : ''}</p>
+            ${item.hint ? `<p class="text-xs text-on-surface-variant break-words">${esc(item.hint)}</p>` : ''}
+          </div>
+        </li>`;
+    }).join('');
+    const missing = checklist.items.filter(i => !i.ok && i.required !== false).length;
+    const submitBox = document.getElementById('ce-submit');
+    if (['draft', 'rejected'].includes(course.status)) {
+      submitBox.innerHTML = `
+        <button type="button" onclick="submitCourseForReview(this)" ${checklist.ready ? '' : 'disabled'}
+          class="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined text-base">send</span>${course.status === 'rejected' ? 'Gửi duyệt lại' : 'Gửi duyệt'}
+        </button>
+        <p class="text-xs text-center mt-2 ${checklist.ready ? 'text-green-700' : 'text-on-surface-variant'}">
+          ${checklist.ready ? 'Đã đủ điều kiện. Admin sẽ xem toàn bộ nội dung trước khi công khai.' : `Còn ${missing} mục bắt buộc chưa đạt.`}
+        </p>`;
+    } else if (pending) {
+      submitBox.innerHTML = `
+        <button type="button" onclick="withdrawCourse(this)" class="w-full py-2.5 border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low">Rút yêu cầu duyệt</button>
+        <p class="text-xs text-center text-on-surface-variant mt-2">Rút về bản nháp để sửa, sau đó gửi duyệt lại.</p>`;
+    } else {
+      submitBox.innerHTML = `<p class="text-sm text-green-700 bg-green-50 rounded-xl px-3 py-2">${course.status === 'active' ? 'Đã duyệt' : 'Đã từng được duyệt'}${course.published_at ? ' ngày ' + fmtDateVN(course.published_at) : ''}.</p>`;
+    }
+
+    // Hạn nộp
+    document.getElementById('ce-schedule').textContent = course.due_weekday
+      ? `${EngProDeadline.WEEKDAYS[course.due_weekday]} lúc ${String(course.due_time).slice(0, 5)} hằng tuần. Hạn tính riêng cho từng học viên theo ngày vào khóa.`
+      : 'Chưa đặt. Nếu đặt, nhớ xếp tuần cho từng bài giảng.';
+    const scheduleBtn = document.getElementById('ce-schedule-btn');
+    scheduleBtn.textContent = course.due_weekday ? 'Đổi' : 'Đặt';
+    scheduleBtn.disabled = pending;
+
+    const parts = [`${stats.lectures} bài giảng`, `${stats.videos} video`];
+    if (stats.video_seconds) parts.push(EngProMedia.fmtDuration(stats.video_seconds));
+    parts.push(`${stats.materials} tài liệu`, `${stats.tests} bài kiểm tra (${stats.questions} câu)`);
+    document.getElementById('ce-stats').textContent = parts.join(' · ');
+    document.getElementById('ce-add-lecture').disabled = pending;
+    renderCourseCurriculum(lectures, unattached, pending);
+  }
+
+  function renderCourseCurriculum(lectures, unattached, locked) {
+    const box = document.getElementById('ce-curriculum');
+    if (!lectures.length) {
+      box.innerHTML = `
+        <div class="border-2 border-dashed border-outline-variant/60 rounded-2xl p-8 text-center">
+          <span class="material-symbols-outlined text-4xl text-outline-variant">video_library</span>
+          <p class="font-semibold text-primary mt-2">Chưa có bài giảng</p>
+          <p class="text-sm text-on-surface-variant mt-1">Thêm bài giảng đầu tiên, tải video hoặc tài liệu và tạo bài kiểm tra cho bài đó.</p>
+        </div>`;
+      return;
+    }
+    const groups = new Map();
+    lectures.forEach(l => {
+      const key = l.week_number || 0;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(l);
+    });
+    const keys = [...groups.keys()].sort((a, b) => (a || 999) - (b || 999));
+    let html = keys.map(week => `
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">${week ? 'Tuần ' + week : 'Chưa xếp tuần'} · ${groups.get(week).length} bài</p>
+        <div class="space-y-3">${groups.get(week).map(l => ceLectureCard(l, locked)).join('')}</div>
+      </div>`).join('');
+    if (unattached.materials.length || unattached.tests.length) {
+      html += `
+        <div class="border border-amber-200 bg-amber-50/60 rounded-xl p-4">
+          <p class="text-sm font-semibold text-amber-900 mb-2">Chưa gắn với bài giảng nào</p>
+          ${unattached.materials.length ? `<ul class="space-y-1.5">${unattached.materials.map(m => ceMaterialRow(m, locked)).join('')}</ul>` : ''}
+          ${unattached.tests.length ? `<ul class="space-y-2 mt-2">${unattached.tests.map(t => ceTestRow(t, locked)).join('')}</ul>` : ''}
+        </div>`;
+    }
+    box.innerHTML = html;
+  }
+
+  const CE_BTN = 'text-xs font-semibold hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed';
+
+  function ceLectureCard(l, locked) {
+    const dis = locked ? 'disabled' : '';
+    const empty = !l.has_video && !l.materials.length;
+    return `
+      <div class="border ${empty ? 'border-error/40' : 'border-outline-variant/40'} rounded-xl p-3 md:p-4">
+        <div class="flex flex-wrap items-start gap-3">
+          <span class="material-symbols-outlined text-2xl ${l.has_video ? 'text-secondary' : 'text-outline'}">${l.has_video ? 'play_circle' : 'article'}</span>
+          <div class="flex-1 min-w-[10rem]">
+            <p class="font-semibold text-sm text-on-surface break-words">${esc(l.title)}</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">
+              ${esc(SKILL_VI[l.skill] || l.skill)} · ${l.has_video ? 'Video ' + EngProMedia.fmtDuration(l.video_duration) : 'Chưa có video'}
+              ${empty ? ' · <span class="text-error font-semibold">cần video hoặc tài liệu</span>' : ''}
+            </p>
+          </div>
+          <select onchange="setLectureWeek(${l.id}, this)" ${dis} aria-label="Tuần học của bài giảng"
+            class="text-xs border border-outline-variant/60 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-secondary disabled:bg-surface-low">
+            ${weekOptions(l.week_number)}
+          </select>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2 mt-3 sm:pl-9">
+          ${l.has_video ? `<button type="button" onclick="previewLectureVideo(${l.id})" class="${CE_BTN} text-secondary">Xem video</button>` : ''}
+          <button type="button" onclick="pickVideoForLecture(${l.id})" ${dis} class="${CE_BTN} text-secondary">${l.has_video ? 'Thay video' : 'Tải video lên'}</button>
+          ${l.has_video ? `<button type="button" onclick="deleteLectureVideo(${l.id})" ${dis} class="${CE_BTN} text-error">Gỡ video</button>` : ''}
+          <button type="button" onclick="ceAddMaterial(${l.id})" ${dis} class="${CE_BTN} text-secondary">+ Tài liệu</button>
+          <button type="button" onclick="ceAddTest(${l.id})" ${dis} class="${CE_BTN} text-secondary">+ Bài kiểm tra</button>
+          <button type="button" onclick="deleteGVLecture(${l.id})" ${dis} class="${CE_BTN} text-error sm:ml-auto">Xóa bài giảng</button>
+        </div>
+        ${l.materials.length ? `<ul class="mt-3 sm:pl-9 space-y-1.5">${l.materials.map(m => ceMaterialRow(m, locked)).join('')}</ul>` : ''}
+        ${l.tests.length ? `<ul class="mt-3 sm:pl-9 space-y-2">${l.tests.map(t => ceTestRow(t, locked)).join('')}</ul>` : ''}
+      </div>`;
+  }
+
+  function ceMaterialRow(m, locked) {
+    return `
+      <li class="flex items-center gap-2 text-xs min-w-0">
+        <span class="material-symbols-outlined text-base text-on-surface-variant">attach_file</span>
+        <a href="/${esc(m.filepath)}" class="truncate text-on-surface hover:text-secondary hover:underline">${esc(m.filename)}</a>
+        <span class="shrink-0 text-on-surface-variant">${m.filesize ? EngProMedia.fmtSize(m.filesize) : ''}</span>
+        <button type="button" onclick="deleteGVMaterial(${m.id})" ${locked ? 'disabled' : ''} class="${CE_BTN} text-error ml-auto shrink-0">Xóa</button>
+      </li>`;
+  }
+
+  function ceTestRow(t, locked) {
+    const dis = locked ? 'disabled' : '';
+    return `
+      <li class="flex flex-wrap items-center gap-x-3 gap-y-1 bg-surface-low rounded-lg px-3 py-2 text-xs">
+        <span class="material-symbols-outlined text-base text-secondary">quiz</span>
+        <span class="font-semibold text-on-surface break-words">${esc(t.title)}</span>
+        <span class="${t.question_count ? 'text-on-surface-variant' : 'text-error font-semibold'}">${t.question_count} câu${t.question_count ? '' : ' (cần thêm câu hỏi)'}</span>
+        <span class="text-on-surface-variant">đạt ${t.pass_percent}% · ${t.duration_minutes ? t.duration_minutes + ' phút' : 'không giới hạn giờ'}</span>
+        <span class="flex flex-wrap gap-3 sm:ml-auto">
+          <button type="button" onclick="openGVQuestionsModal(${t.id}, this.dataset.title)" data-title="${esc(t.title)}" class="${CE_BTN} text-secondary">${locked ? 'Xem câu hỏi' : 'Soạn câu hỏi'}</button>
+          <button type="button" onclick="openTestModal(${t.id})" ${dis} class="${CE_BTN} text-on-surface-variant">Cài đặt</button>
+          <button type="button" onclick="openTestStats(${t.id}, this.dataset.title)" data-title="${esc(t.title)}" class="${CE_BTN} text-secondary">Thống kê</button>
+          <button type="button" onclick="deleteGVTest(${t.id})" ${dis} class="${CE_BTN} text-error">Xóa</button>
+        </span>
+      </li>`;
+  }
+
+  // Mở hộp thoại thêm bài giảng / tài liệu / bài kiểm tra với khóa học (và bài giảng) chọn sẵn
+  async function cePrefill(prefix, lectureId) {
+    await _selectsLoading;
+    document.getElementById(prefix + '-course-select').value = String(_ceCourseId);
+    if (lectureId !== undefined) {
+      await loadLectureOptions(prefix);
+      document.getElementById(prefix + '-lecture-select').value = String(lectureId);
+    }
+  }
+  function ceAddLecture() {
+    openModal('modal-lecture');
+    const weeks = ceLectures().map(l => l.week_number || 0);
+    document.getElementById('lec-week').value = weeks.length ? String(Math.max(...weeks) || '') : '1';
+    cePrefill('lecture');
+  }
+  function ceAddMaterial(lectureId) { openModal('modal-material'); cePrefill('material', lectureId); }
+  function ceAddTest(lectureId) { openTestModal(); cePrefill('test', lectureId); }
+
+  document.getElementById('ce-f-desc').addEventListener('input', e => {
+    document.getElementById('ce-desc-count').textContent = e.target.value.trim().length;
+  });
+
+  async function saveCourseInfo() {
+    const course = _ceOutline.course;
+    const errorEl = document.getElementById('ce-info-error');
+    const val = id => document.getElementById(id).value;
+    const body = {
+      title: val('ce-f-title').trim(), level: val('ce-f-level'),
+      band_from: val('ce-f-band-from').trim(), band_to: val('ce-f-band-to').trim(),
+      description: val('ce-f-desc'), objectives: val('ce-f-objectives'),
+    };
+    if (!['active', 'locked'].includes(course.status)) {
+      body.category_id = val('ce-f-category') || null;
+      body.price = val('ce-f-price') || 0;
+    }
+    if (!body.title) { errorEl.textContent = 'Nhập tên khóa học.'; errorEl.classList.remove('hidden'); return; }
+    const btn = document.getElementById('ce-save-info');
+    btn.disabled = true;
+    try {
+      const json = await (await fetch('/api/gv/courses/' + course.id, {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })).json();
+      if (!json.success) { errorEl.textContent = json.message || 'Không lưu được'; errorEl.classList.remove('hidden'); return; }
+      errorEl.classList.add('hidden');
+      showToast('Đã lưu thông tin khóa học', 'success');
+      await refreshCourseEditor(true);
+    } catch { errorEl.textContent = 'Không thể kết nối server.'; errorEl.classList.remove('hidden'); }
+    finally { btn.disabled = _ceOutline?.course.status === 'pending'; }
+  }
+
+  async function submitCourseForReview(btn) {
+    if (!confirm('Gửi khóa học cho admin duyệt? Trong lúc chờ duyệt bạn tạm thời không sửa được nội dung.')) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/gv/courses/${_ceCourseId}/submit`, { method: 'POST', credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) {
+        showToast(json.message || 'Không gửi được', 'error');
+        if (json.data?.checklist) { _ceOutline.checklist = json.data.checklist; renderCourseEditor(false); }
+        else btn.disabled = false;
+        return;
+      }
+      showToast('Đã gửi khóa học cho admin duyệt', 'success');
+      await refreshCourseEditor(true);
+      loadGVCourses();
+    } catch { showToast('Không thể kết nối server.', 'error'); btn.disabled = false; }
+  }
+
+  async function withdrawCourse(btn) {
+    if (!confirm('Rút yêu cầu duyệt và đưa khóa học về bản nháp?')) return;
+    btn.disabled = true;
+    try {
+      const json = await (await fetch(`/api/gv/courses/${_ceCourseId}/withdraw`, { method: 'POST', credentials: 'include' })).json();
+      if (!json.success) { showToast(json.message || 'Không rút được', 'error'); btn.disabled = false; return; }
+      showToast('Đã rút yêu cầu duyệt, khóa học trở về bản nháp', 'success');
+      await refreshCourseEditor(true);
+      loadGVCourses();
+    } catch { showToast('Không thể kết nối server.', 'error'); btn.disabled = false; }
+  }
+
+  // Giới thiệu giảng viên: lưu cùng họ tên, số điện thoại hiện có (route hồ sơ yêu cầu gửi đủ)
+  let _gvProfile = null;
+  async function loadTeacherBio() {
+    try {
+      const json = await (await fetch('/api/user/profile', { credentials: 'include' })).json();
+      if (!json.success) return;
+      _gvProfile = json.data;
+      document.getElementById('ce-bio').value = _gvProfile.bio || '';
+    } catch {}
+  }
+  async function saveTeacherBio(btn) {
+    if (!_gvProfile) await loadTeacherBio();
+    if (!_gvProfile) { showToast('Không tải được hồ sơ', 'error'); return; }
+    btn.disabled = true;
+    try {
+      const bio = document.getElementById('ce-bio').value;
+      const json = await (await fetch('/api/user/profile', {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: _gvProfile.name, phone: _gvProfile.phone, bio }),
+      })).json();
+      if (!json.success) { showToast(json.message || 'Không lưu được', 'error'); return; }
+      _gvProfile.bio = bio.trim();
+      showToast('Đã lưu phần giới thiệu', 'success');
+    } catch { showToast('Không thể kết nối server.', 'error'); }
+    finally { btn.disabled = false; }
+  }
+  loadTeacherBio();
+
+  // Địa chỉ #course-ID (từ thông báo được duyệt hoặc bị từ chối) mở thẳng trang soạn khóa học
+  function openCourseFromHash() {
+    if (location.hash === '#students') { showSection('students'); return; } // từ thông báo học viên học xong
+    const m = location.hash.match(/^#course-(\d+)$/);
+    if (m && Number(m[1]) !== (_ceOutline?.course.id)) openCourseEditor(Number(m[1]));
+  }
+  window.addEventListener('hashchange', openCourseFromHash);
 
   // Cascade: sau khi chọn khóa học → load danh sách bài giảng
   async function loadLectureOptions(prefix) {
@@ -914,7 +1648,7 @@
         sel.innerHTML = '<option value="">-- Chưa có bài giảng --</option>';
         return;
       }
-      sel.innerHTML = json.data.map(l => `<option value="${l.id}">${l.title}</option>`).join('');
+      sel.innerHTML = json.data.map(l => `<option value="${l.id}">${esc(l.title)}</option>`).join('');
     } catch { sel.innerHTML = '<option value="">Lỗi tải bài giảng</option>'; }
   }
 
@@ -925,7 +1659,8 @@
       const json = await res.json();
       if (!json.success) return;
       const opts = '<option value="">-- Chọn khóa học --</option>'
-        + json.data.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+        + json.data.filter(c => c.status !== 'pending')
+            .map(c => `<option value="${c.id}">${esc(c.title)}${c.status === 'draft' ? ' (bản nháp)' : ''}</option>`).join('');
       ['lecture-course-select','test-course-select','material-course-select'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = opts;
@@ -940,7 +1675,7 @@
       if (!json.success) return;
       const sel = document.getElementById('course-category');
       sel.innerHTML = '<option value="">-- Chọn danh mục --</option>'
-        + json.data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        + json.data.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
     } catch {}
   }
 
@@ -957,13 +1692,18 @@
     errBox.classList.add('hidden');
 
     const btn = document.getElementById('btn-submit-course');
-    btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">sync</span> Đang gửi...';
+    btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">sync</span> Đang tạo...';
 
     try {
       const res  = await fetch('/api/gv/courses', {
         method:  'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, category_id: catId, description: desc, price }),
+        body: JSON.stringify({
+          title, category_id: catId, description: desc, price,
+          level: document.getElementById('course-level').value,
+          band_from: document.getElementById('course-band-from').value.trim(),
+          band_to: document.getElementById('course-band-to').value.trim(),
+        }),
       });
       const json = await res.json();
       if (!json.success) {
@@ -977,21 +1717,25 @@
       document.getElementById('course-category').value = '';
       document.getElementById('course-desc').value = '';
       document.getElementById('course-price').value = '';
-      showToast('Khóa học đã được gửi đến Admin để phê duyệt!', 'success');
-      loadGVCourses();
+      document.getElementById('course-level').value = 'Cơ bản';
+      document.getElementById('course-band-from').value = '';
+      document.getElementById('course-band-to').value = '';
+      showToast('Đã tạo bản nháp. Thêm bài giảng rồi gửi duyệt khi đã đủ nội dung.', 'success');
+      openCourseEditor(json.data.id);
     } catch {
       errMsg.textContent = 'Không thể kết nối server.';
       errBox.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<span class="material-symbols-outlined text-base">send</span>Gửi duyệt';
+      btn.innerHTML = '<span class="material-symbols-outlined text-base">edit_note</span>Tạo bản nháp';
     }
   }
 
+  let _selectsLoading = Promise.resolve();
   function openModal(id, data = null) {
     document.getElementById(id).classList.remove('hidden');
     if (id === 'modal-course') loadCategoryOptions();
-    if (['modal-lecture','modal-material','modal-test'].includes(id)) loadGVCoursesForSelects();
+    if (['modal-lecture','modal-material','modal-test'].includes(id)) _selectsLoading = loadGVCoursesForSelects();
     if (id === 'modal-feedback') openFeedbackModal(data);
   }
   function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -1001,7 +1745,7 @@
     const colors = { success: 'bg-green-600', error: 'bg-error', info: 'bg-secondary', warning: 'bg-amber-500' };
     const icons  = { success: 'check_circle', error: 'error', info: 'info', warning: 'warning' };
     t.className = `fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg text-sm font-semibold text-white min-w-[240px] ${colors[type] || colors.success}`;
-    t.innerHTML = `<span class="material-symbols-outlined text-base">${icons[type] || icons.success}</span>${msg}`;
+    t.innerHTML = `<span class="material-symbols-outlined text-base">${icons[type] || icons.success}</span>${esc(msg)}`;
     t.classList.remove('hidden');
     setTimeout(() => t.classList.add('hidden'), 3000);
   }
@@ -1030,7 +1774,7 @@
       _allStudents.forEach(s => {
         if (!seen.has(s.course_id)) {
           seen.add(s.course_id);
-          sel.innerHTML += `<option value="${s.course_id}">${s.course_title}</option>`;
+          sel.innerHTML += `<option value="${s.course_id}">${esc(s.course_title)}</option>`;
         }
       });
 
@@ -1058,19 +1802,19 @@
       const date = new Date(s.enrolled_at).toLocaleDateString('vi-VN');
       return `
       <tr class="student-row hover:bg-surface-low/50 transition-colors"
-          data-name="${(s.name||'').toLowerCase()}" data-email="${(s.email||'').toLowerCase()}" data-course="${s.course_id}">
+          data-name="${esc((s.name||'').toLowerCase())}" data-email="${esc((s.email||'').toLowerCase())}" data-course="${s.course_id}">
         <td class="px-5 py-3.5">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-secondary/15 text-secondary font-bold text-sm flex items-center justify-center shrink-0">
-              ${(s.name || '?').charAt(0).toUpperCase()}
+              ${esc((s.name || '?').charAt(0).toUpperCase())}
             </div>
             <div>
-              <p class="font-semibold text-on-surface">${s.name}</p>
-              <p class="text-xs text-on-surface-variant">${s.email}</p>
+              <p class="font-semibold text-on-surface">${esc(s.name)}</p>
+              <p class="text-xs text-on-surface-variant">${esc(s.email)}</p>
             </div>
           </div>
         </td>
-        <td class="px-5 py-3.5 text-sm text-on-surface">${s.course_title}</td>
+        <td class="px-5 py-3.5 text-sm text-on-surface">${esc(s.course_title)}</td>
         <td class="px-5 py-3.5">${ENROLL_BADGE[s.enroll_status] || s.enroll_status}</td>
         <td class="px-5 py-3.5">
           <div class="flex items-center gap-2 min-w-[80px]">
@@ -1185,7 +1929,7 @@
     try {
       const json = await lectureRes.json();
       if (!json.success || !json.data.length) { lectureSel.innerHTML = '<option value="">-- Chưa có bài giảng --</option>'; return; }
-      lectureSel.innerHTML = json.data.map(l => `<option value="${l.id}">${l.title}</option>`).join('');
+      lectureSel.innerHTML = json.data.map(l => `<option value="${l.id}">${esc(l.title)}</option>`).join('');
     } catch { lectureSel.innerHTML = '<option value="">Lỗi tải dữ liệu</option>'; }
   }
 
@@ -1203,7 +1947,7 @@
       // De-duplicate theo student id (1 học sinh có thể xuất hiện nhiều lần)
       const seen = new Set();
       const unique = json.data.filter(s => { if (seen.has(s.id)) return false; seen.add(s.id); return true; });
-      studentSel.innerHTML = unique.map(s => `<option value="${s.id}">${s.name} – ${s.email}</option>`).join('');
+      studentSel.innerHTML = unique.map(s => `<option value="${s.id}">${esc(s.name)} – ${esc(s.email)}</option>`).join('');
     } catch { studentSel.innerHTML = '<option value="">Lỗi tải dữ liệu</option>'; }
   }
 
@@ -1264,7 +2008,7 @@
       _allFeedback.forEach(f => {
         if (!seen.has(f.course_id)) {
           seen.add(f.course_id);
-          courseSel.innerHTML += `<option value="${f.course_id}">${f.course_title}</option>`;
+          courseSel.innerHTML += `<option value="${f.course_id}">${esc(f.course_title)}</option>`;
         }
       });
 
@@ -1299,19 +2043,19 @@
         <div class="flex items-start justify-between gap-3">
           <div class="flex-grow min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-1">
-              <p class="font-semibold text-on-surface text-sm">${f.student_name}</p>
-              <span class="text-xs text-on-surface-variant">${f.student_email}</span>
+              <p class="font-semibold text-on-surface text-sm">${esc(f.student_name)}</p>
+              <span class="text-xs text-on-surface-variant">${esc(f.student_email)}</span>
               <span class="text-xs text-on-surface-variant">·</span>
               <span class="text-xs text-on-surface-variant">${date}</span>
             </div>
             <div class="flex items-center gap-2 flex-wrap mb-2">
-              <span class="text-xs font-medium text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">${f.course_title}</span>
-              <span class="text-xs text-on-surface-variant">Bài: <span class="font-medium text-on-surface">${f.lecture_title}</span></span>
+              <span class="text-xs font-medium text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">${esc(f.course_title)}</span>
+              <span class="text-xs text-on-surface-variant">Bài: <span class="font-medium text-on-surface">${esc(f.lecture_title)}</span></span>
             </div>
-            <p class="text-sm text-on-surface leading-relaxed whitespace-pre-line border-l-2 border-secondary/30 pl-3">${f.content}</p>
+            <p class="text-sm text-on-surface leading-relaxed whitespace-pre-line border-l-2 border-secondary/30 pl-3">${esc(f.content)}</p>
           </div>
           <div class="flex gap-2 shrink-0">
-            <button onclick="openModal('modal-feedback',${JSON.stringify(f).replace(/"/g,'&quot;')})" class="text-xs text-secondary hover:underline">Sửa</button>
+            <button onclick="openModal('modal-feedback', JSON.parse(this.dataset.feedback))" data-feedback="${esc(JSON.stringify(f))}" class="text-xs text-secondary hover:underline">Sửa</button>
             <button onclick="deleteGVFeedback(${f.id})" class="text-xs text-error hover:underline">Xóa</button>
           </div>
         </div>
@@ -1336,7 +2080,7 @@
   // ── GV Lectures ───────────────────────────────────────────
   async function loadGVLectures() {
     const tbody = document.getElementById('lecture-tbody');
-    tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-10 text-center text-sm text-on-surface-variant">Đang tải...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-10 text-center text-sm text-on-surface-variant">Đang tải...</td></tr>';
     try {
       const res  = await fetch('/api/gv/lectures', { credentials: 'include' });
       const json = await res.json();
@@ -1349,11 +2093,11 @@
       _allLectures.forEach(l => {
         if (l.course_id && !seen.has(l.course_id)) {
           seen.add(l.course_id);
-          sel.innerHTML += `<option value="${l.course_id}">${l.course_title || l.course_id}</option>`;
+          sel.innerHTML += `<option value="${l.course_id}">${esc(l.course_title || l.course_id)}</option>`;
         }
       });
       renderGVLectures(_allLectures);
-    } catch { tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-10 text-center text-sm text-error">Không thể tải dữ liệu</td></tr>'; }
+    } catch { tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-10 text-center text-sm text-error">Không thể tải dữ liệu</td></tr>'; }
   }
 
   function filterGVLectures() {
@@ -1366,15 +2110,39 @@
     const countEl = document.getElementById('lecture-count-label2');
     if (countEl) countEl.textContent = list.length + ' bài giảng';
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-10 text-center text-sm text-on-surface-variant">Chưa có bài giảng nào.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-10 text-center text-sm text-on-surface-variant">Chưa có bài giảng nào.</td></tr>';
       return;
     }
     tbody.innerHTML = list.map(l => `
       <tr class="hover:bg-surface-low/50 transition-colors">
-        <td class="px-5 py-3.5 text-sm font-semibold text-on-surface">${l.title}</td>
-        <td class="px-5 py-3.5 text-sm text-on-surface-variant">${l.course_title || '—'}</td>
+        <td class="px-5 py-3.5 text-sm font-semibold text-on-surface">${esc(l.title)}</td>
+        <td class="px-5 py-3.5 text-sm text-on-surface-variant">${esc(l.course_title || '—')}</td>
         <td class="px-5 py-3.5">
-          <span class="px-2 py-0.5 bg-blue-50 text-secondary rounded-full text-xs font-semibold">${l.skill || '—'}</span>
+          <span class="px-2 py-0.5 bg-blue-50 text-secondary rounded-full text-xs font-semibold">${esc(l.skill || '—')}</span>
+        </td>
+        <td class="px-5 py-3.5">
+          <select onchange="setLectureWeek(${l.id}, this)" title="Bài giảng thuộc tuần nào (dùng để tính hạn nộp)"
+            class="text-xs border border-outline-variant/60 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-secondary">
+            ${weekOptions(l.week_number)}
+          </select>
+        </td>
+        <td class="px-5 py-3.5">
+          ${l.video_path
+            ? `<div class="flex flex-col gap-1">
+                 <span class="inline-flex items-center gap-1 w-fit px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold">
+                   <span class="material-symbols-outlined text-sm">check_circle</span>Đã có video
+                 </span>
+                 <span class="text-xs text-on-surface-variant">${[EngProMedia.fmtDuration(l.video_duration), EngProMedia.fmtSize(l.video_size)].filter(Boolean).join(' · ')}</span>
+                 <span class="flex gap-3 text-xs">
+                   <button onclick="previewLectureVideo(${l.id})" class="text-secondary hover:underline">Xem</button>
+                   <button onclick="pickVideoForLecture(${l.id})" class="text-secondary hover:underline">Thay</button>
+                   <button onclick="deleteLectureVideo(${l.id})" class="text-error hover:underline">Gỡ</button>
+                 </span>
+               </div>`
+            : `<div class="flex flex-col gap-1">
+                 <span class="w-fit px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">Chưa có video</span>
+                 <button onclick="pickVideoForLecture(${l.id})" class="w-fit text-xs text-secondary hover:underline">Tải video lên</button>
+               </div>`}
         </td>
         <td class="px-5 py-3.5 text-sm text-on-surface-variant">${l.duration_minutes ? l.duration_minutes + ' phút' : '—'}</td>
         <td class="px-5 py-3.5">
@@ -1387,42 +2155,232 @@
     const title    = document.getElementById('lec-title').value.trim();
     const courseId = document.getElementById('lecture-course-select').value;
     const skill    = document.getElementById('lec-skill').value;
-    const video    = document.getElementById('lec-video').value.trim();
     const duration = document.getElementById('lec-duration').value;
+    const week     = document.getElementById('lec-week').value;
     const desc     = document.getElementById('lec-desc').value.trim();
     const errEl    = document.getElementById('lec-err');
 
     if (!title)    { errEl.textContent = 'Vui lòng nhập tiêu đề bài giảng.'; errEl.classList.remove('hidden'); return; }
     if (!courseId) { errEl.textContent = 'Vui lòng chọn khóa học.';           errEl.classList.remove('hidden'); return; }
+    if (_pickedLectureVideo?.error) { errEl.textContent = _pickedLectureVideo.error; errEl.classList.remove('hidden'); return; }
     errEl.classList.add('hidden');
 
     const btn = document.getElementById('btn-submit-lecture');
     btn.disabled = true; btn.textContent = 'Đang lưu...';
     try {
+      // Bước 1: tạo bài giảng
       const res  = await fetch('/api/gv/lectures', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ course_id: courseId, title, skill, video_url: video, duration_minutes: duration || null, description: desc }),
+        body: JSON.stringify({ course_id: courseId, title, skill, duration_minutes: duration || null, week_number: week || null, description: desc }),
       });
       const json = await res.json();
       if (!json.success) { errEl.textContent = json.message || 'Thất bại.'; errEl.classList.remove('hidden'); return; }
+
+      // Bước 2: tải video lên (nếu có chọn file)
+      let uploadError = null;
+      if (_pickedLectureVideo) {
+        btn.textContent = 'Đang tải video...';
+        const progressEl = document.getElementById('lec-upload-progress');
+        progressEl.classList.remove('hidden');
+        try {
+          await uploadLectureVideo(json.data.id, _pickedLectureVideo.file, _pickedLectureVideo.duration, pct => {
+            document.getElementById('lec-upload-pct').textContent = pct + '%';
+            document.getElementById('lec-upload-bar').style.width = pct + '%';
+          });
+        } catch (e) { uploadError = e.message; }
+      }
+
       closeModal('modal-lecture');
-      document.getElementById('lec-title').value = '';
-      document.getElementById('lec-video').value = '';
-      document.getElementById('lec-duration').value = '';
-      document.getElementById('lec-desc').value = '';
-      showToast('Bài giảng đã được thêm!', 'success');
+      resetLectureForm();
+      if (uploadError) showToast('Đã tạo bài giảng nhưng chưa tải được video: ' + uploadError, 'warning');
+      else showToast('Bài giảng đã được thêm!', 'success');
       loadGVLectures();
+      refreshCourseEditor();
     } catch { errEl.textContent = 'Không thể kết nối server.'; errEl.classList.remove('hidden'); }
     finally { btn.disabled = false; btn.textContent = 'Lưu bài giảng'; }
   }
 
-  async function deleteGVLecture(id) {
-    if (!confirm('Xóa bài giảng này?')) return;
+  function resetLectureForm() {
+    ['lec-title', 'lec-duration', 'lec-week', 'lec-desc', 'lec-video-file'].forEach(id => document.getElementById(id).value = '');
+    _pickedLectureVideo = null;
+    document.getElementById('lec-video-name').textContent = 'Chọn file video từ máy';
+    document.getElementById('lec-video-meta').textContent = 'Có thể bỏ trống và tải video lên sau';
+    document.getElementById('lec-upload-progress').classList.add('hidden');
+    document.getElementById('lec-upload-pct').textContent = '0%';
+    document.getElementById('lec-upload-bar').style.width = '0%';
+  }
+
+  // ── Tuần học & hạn nộp ───────────────────────────────────
+  let _gvCourses = [];
+  let _scheduleCourseId = null;
+
+  function weekOptions(selected) {
+    let html = `<option value="" ${selected ? '' : 'selected'}>Chưa xếp tuần</option>`;
+    for (let w = 1; w <= 24; w++) html += `<option value="${w}" ${Number(selected) === w ? 'selected' : ''}>Tuần ${w}</option>`;
+    return html;
+  }
+  document.getElementById('lec-week').innerHTML = weekOptions(null);
+
+  async function setLectureWeek(lectureId, select) {
     try {
-      await fetch('/api/gv/lectures/' + id, { method: 'DELETE', credentials: 'include' });
+      const json = await (await fetch('/api/gv/lectures/' + lectureId + '/week', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ week_number: select.value || null }),
+      })).json();
+      if (!json.success) { showToast(json.message || 'Không lưu được tuần', 'error'); return; }
+      const lecture = _allLectures.find(l => l.id === lectureId);
+      if (lecture) lecture.week_number = select.value ? Number(select.value) : null;
+      showToast(select.value ? 'Đã xếp vào tuần ' + select.value : 'Đã bỏ xếp tuần', 'success');
+      refreshCourseEditor();
+    } catch { showToast('Không thể kết nối server.', 'error'); }
+  }
+
+  function openScheduleModal(courseId) {
+    const course = _gvCourses.find(c => c.id === courseId) || (_ceOutline?.course.id === courseId ? _ceOutline.course : null);
+    _scheduleCourseId = courseId;
+    document.getElementById('schedule-course').textContent = course?.title || '';
+    document.getElementById('schedule-weekday').innerHTML = EngProDeadline.WEEKDAYS
+      .map((name, i) => i ? `<option value="${i}">${name}</option>` : '').join('');
+    document.getElementById('schedule-enabled').checked = !!course?.due_weekday;
+    document.getElementById('schedule-weekday').value = course?.due_weekday || 6;
+    document.getElementById('schedule-time').value = course?.due_time ? String(course.due_time).slice(0, 5) : '21:00';
+    document.getElementById('schedule-err').classList.add('hidden');
+    toggleScheduleFields();
+    openModal('modal-schedule');
+  }
+
+  function toggleScheduleFields() {
+    const on = document.getElementById('schedule-enabled').checked;
+    document.getElementById('schedule-fields').classList.toggle('opacity-40', !on);
+    ['schedule-weekday', 'schedule-time'].forEach(id => { document.getElementById(id).disabled = !on; });
+  }
+
+  async function saveSchedule() {
+    const on = document.getElementById('schedule-enabled').checked;
+    const time = document.getElementById('schedule-time').value;
+    const errEl = document.getElementById('schedule-err');
+    if (on && !time) { errEl.textContent = 'Chọn giờ hạn nộp'; errEl.classList.remove('hidden'); return; }
+    const btn = document.getElementById('btn-save-schedule');
+    btn.disabled = true;
+    try {
+      const json = await (await fetch('/api/gv/courses/' + _scheduleCourseId + '/schedule', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(on
+          ? { due_weekday: Number(document.getElementById('schedule-weekday').value), due_time: time }
+          : { due_weekday: null, due_time: null }),
+      })).json();
+      if (!json.success) { errEl.textContent = json.message || 'Không lưu được'; errEl.classList.remove('hidden'); return; }
+      closeModal('modal-schedule');
+      showToast(on ? 'Đã đặt hạn nộp hằng tuần' : 'Đã bỏ hạn nộp', 'success');
+      loadGVCourses();
+      refreshCourseEditor();
+    } catch { errEl.textContent = 'Không thể kết nối server.'; errEl.classList.remove('hidden'); }
+    finally { btn.disabled = false; }
+  }
+
+  async function deleteGVLecture(id) {
+    if (!confirm('Xóa bài giảng này? Video của bài giảng cũng sẽ bị xóa.')) return;
+    try {
+      const json = await (await fetch('/api/gv/lectures/' + id, { method: 'DELETE', credentials: 'include' })).json();
+      if (!json.success) { showToast(json.message || 'Không xóa được bài giảng', 'error'); return; }
+      showToast('Đã xóa bài giảng', 'success');
       loadGVLectures();
-    } catch {}
+      refreshCourseEditor();
+    } catch { showToast('Không thể kết nối server.', 'error'); }
+  }
+
+  // ── Video bài giảng (kiểm tra & upload file dùng js/media.js) ──
+  let _pickedLectureVideo = null;  // { file, duration, error } — file chọn trong modal thêm bài giảng
+  let _tableVideoLectureId = null; // bài giảng đang chọn video từ bảng
+  const uploadLectureVideo = (lectureId, file, duration, onProgress) =>
+    EngProMedia.upload('/api/gv/lectures/' + lectureId + '/video', 'video', file, duration, onProgress);
+
+  async function onLectureVideoPicked(input) {
+    const file = input.files[0];
+    const nameEl = document.getElementById('lec-video-name');
+    const metaEl = document.getElementById('lec-video-meta');
+    if (!file) return;
+    nameEl.textContent = file.name;
+    metaEl.textContent = 'Đang kiểm tra video...';
+    _pickedLectureVideo = await EngProMedia.inspect(file, 'video');
+    if (_pickedLectureVideo.error) {
+      metaEl.innerHTML = `<span class="text-error">${_pickedLectureVideo.error}</span>`;
+      return;
+    }
+    metaEl.textContent = `${EngProMedia.fmtDuration(_pickedLectureVideo.duration)} · ${EngProMedia.fmtSize(file.size)}`;
+    // Tự điền thời lượng (phút) theo video
+    document.getElementById('lec-duration').value = Math.ceil(_pickedLectureVideo.duration / 60);
+  }
+
+  function pickVideoForLecture(lectureId) {
+    _tableVideoLectureId = lectureId;
+    const input = document.getElementById('table-video-file');
+    input.value = '';
+    input.click();
+  }
+
+  async function onTableVideoPicked(input) {
+    const file = input.files[0];
+    const lecture = _allLectures.find(l => l.id === _tableVideoLectureId) || ceFindLecture(_tableVideoLectureId);
+    if (!file || !lecture) return;
+    const checked = await EngProMedia.inspect(file, 'video');
+    if (checked.error) { showToast(checked.error, 'error'); return; }
+    if (lecture.video_path && !confirm('Bài giảng đã có video. Thay bằng video mới?')) return;
+
+    document.getElementById('vu-lecture-title').textContent = lecture.title;
+    document.getElementById('vu-file-name').textContent = file.name;
+    document.getElementById('vu-file-meta').textContent = `${EngProMedia.fmtDuration(checked.duration)} · ${EngProMedia.fmtSize(file.size)}`;
+    document.getElementById('vu-status').textContent = 'Đang tải lên...';
+    document.getElementById('vu-status').className = '';
+    document.getElementById('vu-pct').textContent = '0%';
+    document.getElementById('vu-bar').style.width = '0%';
+    document.getElementById('vu-close').classList.add('hidden');
+    openModal('modal-video-upload');
+
+    try {
+      await uploadLectureVideo(lecture.id, file, checked.duration, pct => {
+        document.getElementById('vu-pct').textContent = pct + '%';
+        document.getElementById('vu-bar').style.width = pct + '%';
+        if (pct === 100) document.getElementById('vu-status').textContent = 'Đang lưu trên máy chủ...';
+      });
+      closeModal('modal-video-upload');
+      showToast('Đã tải video lên!', 'success');
+      loadGVLectures();
+      refreshCourseEditor();
+    } catch (e) {
+      document.getElementById('vu-status').textContent = e.message;
+      document.getElementById('vu-status').className = 'text-error';
+      document.getElementById('vu-close').classList.remove('hidden');
+    }
+  }
+
+  async function deleteLectureVideo(lectureId) {
+    if (!confirm('Gỡ video khỏi bài giảng này? File video sẽ bị xóa khỏi máy chủ.')) return;
+    try {
+      const json = await (await fetch('/api/gv/lectures/' + lectureId + '/video', { method: 'DELETE', credentials: 'include' })).json();
+      if (!json.success) { showToast(json.message || 'Không gỡ được video', 'error'); return; }
+      showToast('Đã gỡ video', 'success');
+      loadGVLectures();
+      refreshCourseEditor();
+    } catch { showToast('Không thể kết nối server.', 'error'); }
+  }
+
+  function previewLectureVideo(lectureId) {
+    const lecture = _allLectures.find(l => l.id === lectureId) || ceFindLecture(lectureId);
+    document.getElementById('vp-title').textContent = lecture?.title || '';
+    document.getElementById('vp-video').src = '/api/lectures/' + lectureId + '/video';
+    openModal('modal-video-preview');
+  }
+
+  function closeVideoPreview() {
+    const video = document.getElementById('vp-video');
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    closeModal('modal-video-preview');
   }
 
   // ── GV Materials ──────────────────────────────────────────
@@ -1441,7 +2399,7 @@
       _allMaterials.forEach(m => {
         if (m.course_id && !seen.has(m.course_id)) {
           seen.add(m.course_id);
-          sel.innerHTML += `<option value="${m.course_id}">${m.course_title || m.course_id}</option>`;
+          sel.innerHTML += `<option value="${m.course_id}">${esc(m.course_title || m.course_id)}</option>`;
         }
       });
       renderGVMaterials(_allMaterials);
@@ -1466,9 +2424,9 @@
       return `
       <div class="bg-white rounded-xl border border-outline-variant/40 p-4 flex items-start gap-3">
         <div class="flex-grow min-w-0">
-          <p class="text-sm font-semibold text-on-surface truncate">${m.filename || '—'}</p>
-          <p class="text-xs text-on-surface-variant mt-0.5">${m.course_title || ''} ${m.lecture_title ? '› '+m.lecture_title : ''} ${size ? '· '+size : ''}</p>
-          ${m.description ? `<p class="text-xs text-on-surface-variant mt-0.5 italic">${m.description}</p>` : ''}
+          <p class="text-sm font-semibold text-on-surface truncate">${esc(m.filename || '—')}</p>
+          <p class="text-xs text-on-surface-variant mt-0.5">${esc(m.course_title || '')} ${m.lecture_title ? '› ' + esc(m.lecture_title) : ''} ${size ? '· '+size : ''}</p>
+          ${m.description ? `<p class="text-xs text-on-surface-variant mt-0.5 italic">${esc(m.description)}</p>` : ''}
         </div>
         <button onclick="deleteGVMaterial(${m.id})" class="shrink-0 text-xs text-error hover:underline">Xóa</button>
       </div>`;
@@ -1506,6 +2464,7 @@
       document.getElementById('mat-desc').value = '';
       showToast('Tài liệu đã được tải lên!', 'success');
       loadGVMaterials();
+      refreshCourseEditor();
     } catch { errEl.textContent = 'Không thể kết nối server.'; errEl.classList.remove('hidden'); }
     finally { btn.disabled = false; btn.textContent = 'Tải lên'; }
   }
@@ -1513,9 +2472,12 @@
   async function deleteGVMaterial(id) {
     if (!confirm('Xóa tài liệu này?')) return;
     try {
-      await fetch('/api/gv/materials/' + id, { method: 'DELETE', credentials: 'include' });
+      const json = await (await fetch('/api/gv/materials/' + id, { method: 'DELETE', credentials: 'include' })).json();
+      if (!json.success) { showToast(json.message || 'Không xóa được tài liệu', 'error'); return; }
+      showToast('Đã xóa tài liệu', 'success');
       loadGVMaterials();
-    } catch {}
+      refreshCourseEditor();
+    } catch { showToast('Không thể kết nối server.', 'error'); }
   }
 
   // ── GV Tests ──────────────────────────────────────────────
@@ -1534,7 +2496,7 @@
       _allTests.forEach(t => {
         if (t.course_id && !seen.has(t.course_id)) {
           seen.add(t.course_id);
-          sel.innerHTML += `<option value="${t.course_id}">${t.course_title || t.course_id}</option>`;
+          sel.innerHTML += `<option value="${t.course_id}">${esc(t.course_title || t.course_id)}</option>`;
         }
       });
       renderGVTests(_allTests);
@@ -1556,148 +2518,113 @@
     }
     tbody.innerHTML = list.map(t => `
       <tr class="hover:bg-surface-low/50 transition-colors">
-        <td class="px-5 py-3.5 text-sm font-semibold text-on-surface">${t.title}</td>
-        <td class="px-5 py-3.5 text-sm text-on-surface-variant">${t.lecture_title ? t.lecture_title : (t.course_title || '—')}</td>
-        <td class="px-5 py-3.5 text-sm text-on-surface-variant">${t.duration_minutes || 30} phút</td>
+        <td class="px-5 py-3.5 text-sm font-semibold text-on-surface">${esc(t.title)}</td>
+        <td class="px-5 py-3.5 text-sm text-on-surface-variant">${esc(t.lecture_title || t.course_title || '—')}</td>
+        <td class="px-5 py-3.5 text-sm text-on-surface-variant">
+          ${t.duration_minutes > 0 ? t.duration_minutes + ' phút' : 'Không giới hạn'}
+          <span class="block text-xs">${t.max_attempts > 0 ? t.max_attempts + ' lượt' : 'Không giới hạn lượt'}${t.shuffle_questions || t.shuffle_options ? ' · có xáo' : ''}</span>
+        </td>
         <td class="px-5 py-3.5 text-sm text-on-surface-variant">${t.num_questions || 0} câu · đạt ${t.pass_percent || 60}%</td>
         <td class="px-5 py-3.5 flex items-center gap-3">
-          <button onclick="openGVQuestionsModal(${t.id},'${(t.title||'').replace(/'/g,'&#39;')}')"
+          <button onclick="openGVQuestionsModal(${t.id}, this.dataset.title)" data-title="${esc(t.title)}"
             class="text-xs text-secondary hover:underline">Câu hỏi</button>
+          <button onclick="openTestStats(${t.id}, this.dataset.title)" data-title="${esc(t.title)}" class="text-xs text-secondary hover:underline">Thống kê</button>
+          <button onclick="openTestModal(${t.id})" class="text-xs text-on-surface-variant hover:underline">Sửa</button>
           <button onclick="deleteGVTest(${t.id})" class="text-xs text-error hover:underline">Xóa</button>
         </td>
       </tr>`).join('');
   }
 
+  // Mở form bài kiểm tra: không có id là tạo mới, có id là sửa (không đổi khóa học và bài giảng)
+  function openTestModal(id = null) {
+    const t = id ? (_allTests.find(x => x.id === id) || ceFindTest(id)) : null;
+    openModal('modal-test');
+    document.getElementById('test-edit-id').value = t ? t.id : '';
+    document.getElementById('test-modal-title').textContent = t ? 'Sửa bài kiểm tra' : 'Tạo bài kiểm tra';
+    document.getElementById('btn-submit-test').textContent = t ? 'Lưu thay đổi' : 'Tạo bài kiểm tra';
+    document.getElementById('test-title').value = t ? t.title : '';
+    document.getElementById('test-duration').value = t ? t.duration_minutes : 30;
+    document.getElementById('test-max-attempts').value = t ? t.max_attempts : 0;
+    document.getElementById('test-pass').value = t ? t.pass_percent : 60;
+    document.getElementById('test-shuffle-q').checked = !!t?.shuffle_questions;
+    document.getElementById('test-shuffle-o').checked = !!t?.shuffle_options;
+    ['test-course-select', 'test-lecture-select'].forEach(sel => {
+      document.getElementById(sel).closest('div').classList.toggle('hidden', !!t);
+    });
+    document.getElementById('test-err').classList.add('hidden');
+  }
+
   async function submitGVTest() {
+    const editId    = document.getElementById('test-edit-id').value;
     const title     = document.getElementById('test-title').value.trim();
     const courseId  = document.getElementById('test-course-select').value;
     const lectureId = document.getElementById('test-lecture-select').value;
-    const duration  = document.getElementById('test-duration').value;
-    const numQ      = document.getElementById('test-num-q').value;
-    const pass      = document.getElementById('test-pass').value;
     const errEl     = document.getElementById('test-err');
+    const settings  = {
+      duration_minutes: document.getElementById('test-duration').value,
+      max_attempts:     document.getElementById('test-max-attempts').value,
+      pass_percent:     document.getElementById('test-pass').value,
+      shuffle_questions: document.getElementById('test-shuffle-q').checked,
+      shuffle_options:   document.getElementById('test-shuffle-o').checked,
+    };
 
     if (!title)     { errEl.textContent = 'Vui lòng nhập tên bài kiểm tra.'; errEl.classList.remove('hidden'); return; }
-    if (!courseId)  { errEl.textContent = 'Vui lòng chọn khóa học.';         errEl.classList.remove('hidden'); return; }
-    if (!lectureId) { errEl.textContent = 'Vui lòng chọn bài giảng liên kết.'; errEl.classList.remove('hidden'); return; }
+    if (!editId && !courseId)  { errEl.textContent = 'Vui lòng chọn khóa học.';         errEl.classList.remove('hidden'); return; }
+    if (!editId && !lectureId) { errEl.textContent = 'Vui lòng chọn bài giảng liên kết.'; errEl.classList.remove('hidden'); return; }
     errEl.classList.add('hidden');
 
     const btn = document.getElementById('btn-submit-test');
-    btn.disabled = true; btn.textContent = 'Đang tạo...';
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Đang lưu...';
     try {
-      const res  = await fetch('/api/gv/tests', {
-        method: 'POST', credentials: 'include',
+      const res  = await fetch(editId ? '/api/gv/tests/' + editId : '/api/gv/tests', {
+        method: editId ? 'PUT' : 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ course_id: courseId, lecture_id: lectureId, title, duration_minutes: duration || 30, num_questions: numQ || 20, pass_percent: pass || 60 }),
+        body: JSON.stringify(editId ? { title, ...settings } : { course_id: courseId, lecture_id: lectureId, title, ...settings }),
       });
       const json = await res.json();
       if (!json.success) { errEl.textContent = json.message || 'Thất bại.'; errEl.classList.remove('hidden'); return; }
       closeModal('modal-test');
       document.getElementById('test-title').value = '';
-      showToast('Bài kiểm tra đã được tạo!', 'success');
+      showToast(editId ? 'Đã lưu bài kiểm tra. Cài đặt mới áp dụng cho các lượt làm bắt đầu sau.' : 'Bài kiểm tra đã được tạo! Bấm "Soạn câu hỏi" để thêm câu.', 'success');
       loadGVTests();
+      refreshCourseEditor();
     } catch { errEl.textContent = 'Không thể kết nối server.'; errEl.classList.remove('hidden'); }
-    finally { btn.disabled = false; btn.textContent = 'Tạo bài kiểm tra'; }
+    finally { btn.disabled = false; btn.textContent = label; }
   }
 
   async function deleteGVTest(id) {
-    if (!confirm('Xóa bài kiểm tra này?')) return;
+    if (!confirm('Xóa bài kiểm tra này? Kết quả làm bài của học viên cũng bị xóa.')) return;
     try {
-      await fetch('/api/gv/tests/' + id, { method: 'DELETE', credentials: 'include' });
+      const json = await (await fetch('/api/gv/tests/' + id, { method: 'DELETE', credentials: 'include' })).json();
+      if (!json.success) { showToast(json.message || 'Không xóa được bài kiểm tra', 'error'); return; }
+      showToast('Đã xóa bài kiểm tra', 'success');
       loadGVTests();
-    } catch {}
+      refreshCourseEditor();
+    } catch { showToast('Không thể kết nối server.', 'error'); }
   }
 
-  // ── Quản lý câu hỏi (GV) ───────────────────────────────────
-  let _qTestId = null;
+  // Thống kê từng câu hỏi (js/test-stats.js)
+  function openTestStats(testId, title) {
+    EngProTestStats.open({ url: '/api/gv/tests/' + testId + '/stats', title });
+  }
 
-  async function openGVQuestionsModal(testId, testTitle) {
-    _qTestId = testId;
+  // ── Soạn đề (GV): phần nghe, phần đọc, câu hỏi — xem js/test-editor.js ──
+  function openGVQuestionsModal(testId, testTitle) {
     document.getElementById('qmodal-title').textContent = testTitle;
-    // Reset add-form
-    document.getElementById('q-text').value = '';
-    ['q-a','q-b','q-c','q-d'].forEach(id => document.getElementById(id).value = '');
-    document.querySelectorAll('input[name="q-ans"]').forEach(r => r.checked = false);
-    document.getElementById('q-err').classList.add('hidden');
     document.getElementById('modal-questions').classList.remove('hidden');
-    await refreshGVQuestions();
+    TestEditor.open({
+      base:     '/api/gv/tests/' + testId,
+      listEl:   document.getElementById('qmodal-list'),
+      formEl:   document.getElementById('qmodal-form'),
+      countEl:  document.getElementById('qmodal-count'),
+      toast:    showToast,
+      onChange: () => { loadGVTests(); refreshCourseEditor(); },
+    });
   }
 
-  async function refreshGVQuestions() {
-    const listEl   = document.getElementById('qmodal-list');
-    const countEl  = document.getElementById('qmodal-count');
-    listEl.innerHTML = '<p class="text-sm text-on-surface-variant text-center py-6">Đang tải...</p>';
-    try {
-      const res  = await fetch('/api/gv/tests/' + _qTestId + '/questions', { credentials: 'include' });
-      const json = await res.json();
-      if (!json.success) { listEl.innerHTML = '<p class="text-sm text-error text-center py-6">Lỗi tải dữ liệu</p>'; return; }
-      const qs = json.data;
-      countEl.textContent = qs.length + ' câu';
-      if (!qs.length) {
-        listEl.innerHTML = '<p class="text-sm text-on-surface-variant text-center py-8">Chưa có câu hỏi nào. Thêm câu hỏi bên dưới.</p>';
-        return;
-      }
-      listEl.innerHTML = qs.map((q, i) => `
-        <div class="bg-surface-low rounded-xl p-4 relative group">
-          <div class="flex items-start gap-3">
-            <span class="shrink-0 w-6 h-6 rounded-full bg-secondary/10 text-secondary text-xs font-bold flex items-center justify-center mt-0.5">${i+1}</span>
-            <div class="flex-grow min-w-0">
-              <p class="text-sm font-semibold text-on-surface mb-2">${q.question_text}</p>
-              <div class="grid grid-cols-2 gap-1.5 text-xs">
-                <span class="${q.correct_answer==='A'?'bg-green-100 text-green-700 font-bold':'text-on-surface-variant'} px-2 py-1 rounded">A. ${q.option_a}</span>
-                <span class="${q.correct_answer==='B'?'bg-green-100 text-green-700 font-bold':'text-on-surface-variant'} px-2 py-1 rounded">B. ${q.option_b}</span>
-                <span class="${q.correct_answer==='C'?'bg-green-100 text-green-700 font-bold':'text-on-surface-variant'} px-2 py-1 rounded">C. ${q.option_c}</span>
-                <span class="${q.correct_answer==='D'?'bg-green-100 text-green-700 font-bold':'text-on-surface-variant'} px-2 py-1 rounded">D. ${q.option_d}</span>
-              </div>
-            </div>
-            <button onclick="deleteGVQuestion(${q.id})"
-              class="shrink-0 p-1 hover:text-error text-on-surface-variant transition-colors opacity-0 group-hover:opacity-100">
-              <span class="material-symbols-outlined text-base">delete</span>
-            </button>
-          </div>
-        </div>`).join('');
-    } catch { listEl.innerHTML = '<p class="text-sm text-error text-center py-6">Không thể kết nối server</p>'; }
-  }
-
-  async function addGVQuestion() {
-    const text = document.getElementById('q-text').value.trim();
-    const a    = document.getElementById('q-a').value.trim();
-    const b    = document.getElementById('q-b').value.trim();
-    const c    = document.getElementById('q-c').value.trim();
-    const d    = document.getElementById('q-d').value.trim();
-    const ans  = document.querySelector('input[name="q-ans"]:checked')?.value || '';
-    const errEl = document.getElementById('q-err');
-
-    if (!text || !a || !b || !c || !d) { errEl.textContent = 'Vui lòng điền đầy đủ nội dung câu hỏi và 4 đáp án'; errEl.classList.remove('hidden'); return; }
-    if (!ans) { errEl.textContent = 'Vui lòng chọn đáp án đúng (A/B/C/D)'; errEl.classList.remove('hidden'); return; }
-    errEl.classList.add('hidden');
-
-    const btn = document.getElementById('btn-add-q');
-    btn.disabled = true; btn.textContent = 'Đang lưu...';
-    try {
-      const res  = await fetch('/api/gv/tests/' + _qTestId + '/questions', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question_text: text, option_a: a, option_b: b, option_c: c, option_d: d, correct_answer: ans }),
-      });
-      const json = await res.json();
-      if (!json.success) { errEl.textContent = json.message || 'Lỗi thêm câu hỏi'; errEl.classList.remove('hidden'); return; }
-      // Reset form
-      document.getElementById('q-text').value = '';
-      ['q-a','q-b','q-c','q-d'].forEach(id => document.getElementById(id).value = '');
-      document.querySelectorAll('input[name="q-ans"]').forEach(r => r.checked = false);
-      await refreshGVQuestions();
-      showToast('Đã thêm câu hỏi', 'ok');
-    } catch { errEl.textContent = 'Không thể kết nối server'; errEl.classList.remove('hidden'); }
-    finally { btn.disabled = false; btn.textContent = '+ Thêm câu'; }
-  }
-
-  async function deleteGVQuestion(qId) {
-    if (!confirm('Xóa câu hỏi này?')) return;
-    try {
-      await fetch('/api/gv/tests/' + _qTestId + '/questions/' + qId, { method: 'DELETE', credentials: 'include' });
-      await refreshGVQuestions();
-    } catch {}
+  function closeQuestionsModal() {
+    if (TestEditor.close()) closeModal('modal-questions');
   }
 
   // ── GV Results ───────────────────────────────────────────
@@ -1718,7 +2645,7 @@
       _gvResults.forEach(r => {
         if (r.course_id && !seen.has(r.course_id)) {
           seen.add(r.course_id);
-          sel.innerHTML += `<option value="${r.course_id}">${r.course_title || r.course_id}</option>`;
+          sel.innerHTML += `<option value="${r.course_id}">${esc(r.course_title || r.course_id)}</option>`;
         }
       });
       renderGVResults(_gvResults);
@@ -1742,20 +2669,25 @@
     }
     tbody.innerHTML = list.map(r => `
       <tr class="hover:bg-surface-low/50 transition-colors result-row"
-          data-name="${(r.student_name||'').toLowerCase()}" data-test="${(r.test_title||'').toLowerCase()}">
+          data-name="${esc((r.student_name||'').toLowerCase())}" data-test="${esc((r.test_title||'').toLowerCase())}">
         <td class="px-5 py-3.5">
-          <p class="font-semibold text-on-surface text-sm">${r.student_name}</p>
-          <p class="text-xs text-on-surface-variant">${r.student_email}</p>
+          <p class="font-semibold text-on-surface text-sm">${esc(r.student_name)}</p>
+          <p class="text-xs text-on-surface-variant">${esc(r.student_email)}</p>
         </td>
-        <td class="px-5 py-3.5 text-sm text-on-surface-variant">${r.course_title}</td>
-        <td class="px-5 py-3.5 text-sm text-on-surface">${r.test_title}</td>
+        <td class="px-5 py-3.5 text-sm text-on-surface-variant">${esc(r.course_title)}</td>
+        <td class="px-5 py-3.5 text-sm text-on-surface">${esc(r.test_title)}</td>
         <td class="px-5 py-3.5 text-sm font-semibold ${r.passed ? 'text-green-700' : 'text-error'}">${r.score}%</td>
         <td class="px-5 py-3.5">
           ${r.passed
             ? '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-semibold">Đạt</span>'
             : '<span class="px-2 py-0.5 bg-red-100 text-error rounded text-xs font-semibold">Không đạt</span>'}
         </td>
-        <td class="px-5 py-3.5 text-xs text-on-surface-variant">${new Date(r.submitted_at).toLocaleDateString('vi-VN')}</td>
+        <td class="px-5 py-3.5 text-xs text-on-surface-variant">
+          ${new Date(r.submitted_at).toLocaleDateString('vi-VN')}
+          ${r.due_at ? (r.is_late
+            ? `<span class="block w-fit mt-1 px-2 py-0.5 bg-red-100 text-error rounded text-[11px] font-semibold" title="Hạn: ${EngProDeadline.format(r.due_at)}">Nộp muộn</span>`
+            : `<span class="block w-fit mt-1 px-2 py-0.5 bg-green-50 text-green-700 rounded text-[11px] font-semibold" title="Hạn: ${EngProDeadline.format(r.due_at)}">Đúng hạn</span>`) : ''}
+        </td>
       </tr>`).join('');
   }
 
@@ -1806,7 +2738,7 @@
       const statusBadge = s => ({
         active:    '<span class="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-semibold">Đang học</span>',
         completed: '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">Hoàn thành</span>',
-      }[s] || '<span class="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-semibold">' + s + '</span>');
+      }[s] || '<span class="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-semibold">' + esc(s) + '</span>');
 
       const rows = students.map((s, si) => {
         const progressPct = total_lectures > 0
@@ -1829,7 +2761,7 @@
           ? '<p class="text-xs text-on-surface-variant italic">Khóa học chưa có bài kiểm tra.</p>'
           : `<div class="flex flex-wrap items-center gap-2">
               ${s.tests.map((t, i) => {
-                const title = tests[i]?.title || ('Bài ' + (i+1));
+                const title = esc(tests[i]?.title || ('Bài ' + (i+1)));
                 if (t.score === null)
                   return `<span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-low text-on-surface-variant border border-outline-variant/30" title="${title}">${title}: —</span>`;
                 return t.passed
@@ -1846,8 +2778,8 @@
         return `
           <tr class="hover:bg-surface-low/40 transition-colors">
             <td class="px-4 py-3">
-              <p class="text-sm font-semibold text-on-surface">${s.name}</p>
-              <p class="text-xs text-on-surface-variant">${s.email}</p>
+              <p class="text-sm font-semibold text-on-surface">${esc(s.name)}</p>
+              <p class="text-xs text-on-surface-variant">${esc(s.email)}</p>
             </td>
             <td class="px-4 py-3">${statusBadge(s.status)}</td>
             <td class="px-4 py-3">${lectureCell}</td>
@@ -1871,7 +2803,7 @@
       }).join('');
 
       tableEl.innerHTML = `
-        <table class="w-full text-sm" style="table-layout:fixed">
+        <table class="w-full text-sm min-w-[640px]" style="table-layout:fixed">
           <colgroup>
             <col style="width:200px">
             <col style="width:120px">

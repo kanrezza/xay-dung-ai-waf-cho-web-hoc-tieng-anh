@@ -37,50 +37,54 @@
         </div>
         <span class="text-xl font-bold text-primary">EngPro</span>
       </a>
-      <nav class="hidden md:flex items-center gap-8">
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
         <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
         <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
         <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+        <a href="writing.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện viết AI</a>
       </nav>
       <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
         <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
         <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
       </div>
-      <div id="auth-user" class="hidden items-center gap-2 shrink-0">
-        <a id="dash-link" href="#" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
             <span class="text-white text-xs font-bold" id="user-initial">?</span>
           </div>
           <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
-          <span class="material-symbols-outlined text-on-surface-variant text-base">dashboard</span>
-        </a>
-        <button onclick="doLogout()" title="Đăng xuất" class="p-2 rounded-xl hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors">
-          <span class="material-symbols-outlined text-xl">logout</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
         </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
       </div>
-      <button id="mobile-menu-btn" class="md:hidden text-on-surface-variant">
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
         <span class="material-symbols-outlined text-3xl">menu</span>
       </button>
     </div>
-    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
       <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
       <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
       <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <a href="writing.html" class="text-on-surface-variant text-base py-1">Luyện viết AI</a>
       <hr class="border-outline-variant/30" />
       <div id="auth-guest-mobile" class="hidden flex-col gap-2">
         <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
         <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
       </div>
-      <div id="auth-user-mobile" class="hidden flex-col gap-2">
-        <a id="dash-link-mobile" href="#" class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
             <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
           </div>
-          <div><p class="text-sm font-bold text-primary" id="user-name-mobile">...</p><p class="text-xs text-on-surface-variant">Vào Dashboard</p></div>
-        </a>
-        <button onclick="doLogout()" class="text-sm font-semibold text-error border border-error/40 rounded-lg px-4 py-2 text-center w-full hover:bg-red-50 flex items-center justify-center gap-1">
-          <span class="material-symbols-outlined text-base">logout</span>Đăng xuất
-        </button>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
+          </div>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
       </div>
     </div>
   </header>
@@ -100,6 +104,18 @@
       <section class="max-w-container mx-auto px-4 md:px-16 py-12">
         <!-- Chọn kỳ thi -->
         <div class="max-w-xl mx-auto">
+          <!-- Kết quả lần gần nhất (học viên đã đăng nhập) -->
+          <div id="last-result" class="hidden mb-8 bg-white rounded-xl border border-outline-variant/50 shadow-sm p-5 flex items-center gap-4">
+            <span class="w-11 h-11 rounded-full bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined">history</span>
+            </span>
+            <div class="flex-grow min-w-0">
+              <p class="text-xs text-on-surface-variant">Lần xếp loại gần nhất</p>
+              <p class="text-sm font-bold text-primary" id="last-result-text"></p>
+            </div>
+            <a href="results.html#placement" class="text-xs font-semibold text-secondary hover:underline shrink-0">Xem lịch sử</a>
+          </div>
+
           <h2 class="text-lg font-bold text-primary mb-5 text-center">Bạn muốn xếp loại cho kỳ thi nào?</h2>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <button onclick="selectExam('ielts')" id="btn-ielts" class="exam-btn border-2 border-outline-variant rounded-xl p-5 text-center hover:border-primary transition-all group">
@@ -129,7 +145,7 @@
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-primary">20 câu hỏi</p>
-                  <p class="text-xs text-on-surface-variant">Trắc nghiệm & điền từ</p>
+                  <p class="text-xs text-on-surface-variant">Trắc nghiệm 4 đáp án</p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
@@ -156,7 +172,7 @@
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-primary">Kết quả tức thì</p>
-                  <p class="text-xs text-on-surface-variant">Gợi ý band phù hợp ngay</p>
+                  <p class="text-xs text-on-surface-variant">Band tham khảo và khóa học gợi ý</p>
                 </div>
               </div>
             </div>
@@ -165,9 +181,10 @@
           <button id="start-btn" onclick="startPlacementTest()" disabled
             class="w-full bg-accent text-white font-bold py-4 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             <span class="material-symbols-outlined">play_arrow</span>
-            Bắt đầu bài test xếp loại
+            <span id="start-label">Bắt đầu bài test xếp loại</span>
           </button>
           <p id="select-hint" class="text-center text-xs text-on-surface-variant mt-2">Vui lòng chọn kỳ thi trước khi bắt đầu</p>
+          <p id="start-error" class="hidden text-center text-xs text-red-600 mt-2"></p>
         </div>
       </section>
     </div>
@@ -209,38 +226,49 @@
 
     <!-- ===== RESULT SCREEN ===== -->
     <div id="screen-result" class="hidden">
-      <div class="max-w-lg mx-auto px-4 md:px-0 py-14 text-center">
-        <div class="bg-white rounded-2xl border border-outline-variant/50 shadow-lg p-10">
+      <div class="max-w-2xl mx-auto px-4 md:px-0 py-10 space-y-6">
+        <div class="bg-white rounded-2xl border border-outline-variant/50 shadow-lg p-8 text-center">
           <span class="material-symbols-outlined text-5xl text-accent block mb-3">emoji_events</span>
-          <h2 class="text-2xl font-bold text-primary mb-1">Kết Quả Xếp Loại</h2>
+          <h2 class="text-2xl font-bold text-primary mb-1">Kết quả xếp loại</h2>
           <p class="text-xs text-on-surface-variant mb-6" id="result-exam-label">IELTS</p>
 
-          <div class="bg-surface-low rounded-xl p-5 mb-6">
-            <p class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1">Điểm của bạn</p>
-            <p class="text-5xl font-bold text-primary" id="result-score">14 / 20</p>
-            <p class="text-xs text-on-surface-variant mt-1" id="result-pct">70%</p>
+          <div class="grid sm:grid-cols-2 gap-4 mb-6 text-left">
+            <div class="bg-surface-low rounded-xl p-5 text-center">
+              <p class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1">Số câu đúng</p>
+              <p class="text-4xl font-bold text-primary" id="result-score"></p>
+              <p class="text-xs text-on-surface-variant mt-1" id="result-pct"></p>
+            </div>
+            <div class="bg-primary rounded-xl p-5">
+              <p class="text-xs font-bold uppercase tracking-wider text-blue-200 mb-1">Band tham khảo</p>
+              <p class="text-2xl font-bold text-white" id="result-band"></p>
+              <p class="text-xs text-blue-200 mt-1" id="result-band-desc"></p>
+              <span id="result-level" class="inline-block mt-2 px-2 py-0.5 rounded-full bg-white/15 text-white text-[11px] font-semibold"></span>
+            </div>
           </div>
 
-          <div class="bg-primary rounded-xl p-5 mb-6 text-left">
-            <p class="text-xs font-bold uppercase tracking-wider text-blue-200 mb-1">Band gợi ý</p>
-            <p class="text-2xl font-bold text-white" id="result-band">5.5 – 6.5</p>
-            <p class="text-xs text-blue-200 mt-1" id="result-band-desc">Trình độ trung cấp — bạn đã có nền tảng tốt</p>
-          </div>
-
-          <!-- Skill breakdown -->
           <div class="text-left mb-6">
             <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3">Phân tích theo kỹ năng</p>
             <div class="space-y-2" id="skill-breakdown"></div>
           </div>
 
-          <div class="flex flex-col gap-3">
-            <a href="courses.html" id="result-course-link" class="w-full bg-accent text-white font-bold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm text-center">
-              Xem khóa học phù hợp →
-            </a>
-            <button onclick="retakeTest()" class="w-full border border-outline-variant text-on-surface-variant font-semibold py-3 rounded-xl hover:bg-surface-low transition-colors text-sm">
-              Làm lại bài test
-            </button>
+          <!-- Đã lưu / cần đăng nhập để lưu -->
+          <div id="save-status" class="hidden mb-6 rounded-xl px-4 py-3 text-sm text-left flex items-center gap-3"></div>
+
+          <button onclick="retakeTest()" class="w-full border border-outline-variant text-on-surface-variant font-semibold py-3 rounded-xl hover:bg-surface-low transition-colors text-sm">
+            Làm lại bài test
+          </button>
+        </div>
+
+        <!-- Khóa học gợi ý -->
+        <div class="bg-white rounded-2xl border border-outline-variant/50 shadow-sm p-6">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 class="font-bold text-primary">Khóa học gợi ý cho bạn</h3>
+              <p class="text-xs text-on-surface-variant mt-0.5" id="suggest-hint"></p>
+            </div>
+            <a id="result-course-link" href="courses.html" class="text-xs font-semibold text-secondary hover:underline shrink-0">Xem tất cả</a>
           </div>
+          <div id="course-suggestions" class="space-y-3"></div>
         </div>
       </div>
     </div>
@@ -248,8 +276,12 @@
   </main>
 
   <footer class="bg-primary text-white py-8">
-    <div class="max-w-container mx-auto px-4 md:px-16 text-center text-xs text-blue-200">
-      © 2026 EngPro English Systems.
+    <div class="max-w-container mx-auto px-4 md:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+      <span>© 2026 EngPro English Systems.</span>
+      <nav class="flex gap-5">
+        <a href="help.html" class="hover:text-white">Trung tâm trợ giúp</a>
+        <a href="contact.html" class="hover:text-white">Liên hệ</a>
+      </nav>
     </div>
   </footer>
 
@@ -258,107 +290,20 @@
       document.getElementById('mobile-menu').classList.toggle('hidden');
     });
 
-    // ---- STATE ----
+    // Câu hỏi lấy từ server, không kèm đáp án. Nộp bài thì server chấm, gợi ý khóa học và lưu kết quả.
+    const PENDING_KEY = 'engpro_placement_pending'; // bài làm lúc chưa đăng nhập, lưu lại sau khi đăng nhập
     let selectedExam = '';
+    let examData = null;   // { label, questions: [{ id, cat, text, opts }] }
     let currentQ = 0;
-    let answers = {};
+    let answers = {};      // { "ielts-1": 1 }
 
-    // ---- QUESTION BANK ----
-    const questions = {
-      ielts: [
-        { cat: 'Ngữ pháp', text: 'Choose the correct form: "She has been working here ___ 2019."', opts: ['for', 'since', 'during', 'while'], ans: 1 },
-        { cat: 'Từ vựng', text: 'What does "meticulous" mean?', opts: ['Careless', 'Very careful and precise', 'Expensive', 'Quick'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'If I ___ more time, I would study harder.', opts: ['have', 'had', 'will have', 'would have'], ans: 1 },
-        { cat: 'Đọc hiểu', text: 'The graph shows a "steady decline" in sales. This means sales:', opts: ['Increased slowly', 'Decreased gradually', 'Stayed the same', 'Fluctuated'], ans: 1 },
-        { cat: 'Từ vựng', text: 'Which word is a synonym for "abundant"?', opts: ['Scarce', 'Plentiful', 'Tiny', 'Vague'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'The report ___ by the committee next week.', opts: ['will review', 'will be reviewed', 'reviews', 'is reviewing'], ans: 1 },
-        { cat: 'Đọc hiểu', text: 'The author argues that climate change "poses an existential threat." This is best described as:', opts: ['A minor inconvenience', 'A debatable topic', 'A severe danger to survival', 'An economic benefit'], ans: 2 },
-        { cat: 'Ngữ pháp', text: 'Despite ___ tired, she continued working.', opts: ['be', 'being', 'been', 'to be'], ans: 1 },
-        { cat: 'Từ vựng', text: '"The policy was implemented" means the policy was:', opts: ['Rejected', 'Put into action', 'Discussed', 'Delayed'], ans: 1 },
-        { cat: 'Đọc hiểu', text: 'A text that "challenges conventional wisdom" means it:', opts: ['Supports traditional ideas', 'Questions accepted beliefs', 'Ignores evidence', 'Simplifies concepts'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'Not only ___ late, but he also forgot the documents.', opts: ['he arrived', 'did he arrive', 'he did arrive', 'arrived he'], ans: 1 },
-        { cat: 'Từ vựng', text: 'Which is most academic? "The data ___ a clear trend."', opts: ['shows', 'indicates', 'tells', 'says'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'By the time she arrived, the meeting ___', opts: ['already ended', 'had already ended', 'has already ended', 'already ends'], ans: 1 },
-        { cat: 'Từ vựng', text: '"Subsequent" most nearly means:', opts: ['Previous', 'Following', 'Simultaneous', 'Opposite'], ans: 1 },
-        { cat: 'Đọc hiểu', text: 'The passage states that renewable energy "is no longer prohibitively expensive." This implies:', opts: ['It is still too costly', 'Its cost has decreased significantly', 'It remains unavailable', 'It costs the same as before'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'The more you practice, ___ you become.', opts: ['the fluent', 'the more fluent', 'more fluent', 'fluenter'], ans: 1 },
-        { cat: 'Từ vựng', text: 'A "comprehensive" report is one that is:', opts: ['Brief and partial', 'Thorough and complete', 'Informal and casual', 'Confidential'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'She suggested ___ the meeting until next week.', opts: ['to postpone', 'postponing', 'postpone', 'postponed'], ans: 1 },
-        { cat: 'Đọc hiểu', text: 'The author concludes that urbanization "inevitably leads to social fragmentation." The word "inevitably" suggests this outcome is:', opts: ['Unlikely', 'Possible', 'Certain / unavoidable', 'Desirable'], ans: 2 },
-        { cat: 'Từ vựng', text: '"Mitigate the impact" means to:', opts: ['Increase the impact', 'Reduce the impact', 'Ignore the impact', 'Study the impact'], ans: 1 },
-      ],
-      toefl: [
-        { cat: 'Vocabulary', text: '"The scientist\'s findings were groundbreaking." The word "groundbreaking" means:', opts: ['Old and outdated', 'Revolutionary and new', 'Confusing', 'Minor'], ans: 1 },
-        { cat: 'Grammar', text: 'Choose the correct sentence:', opts: ['Neither the teacher nor students was present.', 'Neither the teacher nor the students were present.', 'Neither the teacher nor students were present.', 'Neither teacher nor the students was present.'], ans: 1 },
-        { cat: 'Reading', text: 'A passage states: "The results corroborate previous studies." This means the results:', opts: ['Contradict earlier research', 'Support earlier research', 'Ignore earlier research', 'Replace earlier research'], ans: 1 },
-        { cat: 'Grammar', text: 'The experiment ___ for three hours when the power went out.', opts: ['was running', 'had been running', 'has been running', 'ran'], ans: 1 },
-        { cat: 'Vocabulary', text: '"Ambiguous" most nearly means:', opts: ['Clear', 'Open to more than one interpretation', 'Detailed', 'Accurate'], ans: 1 },
-        { cat: 'Reading', text: 'The author\'s "primary purpose" in a passage is:', opts: ['To entertain the reader', 'To express the main reason for writing', 'To list statistics', 'To argue one side only'], ans: 1 },
-        { cat: 'Grammar', text: 'Had they arrived earlier, they ___ the announcement.', opts: ['hear', 'would hear', 'would have heard', 'had heard'], ans: 2 },
-        { cat: 'Vocabulary', text: '"Prevalent" means:', opts: ['Rare', 'Widespread', 'New', 'Harmful'], ans: 1 },
-        { cat: 'Reading', text: 'An "inference" question asks you to:', opts: ['Find a direct quote', 'Summarize the paragraph', 'Understand what is implied but not stated', 'Define a vocabulary word'], ans: 2 },
-        { cat: 'Grammar', text: 'The committee recommended that the report ___ rewritten.', opts: ['is', 'be', 'will be', 'was'], ans: 1 },
-        { cat: 'Vocabulary', text: '"Detrimental" is closest in meaning to:', opts: ['Beneficial', 'Harmful', 'Neutral', 'Temporary'], ans: 1 },
-        { cat: 'Grammar', text: 'Only after the data were collected ___ to analyze them.', opts: ['they began', 'began they', 'did they begin', 'they did begin'], ans: 2 },
-        { cat: 'Reading', text: 'If a paragraph ends with "This shift has far-reaching consequences," the next paragraph likely:', opts: ['Introduces a new unrelated topic', 'Explains those consequences', 'Contradicts the shift', 'Summarizes the introduction'], ans: 1 },
-        { cat: 'Vocabulary', text: '"Concede" most nearly means:', opts: ['Deny', 'Admit or yield', 'Demand', 'Question'], ans: 1 },
-        { cat: 'Grammar', text: 'It is essential that every student ___ the final exam.', opts: ['takes', 'take', 'took', 'has taken'], ans: 1 },
-        { cat: 'Reading', text: 'When a text uses "however," the author is signaling:', opts: ['An example', 'A contrast', 'A result', 'A list'], ans: 1 },
-        { cat: 'Vocabulary', text: '"Proliferate" means to:', opts: ['Decrease rapidly', 'Increase rapidly', 'Stay constant', 'Move slowly'], ans: 1 },
-        { cat: 'Grammar', text: 'The higher the altitude, ___ the temperature.', opts: ['lower', 'the lower', 'the more lower', 'most lower'], ans: 1 },
-        { cat: 'Reading', text: 'A "rhetorical question" is asked to:', opts: ['Seek factual information', 'Make a point, not get an answer', 'Confuse the reader', 'Request clarification'], ans: 1 },
-        { cat: 'Vocabulary', text: '"Substantial evidence" means:', opts: ['Weak evidence', 'Significant and solid evidence', 'Questionable evidence', 'Old evidence'], ans: 1 },
-      ],
-      toeic: [
-        { cat: 'Từ vựng', text: 'The meeting has been ___ to next Friday due to scheduling conflicts.', opts: ['canceled', 'postponed', 'promoted', 'approved'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'Please send the report to Ms. Kim and ___.', opts: ['I', 'me', 'my', 'myself'], ans: 1 },
-        { cat: 'Từ vựng', text: 'We need to ___ the budget before the end of the quarter.', opts: ['finalize', 'increase', 'deny', 'postpone'], ans: 0 },
-        { cat: 'Ngữ pháp', text: 'The new policy ___ into effect on January 1st.', opts: ['goes', 'will go', 'went', 'going'], ans: 1 },
-        { cat: 'Từ vựng', text: 'The manager gave the team a ___ for the project guidelines.', opts: ['schedule', 'deadline', 'briefing', 'promotion'], ans: 2 },
-        { cat: 'Ngữ pháp', text: 'The documents were sent to all ___ members of the board.', opts: ['respective', 'respecting', 'respected', 'respectful'], ans: 0 },
-        { cat: 'Đọc hiểu', text: 'An email subject says "Action Required: Invoice #4521." This email likely:', opts: ['Shares company news', 'Asks the reader to do something about an invoice', 'Confirms a shipment', 'Introduces a new employee'], ans: 1 },
-        { cat: 'Từ vựng', text: 'The conference has been ___ due to low registration numbers.', opts: ['enhanced', 'extended', 'canceled', 'promoted'], ans: 2 },
-        { cat: 'Ngữ pháp', text: 'She was ___ with the new software after one day of training.', opts: ['familiar', 'familiarly', 'familiarize', 'familiarity'], ans: 0 },
-        { cat: 'Từ vựng', text: 'We are pleased to ___ that our company has reached $1M in sales.', opts: ['announce', 'decline', 'apply', 'consider'], ans: 0 },
-        { cat: 'Ngữ pháp', text: 'The product was launched ___ schedule.', opts: ['ahead of', 'instead of', 'because of', 'in spite'], ans: 0 },
-        { cat: 'Đọc hiểu', text: 'A memo says "All staff must complete training by Friday." This is a:', opts: ['Suggestion', 'Requirement', 'Invitation', 'Question'], ans: 1 },
-        { cat: 'Từ vựng', text: 'The HR department will ___ the onboarding process for new hires.', opts: ['oversee', 'overlook', 'overcome', 'overthrow'], ans: 0 },
-        { cat: 'Ngữ pháp', text: 'Neither the CEO nor the directors ___ available for comment.', opts: ['was', 'were', 'is', 'are'], ans: 1 },
-        { cat: 'Từ vựng', text: 'The client requested a ___ of the contract terms before signing.', opts: ['revision', 'rejection', 'reception', 'relaxation'], ans: 0 },
-        { cat: 'Đọc hiểu', text: 'A notice says "The office will be closed on May 30 for maintenance." What should employees do on May 30?', opts: ['Come in early', 'Work from home or take a day off', 'Attend a training session', 'Submit reports'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'The company\'s profits have increased ___ 20% this year.', opts: ['by', 'at', 'to', 'of'], ans: 0 },
-        { cat: 'Từ vựng', text: '"Outstanding balance" on an invoice refers to:', opts: ['A very high amount', 'An amount that has not been paid yet', 'A discount offered', 'A payment confirmation'], ans: 1 },
-        { cat: 'Ngữ pháp', text: 'The supervisor asked the team ___ the project by end of day.', opts: ['complete', 'to complete', 'completing', 'completed'], ans: 1 },
-        { cat: 'Đọc hiểu', text: 'An email says "Please revert at your earliest convenience." This means:', opts: ['Delete the email', 'Reply as soon as you can', 'Forward the email', 'Print the email'], ans: 1 },
-      ],
-    };
-
-    // Band mapping
-    const bandMap = {
-      ielts: [
-        { min: 0,  max: 6,  band: '4.5 – 5.5', desc: 'Trình độ cơ bản — cần củng cố nền tảng', link: 'courses.html?type=ielts' },
-        { min: 7,  max: 12, band: '5.5 – 6.5', desc: 'Trình độ trung cấp — bạn đã có nền tảng tốt', link: 'courses.html?type=ielts' },
-        { min: 13, max: 16, band: '6.5 – 7.5', desc: 'Trình độ khá — sẵn sàng chinh phục band cao', link: 'courses.html?type=ielts' },
-        { min: 17, max: 20, band: '7.5+',       desc: 'Trình độ nâng cao — tiếp tục duy trì và hoàn thiện', link: 'courses.html?type=ielts' },
-      ],
-      toefl: [
-        { min: 0,  max: 6,  band: '60 – 75',  desc: 'Cần phát triển thêm kỹ năng Academic English', link: 'courses.html?type=toefl' },
-        { min: 7,  max: 12, band: '75 – 90',  desc: 'Trình độ trung khá — hướng tới 90 điểm', link: 'courses.html?type=toefl' },
-        { min: 13, max: 16, band: '90 – 100', desc: 'Trình độ tốt — chinh phục mốc 100+', link: 'courses.html?type=toefl' },
-        { min: 17, max: 20, band: '100+',     desc: 'Xuất sắc — luyện thêm chiến lược thi để đạt tối đa', link: 'courses.html?type=toefl' },
-      ],
-      toeic: [
-        { min: 0,  max: 6,  band: '450 – 600', desc: 'Cần xây dựng từ vựng văn phòng và ngữ pháp nền', link: 'courses.html?type=toeic' },
-        { min: 7,  max: 12, band: '600 – 750', desc: 'Trình độ trung cấp — chinh phục 750 điểm', link: 'courses.html?type=toeic' },
-        { min: 13, max: 16, band: '750 – 900', desc: 'Trình độ khá — sẵn sàng mục tiêu 900+', link: 'courses.html?type=toeic' },
-        { min: 17, max: 20, band: '900+',      desc: 'Xuất sắc — tinh chỉnh tốc độ và chiến lược', link: 'courses.html?type=toeic' },
-      ],
-    };
+    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const show = id => ['screen-intro', 'screen-test', 'screen-result'].forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
 
     function selectExam(exam) {
       selectedExam = exam;
       document.querySelectorAll('.exam-btn').forEach(b => {
-        b.classList.remove('border-primary', 'border-accent', 'border-secondary', 'bg-primary/5', 'bg-accent/5', 'bg-secondary/5');
+        b.classList.remove('border-primary', 'border-accent', 'border-secondary', 'bg-blue-50', 'bg-orange-50');
         b.classList.add('border-outline-variant');
       });
       const colorMap = { ielts: 'border-primary bg-blue-50', toefl: 'border-accent bg-orange-50', toeic: 'border-secondary bg-blue-50' };
@@ -369,22 +314,38 @@
       document.getElementById('select-hint').classList.add('invisible');
     }
 
-    function startPlacementTest() {
-      currentQ = 0;
-      answers = {};
-      document.getElementById('screen-intro').classList.add('hidden');
-      document.getElementById('screen-test').classList.remove('hidden');
-      renderQuestion();
+    async function startPlacementTest() {
+      const btn = document.getElementById('start-btn');
+      const errEl = document.getElementById('start-error');
+      btn.disabled = true;
+      document.getElementById('start-label').textContent = 'Đang tải câu hỏi...';
+      errEl.classList.add('hidden');
+      try {
+        const json = await (await fetch('/api/placement/' + selectedExam)).json();
+        if (!json.success) throw new Error(json.message);
+        examData = json.data;
+        currentQ = 0;
+        answers = {};
+        show('screen-test');
+        window.scrollTo(0, 0);
+        renderQuestion();
+      } catch (e) {
+        errEl.textContent = e.message || 'Không tải được câu hỏi, vui lòng thử lại';
+        errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        document.getElementById('start-label').textContent = 'Bắt đầu bài test xếp loại';
+      }
     }
 
     function renderQuestion() {
-      const qs = questions[selectedExam];
+      const qs = examData.questions;
       const q = qs[currentQ];
       const total = qs.length;
-      const pct = Math.round((currentQ / total) * 100);
+      const pct = Math.round((Object.keys(answers).length / total) * 100);
 
-      document.getElementById('test-label').textContent = `${selectedExam.toUpperCase()} · Câu ${currentQ + 1} / ${total}`;
-      document.getElementById('progress-pct').textContent = pct + '%';
+      document.getElementById('test-label').textContent = `${examData.label} · Câu ${currentQ + 1} / ${total}`;
+      document.getElementById('progress-pct').textContent = `Đã trả lời ${Object.keys(answers).length}/${total}`;
       document.getElementById('progress-bar').style.width = pct + '%';
       document.getElementById('q-counter').textContent = `${currentQ + 1} / ${total}`;
       document.getElementById('q-category').textContent = q.cat;
@@ -393,11 +354,12 @@
       const opts = document.getElementById('q-options');
       opts.innerHTML = '';
       q.opts.forEach((opt, i) => {
-        const selected = answers[currentQ] === i;
+        const selected = answers[q.id] === i;
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.onclick = () => selectAnswer(i);
         btn.className = `w-full text-left px-4 py-3 rounded-lg border text-sm transition-all ${selected ? 'border-secondary bg-secondary/10 text-secondary font-semibold' : 'border-outline-variant hover:border-secondary hover:bg-surface-low'}`;
-        btn.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full border mr-3 text-xs font-bold ${selected ? 'bg-secondary text-white border-secondary' : 'border-outline-variant text-on-surface-variant'}">${String.fromCharCode(65+i)}</span>${opt}`;
+        btn.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full border mr-3 text-xs font-bold ${selected ? 'bg-secondary text-white border-secondary' : 'border-outline-variant text-on-surface-variant'}">${String.fromCharCode(65 + i)}</span>${esc(opt)}`;
         opts.appendChild(btn);
       });
 
@@ -405,68 +367,127 @@
       const isLast = currentQ === total - 1;
       const nextBtn = document.getElementById('btn-next');
       nextBtn.textContent = isLast ? 'Nộp bài ✓' : 'Câu tiếp →';
-      nextBtn.className = `px-5 py-2.5 font-semibold rounded-lg hover:opacity-90 transition-opacity text-sm ${isLast ? 'bg-accent text-white' : 'bg-primary text-white'}`;
+      nextBtn.className = `px-5 py-2.5 font-semibold rounded-lg hover:opacity-90 transition-opacity text-sm disabled:opacity-50 ${isLast ? 'bg-accent text-white' : 'bg-primary text-white'}`;
     }
 
     function selectAnswer(i) {
-      answers[currentQ] = i;
+      answers[examData.questions[currentQ].id] = i;
       renderQuestion();
     }
 
     function nextQuestion() {
-      const qs = questions[selectedExam];
-      if (currentQ < qs.length - 1) { currentQ++; renderQuestion(); }
-      else showResult();
+      const qs = examData.questions;
+      if (currentQ < qs.length - 1) { currentQ++; renderQuestion(); return; }
+      const missing = qs.length - Object.keys(answers).length;
+      if (missing && !confirm(`Bạn còn ${missing} câu chưa trả lời, các câu này sẽ tính là sai. Nộp bài?`)) return;
+      submitTest(selectedExam, answers);
     }
 
     function prevQuestion() {
       if (currentQ > 0) { currentQ--; renderQuestion(); }
     }
 
-    function showResult() {
-      const qs = questions[selectedExam];
-      let score = 0;
-      const skillScores = {};
-      qs.forEach((q, i) => {
-        if (!skillScores[q.cat]) skillScores[q.cat] = { correct: 0, total: 0 };
-        skillScores[q.cat].total++;
-        if (answers[i] === q.ans) { score++; skillScores[q.cat].correct++; }
-      });
+    async function submitTest(exam, chosen) {
+      const nextBtn = document.getElementById('btn-next');
+      nextBtn.disabled = true;
+      nextBtn.textContent = 'Đang chấm...';
+      try {
+        const json = await (await fetch(`/api/placement/${exam}/submit`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: chosen }),
+        })).json();
+        if (!json.success) throw new Error(json.message);
+        const data = json.data;
+        try {
+          if (data.login_required) sessionStorage.setItem(PENDING_KEY, JSON.stringify({ exam, answers: chosen }));
+          else sessionStorage.removeItem(PENDING_KEY);
+        } catch {}
+        showResult(data);
+      } catch (e) {
+        alert(e.message || 'Không nộp được bài, vui lòng thử lại');
+      } finally {
+        nextBtn.disabled = false;
+      }
+    }
 
-      const band = bandMap[selectedExam].find(b => score >= b.min && score <= b.max);
-      const examLabels = { ielts: 'IELTS Academic', toefl: 'TOEFL iBT', toeic: 'TOEIC L&R' };
+    function showResult(r) {
+      show('screen-result');
+      window.scrollTo(0, 0);
+      document.getElementById('result-exam-label').textContent = r.label;
+      document.getElementById('result-score').textContent = `${r.correct} / ${r.total}`;
+      document.getElementById('result-pct').textContent = `${r.percent}% câu đúng`;
+      document.getElementById('result-band').textContent = r.band;
+      document.getElementById('result-level').textContent = 'Gợi ý khóa trình độ ' + r.level.toLowerCase();
+      document.getElementById('result-band-desc').textContent = r.desc;
+      document.getElementById('result-course-link').href = 'courses.html?type=' + r.exam;
 
-      document.getElementById('screen-test').classList.add('hidden');
-      document.getElementById('screen-result').classList.remove('hidden');
-      document.getElementById('result-exam-label').textContent = examLabels[selectedExam];
-      document.getElementById('result-score').textContent = `${score} / ${qs.length}`;
-      document.getElementById('result-pct').textContent = Math.round((score / qs.length) * 100) + '% câu đúng';
-      document.getElementById('result-band').textContent = band.band;
-      document.getElementById('result-band-desc').textContent = band.desc;
-      document.getElementById('result-course-link').href = band.link;
-
-      const breakdown = document.getElementById('skill-breakdown');
-      breakdown.innerHTML = '';
-      Object.entries(skillScores).forEach(([cat, s]) => {
+      document.getElementById('skill-breakdown').innerHTML = r.skills.map(s => {
         const pct = Math.round((s.correct / s.total) * 100);
         const color = pct >= 70 ? 'bg-secondary' : pct >= 50 ? 'bg-accent' : 'bg-red-400';
-        breakdown.innerHTML += `
+        return `
           <div>
             <div class="flex justify-between text-xs mb-1">
-              <span class="font-medium text-on-surface">${cat}</span>
+              <span class="font-medium text-on-surface">${esc(s.cat)}</span>
               <span class="text-on-surface-variant">${s.correct}/${s.total} (${pct}%)</span>
             </div>
             <div class="h-1.5 bg-surface-low rounded-full overflow-hidden">
-              <div class="h-full ${color} rounded-full transition-all" style="width:${pct}%"></div>
+              <div class="h-full ${color} rounded-full" style="width:${pct}%"></div>
             </div>
           </div>`;
-      });
+      }).join('');
+
+      const status = document.getElementById('save-status');
+      if (r.saved) {
+        status.className = 'mb-6 rounded-xl px-4 py-3 text-sm text-left flex items-center gap-3 bg-green-50 text-green-800';
+        status.innerHTML = `<span class="material-symbols-outlined">check_circle</span>
+          <span class="flex-grow">Kết quả đã được lưu vào Kết quả học tập.</span>
+          <a href="results.html#placement" class="font-semibold underline shrink-0">Xem</a>`;
+      } else if (r.login_required) {
+        status.className = 'mb-6 rounded-xl px-4 py-3 text-sm text-left flex items-center gap-3 bg-amber-50 text-amber-800';
+        status.innerHTML = `<span class="material-symbols-outlined">info</span>
+          <span class="flex-grow">Bạn chưa đăng nhập nên kết quả chưa được lưu.</span>
+          <a href="login.html?next=placement-test.html" class="font-semibold underline shrink-0">Đăng nhập để lưu kết quả</a>`;
+      } else {
+        status.className = 'mb-6 rounded-xl px-4 py-3 text-sm text-left flex items-center gap-3 bg-surface-low text-on-surface-variant';
+        status.innerHTML = '<span class="material-symbols-outlined">info</span><span>Kết quả chỉ được lưu cho tài khoản học viên.</span>';
+      }
+
+      document.getElementById('suggest-hint').textContent = `Ưu tiên các khóa ${r.label.split(' ')[0]} trình độ ${r.level.toLowerCase()}`;
+      const box = document.getElementById('course-suggestions');
+      if (!r.courses.length) {
+        box.innerHTML = `<p class="text-sm text-on-surface-variant text-center py-6">Hiện chưa có khóa ${esc(r.label.split(' ')[0])} nào đang mở. Hãy quay lại sau nhé.</p>`;
+        return;
+      }
+      box.innerHTML = r.courses.map(c => {
+        const price = Number(c.price) > 0 ? Number(c.price).toLocaleString('vi-VN') + 'đ' : 'Miễn phí';
+        const band = c.band_from || c.band_to ? `Band ${esc(c.band_from || '?')} → ${esc(c.band_to || '?')}` : '';
+        const learning = c.enroll_status === 'active' || c.enroll_status === 'completed';
+        const href = learning ? `course-learn.html?id=${c.id}` : `course-detail.html?id=${c.id}`;
+        return `
+          <a href="${href}" class="flex items-center gap-4 p-4 rounded-xl border border-outline-variant/50 hover:border-secondary hover:bg-surface-low transition-colors">
+            <span class="w-10 h-10 rounded-lg bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined">menu_book</span>
+            </span>
+            <span class="flex-grow min-w-0">
+              <span class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-bold text-primary">${esc(c.title)}</span>
+                ${c.level_match ? '<span class="px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-[11px] font-semibold">Hợp trình độ</span>' : ''}
+              </span>
+              <span class="block text-xs text-on-surface-variant mt-0.5">${esc(c.level)}${band ? ' · ' + band : ''} · ${c.lecture_count} bài giảng · ${esc(c.teacher_name)}</span>
+            </span>
+            <span class="text-right shrink-0">
+              <span class="block text-sm font-bold ${Number(c.price) > 0 ? 'text-accent' : 'text-green-600'}">${price}</span>
+              <span class="block text-xs text-secondary font-semibold">${learning ? 'Vào học' : c.enroll_status === 'pending' ? 'Chờ duyệt' : 'Xem khóa'}</span>
+            </span>
+          </a>`;
+      }).join('');
     }
 
     function retakeTest() {
-      document.getElementById('screen-result').classList.add('hidden');
-      document.getElementById('screen-intro').classList.remove('hidden');
+      show('screen-intro');
       selectedExam = '';
+      examData = null;
       answers = {};
       currentQ = 0;
       document.getElementById('start-btn').disabled = true;
@@ -474,8 +495,37 @@
       document.querySelectorAll('.exam-btn').forEach(b => {
         b.className = 'exam-btn border-2 border-outline-variant rounded-xl p-5 text-center hover:border-primary transition-all group';
       });
+      loadLastResult();
     }
+
+    async function loadLastResult() {
+      try {
+        const res = await fetch('/api/user/placement-results', { credentials: 'include' });
+        if (!res.ok) return;
+        const json = await res.json();
+        const last = json.data?.[0];
+        if (!last) return;
+        const date = new Date(last.created_at).toLocaleDateString('vi-VN');
+        document.getElementById('last-result-text').textContent = `${last.label}: band ${last.band} (${last.correct}/${last.total} câu) · ${date}`;
+        document.getElementById('last-result').classList.remove('hidden');
+      } catch {}
+    }
+
+    // Vừa đăng nhập sau khi làm bài lúc chưa đăng nhập: lưu lại kết quả đó
+    (async function init() {
+      let pending = null;
+      try { pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null'); } catch {}
+      if (pending?.exam) {
+        const me = await fetch('/api/auth/me', { credentials: 'include' }).then(r => r.json()).catch(() => null);
+        if (me?.success) {
+          selectedExam = pending.exam;
+          await submitTest(pending.exam, pending.answers || {});
+          return;
+        }
+      }
+      loadLastResult();
+    })();
   </script>
-  <script src="../js/auth-nav.js"></script>
+  <script src="../js/auth-nav.js?v=20260918b"></script>
 </body>
 </html>

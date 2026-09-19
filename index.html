@@ -67,10 +67,11 @@
       </a>
 
       <!-- Nav links (desktop) -->
-      <nav class="hidden md:flex items-center gap-8">
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
         <a href="pages/courses.html" class="nav-link">Khóa học</a>
         <a href="pages/mock-test.html" class="nav-link">Bài test thử</a>
         <a href="pages/practice.html" class="nav-link">Luyện đề</a>
+        <a href="pages/writing.html" class="nav-link">Luyện viết AI</a>
       </nav>
 
       <!-- Auth buttons (desktop) – guest -->
@@ -86,32 +87,32 @@
       </div>
 
       <!-- Auth area (desktop) – logged in -->
-      <div id="auth-user" class="hidden items-center gap-2 shrink-0">
-        <a id="dash-link" href="#"
-           class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
             <span class="text-white text-xs font-bold" id="user-initial">?</span>
           </div>
           <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
-          <span class="material-symbols-outlined text-on-surface-variant text-base">dashboard</span>
-        </a>
-        <button onclick="doLogout()" title="Đăng xuất"
-          class="p-2 rounded-xl hover:bg-red-50 text-on-surface-variant hover:text-error transition-colors">
-          <span class="material-symbols-outlined text-xl">logout</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
         </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
       </div>
 
       <!-- Mobile menu button -->
-      <button id="mobile-menu-btn" class="md:hidden text-on-surface-variant">
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
         <span class="material-symbols-outlined text-3xl">menu</span>
       </button>
     </div>
 
     <!-- Mobile menu -->
-    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
       <a href="pages/courses.html" class="nav-link text-base py-1">Khóa học</a>
       <a href="pages/mock-test.html" class="nav-link text-base py-1">Bài test thử</a>
       <a href="pages/practice.html" class="nav-link text-base py-1">Luyện đề</a>
+      <a href="pages/writing.html" class="nav-link text-base py-1">Luyện viết AI</a>
       <hr class="border-outline-variant/30" />
       <!-- mobile: guest -->
       <div id="auth-guest-mobile" class="hidden flex-col gap-2">
@@ -119,21 +120,17 @@
         <a href="pages/register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
       </div>
       <!-- mobile: logged in -->
-      <div id="auth-user-mobile" class="hidden flex-col gap-2">
-        <a id="dash-link-mobile" href="#"
-           class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
           <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
             <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
           </div>
-          <div>
-            <p class="text-sm font-bold text-primary" id="user-name-mobile">...</p>
-            <p class="text-xs text-on-surface-variant">Vào Dashboard</p>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
           </div>
-        </a>
-        <button onclick="doLogout()"
-          class="text-sm font-semibold text-error border border-error/40 rounded-lg px-4 py-2 text-center w-full hover:bg-red-50 transition-colors flex items-center justify-center gap-1">
-          <span class="material-symbols-outlined text-base">logout</span>Đăng xuất
-        </button>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
       </div>
     </div>
   </header>
@@ -174,13 +171,14 @@
 
           <!-- Stats -->
           <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-outline-variant/30">
+            <!-- Số liệu thật lấy từ /api/public/home -->
             <div>
-              <p class="text-3xl font-bold text-primary">10k+</p>
-              <p class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mt-1">Học viên thành công</p>
+              <p class="text-3xl font-bold text-primary" id="home-courses">–</p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mt-1">Khóa học đang mở</p>
             </div>
             <div>
-              <p class="text-3xl font-bold text-primary">95%</p>
-              <p class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mt-1">Tỷ lệ đạt mục tiêu</p>
+              <p class="text-3xl font-bold text-primary" id="home-tests">–</p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mt-1">Đề thi thử và luyện đề</p>
             </div>
           </div>
         </div>
@@ -194,8 +192,8 @@
           />
           <div class="absolute inset-0 bg-gradient-to-t from-primary/75 to-transparent flex items-end p-6">
             <div class="text-white">
-              <div class="bg-secondary text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-2">Thành Tích Mới</div>
-              <p class="text-sm">"Lộ trình rõ ràng giúp tôi đạt IELTS 7.5 chỉ trong 3 tháng."</p>
+              <div class="bg-secondary text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-2">Học theo lộ trình</div>
+              <p class="text-sm">Video bài giảng theo tuần, bài kiểm tra sau mỗi bài và hỏi đáp trực tiếp với giảng viên.</p>
             </div>
           </div>
         </div>
@@ -331,13 +329,13 @@
           </div>
           <h3 class="text-xl font-bold text-white">Bài Test Thử</h3>
           <p class="text-sm text-blue-200 leading-relaxed">
-            Trải nghiệm đề thi thật với đầy đủ kỹ năng của <strong class="text-white">IELTS, TOEFL, TOEIC</strong>.
-            Mỗi loại có <strong class="text-white">1 bài test chuẩn</strong> giúp bạn làm quen cấu trúc đề thi.
+            Làm bài thi có tính giờ theo cấu trúc <strong class="text-white">IELTS, TOEFL, TOEIC</strong>
+            để làm quen áp lực phòng thi và biết mình đang ở mức nào.
           </p>
           <ul class="text-xs text-blue-200 space-y-1">
-            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-white">check_circle</span> Đủ 4 kỹ năng (IELTS / TOEFL)</li>
-            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-white">check_circle</span> Listening & Reading (TOEIC)</li>
-            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-white">check_circle</span> Chấm điểm và phân tích tự động</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-white">check_circle</span> Phần nghe có audio, phần đọc có bài đọc</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-white">check_circle</span> Tự chấm điểm, xem lại đáp án từng câu</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-white">check_circle</span> Điểm quy đổi ước tính theo thang của kỳ thi</li>
           </ul>
           <a href="pages/mock-test.html"
              class="mt-2 bg-white text-primary font-semibold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity text-sm w-fit">
@@ -352,13 +350,13 @@
           </div>
           <h3 class="text-xl font-bold text-primary">Kho Luyện Đề</h3>
           <p class="text-sm text-on-surface-variant leading-relaxed">
-            Hàng trăm bộ đề luyện tập được phân loại theo <strong>kỳ thi</strong>, <strong>kỹ năng</strong> và
-            <strong>độ khó</strong>. Luyện tập có chủ đích để tăng điểm nhanh nhất.
+            Bộ đề luyện tập phân loại theo <strong>kỳ thi</strong>, <strong>kỹ năng</strong> và
+            <strong>độ khó</strong>. Làm lại nhiều lần để theo dõi điểm tiến bộ.
           </p>
           <ul class="text-xs text-on-surface-variant space-y-1">
-            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-secondary">check_circle</span> Đề luyện theo từng kỹ năng riêng lẻ</li>
-            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-secondary">check_circle</span> Đề tổng hợp full-test</li>
-            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-secondary">check_circle</span> Đề theo chủ đề / topic</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-secondary">check_circle</span> Đề luyện theo từng kỹ năng</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-secondary">check_circle</span> Lưu lịch sử, điểm cao nhất và lần gần nhất</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-secondary">check_circle</span> Làm dở thì quay lại làm tiếp được</li>
           </ul>
           <a href="pages/practice.html"
              class="mt-2 bg-primary text-white font-semibold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity text-sm w-fit">
@@ -369,43 +367,11 @@
       </div>
     </section>
 
-    <!-- ===== TESTIMONIALS ===== -->
-    <section class="w-full bg-surface-low py-16">
+    <!-- ===== ĐÁNH GIÁ CỦA HỌC VIÊN (đánh giá thật từ trang khóa học, ẩn khi chưa có) ===== -->
+    <section id="home-reviews" class="hidden w-full bg-surface-low py-16">
       <div class="max-w-container mx-auto px-4 md:px-16">
-        <h2 class="text-3xl font-bold text-primary mb-8 text-center">Câu Chuyện Thành Công</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-outline-variant/30 relative">
-            <span class="material-symbols-outlined absolute top-4 right-4 text-4xl text-outline-variant opacity-30">format_quote</span>
-            <div class="flex items-center gap-4 mb-4">
-              <div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold">M</div>
-              <div>
-                <p class="font-bold text-primary text-sm">Minh Tuấn</p>
-                <p class="text-xs text-on-surface-variant">IELTS 8.0</p>
-              </div>
-            </div>
-            <p class="text-sm text-on-surface-variant italic leading-relaxed">
-              "Hệ thống lộ trình theo band rất rõ ràng. Tôi từ 5.5 lên 7.0 sau 2 tháng học theo đúng band,
-              sau đó lên thêm band 7.0–8.0 và đạt 8.0 thật. Cực kỳ bài bản."
-            </p>
-          </div>
-
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-outline-variant/30 relative">
-            <span class="material-symbols-outlined absolute top-4 right-4 text-4xl text-outline-variant opacity-30">format_quote</span>
-            <div class="flex items-center gap-4 mb-4">
-              <div class="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-white font-bold">L</div>
-              <div>
-                <p class="font-bold text-primary text-sm">Lan Anh</p>
-                <p class="text-xs text-on-surface-variant">TOEIC 895</p>
-              </div>
-            </div>
-            <p class="text-sm text-on-surface-variant italic leading-relaxed">
-              "Bài test xếp loại giúp tôi biết mình đang ở band 600–750, không mất thời gian học lại
-              những gì đã biết. Kho luyện đề rất phong phú, học đâu chắc đó."
-            </p>
-          </div>
-
-        </div>
+        <h2 class="text-3xl font-bold text-primary mb-8 text-center">Học Viên Nói Gì</h2>
+        <div id="home-review-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
       </div>
     </section>
 
@@ -443,9 +409,9 @@
         <div>
           <p class="font-semibold text-sm mb-3">Hỗ trợ</p>
           <ul class="text-xs text-blue-200 space-y-2">
-            <li><a href="#" class="hover:text-white transition-colors">Trung tâm trợ giúp</a></li>
-            <li><a href="#" class="hover:text-white transition-colors">Liên hệ</a></li>
-            <li><a href="#" class="hover:text-white transition-colors">Blog học thuật</a></li>
+            <li><a href="pages/help.html" class="hover:text-white transition-colors">Trung tâm trợ giúp</a></li>
+            <li><a href="pages/contact.html" class="hover:text-white transition-colors">Liên hệ</a></li>
+            <li><a href="pages/forgot-password.html" class="hover:text-white transition-colors">Quên mật khẩu</a></li>
           </ul>
         </div>
       </div>
@@ -465,8 +431,31 @@
       icon.textContent = menu.classList.contains('hidden') ? 'menu' : 'close';
     });
 
+    // Số liệu và đánh giá thật cho trang chủ
+    const escHome = v => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    fetch('/api/public/home').then(r => r.json()).then(json => {
+      if (!json.success) return;
+      const { stats, reviews } = json.data;
+      document.getElementById('home-courses').textContent = stats.courses;
+      document.getElementById('home-tests').textContent = stats.practice_tests;
+      if (!reviews.length) return;
+      document.getElementById('home-review-list').innerHTML = reviews.map(r => `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-outline-variant/30 relative">
+          <span class="material-symbols-outlined absolute top-4 right-4 text-4xl text-outline-variant opacity-30" aria-hidden="true">format_quote</span>
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold">${escHome(r.user_name.trim().charAt(0).toUpperCase())}</div>
+            <div class="min-w-0">
+              <p class="font-bold text-primary text-sm">${escHome(r.user_name)}</p>
+              <p class="text-xs text-on-surface-variant"><span class="text-amber-500" aria-label="${r.rating} sao">${'★'.repeat(r.rating)}</span> · <a href="pages/course-detail.html?id=${r.course_id}" class="hover:underline">${escHome(r.course_title)}</a></p>
+            </div>
+          </div>
+          <p class="text-sm text-on-surface-variant italic leading-relaxed whitespace-pre-line">"${escHome(r.comment)}"</p>
+        </div>`).join('');
+      document.getElementById('home-reviews').classList.remove('hidden');
+    }).catch(() => {});
+
   </script>
-  <script src="js/auth-nav.js"></script>
+  <script src="js/auth-nav.js?v=20260918b"></script>
 
 </body>
 </html>

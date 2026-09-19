@@ -46,8 +46,8 @@
       <div class="bg-white rounded-2xl border border-outline-variant/40 shadow-sm p-8">
 
         <div class="text-center mb-7">
-          <h1 class="text-2xl font-bold text-primary">Chào mừng trở lại</h1>
-          <p class="text-sm text-on-surface-variant mt-1">Đăng nhập để tiếp tục học tập</p>
+          <h1 class="text-2xl font-bold text-primary" id="login-title">Chào mừng trở lại</h1>
+          <p class="text-sm text-on-surface-variant mt-1" id="login-subtitle">Đăng nhập để tiếp tục học tập</p>
         </div>
 
         <!-- Error alert -->
@@ -72,7 +72,7 @@
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="text-xs font-semibold text-on-surface uppercase tracking-wider">Mật khẩu</label>
-              <a href="#" class="text-xs text-secondary hover:underline">Quên mật khẩu?</a>
+              <a href="forgot-password.html" id="forgot-link" class="text-xs text-secondary hover:underline">Quên mật khẩu?</a>
             </div>
             <div class="relative">
               <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">lock</span>
@@ -93,7 +93,32 @@
 
         </form>
 
-        <p class="text-center text-xs text-on-surface-variant mt-6">
+        <!-- Bước 2: xác thực 2 lớp -->
+        <form id="twofa-form" onsubmit="handleTwofa(event)" class="hidden space-y-5">
+          <div class="flex justify-center">
+            <span class="w-14 h-14 rounded-full bg-blue-50 text-secondary flex items-center justify-center">
+              <span class="material-symbols-outlined text-3xl">verified_user</span>
+            </span>
+          </div>
+          <div>
+            <label for="twofa-code" id="twofa-label" class="block text-xs font-semibold text-on-surface mb-1.5 uppercase tracking-wider">Mã xác thực</label>
+            <input id="twofa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required
+              class="w-full px-4 py-3 text-center text-xl tracking-[0.4em] font-mono border border-outline-variant rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all bg-white" />
+            <p class="text-xs text-on-surface-variant mt-2" id="twofa-hint">Mở ứng dụng Authenticator trên điện thoại và nhập mã 6 số của EngPro.</p>
+          </div>
+          <button type="submit" id="twofa-btn"
+            class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
+            Xác nhận
+          </button>
+          <div class="flex items-center justify-between text-xs">
+            <button type="button" onclick="backToPassword()" class="flex items-center gap-1 text-on-surface-variant hover:text-on-surface">
+              <span class="material-symbols-outlined text-sm">arrow_back</span> Quay lại
+            </button>
+            <button type="button" id="twofa-switch" onclick="toggleRecoveryMode()" class="text-secondary font-semibold hover:underline">Dùng mã dự phòng</button>
+          </div>
+        </form>
+
+        <p class="text-center text-xs text-on-surface-variant mt-6" id="register-link">
           Chưa có tài khoản?
           <a href="register.html" class="text-secondary font-semibold hover:underline">Đăng ký ngay</a>
         </p>
@@ -130,27 +155,130 @@
           return;
         }
 
-        // Lưu thông tin user để UI sử dụng
-        sessionStorage.setItem('engpro_user', JSON.stringify(json.data.user));
-        window.location.href = json.data.redirect;
+        if (json.data.requires_2fa) {
+          resetBtn();
+          showTwofaStep(true);
+          return;
+        }
+        finishLogin(json.data);
 
       } catch (err) {
-        showError('Không thể kết nối đến server. Kiểm tra XAMPP đã chạy chưa.');
+        showError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng rồi thử lại.');
         resetBtn();
       }
     }
 
+    function finishLogin(data) {
+      // Lưu thông tin user để UI sử dụng
+      sessionStorage.setItem('engpro_user', JSON.stringify(data.user));
+      if (data.recovery_codes_left !== undefined) {
+        alert(`Bạn vừa dùng một mã dự phòng, còn lại ${data.recovery_codes_left} mã. Có thể tạo lại mã bằng cách tắt rồi bật xác thực 2 lớp trong Cài đặt tài khoản.`);
+      }
+      // ?next=trang.html: quay lại trang đang dở sau khi đăng nhập (chỉ nhận trang trong thư mục pages)
+      const next = new URLSearchParams(location.search).get('next');
+      window.location.href = next && /^[a-z0-9-]+\.html(\?[^#]*)?$/i.test(next) ? next : data.redirect;
+    }
+
+    // ── Xác thực 2 lớp ─────────────────────────────────────
+    let recoveryMode = false;
+
+    function showTwofaStep(show) {
+      document.getElementById('login-form').classList.toggle('hidden', show);
+      document.getElementById('twofa-form').classList.toggle('hidden', !show);
+      document.getElementById('register-link').classList.toggle('hidden', show);
+      document.getElementById('login-title').textContent = show ? 'Xác thực 2 lớp' : 'Chào mừng trở lại';
+      document.getElementById('login-subtitle').textContent = show
+        ? 'Tài khoản của bạn đã bật xác thực 2 lớp'
+        : 'Đăng nhập để tiếp tục học tập';
+      hideError();
+      if (show) {
+        setRecoveryMode(false);
+        document.getElementById('twofa-code').focus();
+      }
+    }
+
+    function setRecoveryMode(on) {
+      recoveryMode = on;
+      const input = document.getElementById('twofa-code');
+      input.value = '';
+      input.maxLength = on ? 9 : 6;
+      input.inputMode = on ? 'text' : 'numeric';
+      input.autocomplete = on ? 'off' : 'one-time-code';
+      input.placeholder = on ? 'xxxx-xxxx' : '123456';
+      document.getElementById('twofa-label').textContent = on ? 'Mã dự phòng' : 'Mã xác thực';
+      document.getElementById('twofa-hint').textContent = on
+        ? 'Nhập một trong các mã dự phòng bạn đã lưu khi bật xác thực 2 lớp. Mỗi mã chỉ dùng được một lần.'
+        : 'Mở ứng dụng Authenticator trên điện thoại và nhập mã 6 số của EngPro.';
+      document.getElementById('twofa-switch').textContent = on ? 'Dùng mã 6 số' : 'Dùng mã dự phòng';
+    }
+
+    function toggleRecoveryMode() {
+      setRecoveryMode(!recoveryMode);
+      hideError();
+      document.getElementById('twofa-code').focus();
+    }
+
+    function backToPassword() {
+      showTwofaStep(false);
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+    }
+
+    async function handleTwofa(e) {
+      e.preventDefault();
+      const input = document.getElementById('twofa-code');
+      const code  = input.value.trim();
+      if (!recoveryMode && !/^\d{6}$/.test(code)) return showError('Mã xác thực gồm 6 chữ số');
+
+      const btn = document.getElementById('twofa-btn');
+      btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">sync</span> Đang kiểm tra...';
+      btn.disabled = true;
+      hideError();
+      try {
+        const res  = await fetch('/api/auth/login/2fa', {
+          method:      'POST',
+          headers:     { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body:        JSON.stringify({ code }),
+        });
+        const json = await res.json();
+        if (json.success) return finishLogin(json.data);
+
+        if (res.status === 429 || /hết hạn|đăng nhập lại/.test(json.message || '')) {
+          backToPassword();
+        } else {
+          input.value = '';
+          input.focus();
+        }
+        showError(json.message || 'Mã xác thực không đúng');
+      } catch {
+        showError('Không thể kết nối đến server.');
+      }
+      btn.innerHTML = 'Xác nhận';
+      btn.disabled = false;
+    }
+
+    // Điền sẵn email (sau khi đặt lại mật khẩu) và mang email sang trang quên mật khẩu
+    (() => {
+      const email = new URLSearchParams(location.search).get('email');
+      if (email) document.getElementById('email').value = email;
+      document.getElementById('forgot-link').addEventListener('click', e => {
+        const typed = document.getElementById('email').value.trim();
+        if (typed) e.currentTarget.href = 'forgot-password.html?email=' + encodeURIComponent(typed);
+      });
+    })();
+
     function showError(msg) {
       document.getElementById('error-msg').textContent = msg;
       document.getElementById('error-alert').classList.remove('hidden');
-      document.getElementById('email').classList.add('border-error');
-      document.getElementById('password').classList.add('border-error');
+      const twofa = !document.getElementById('twofa-form').classList.contains('hidden');
+      (twofa ? ['twofa-code'] : ['email', 'password'])
+        .forEach(id => document.getElementById(id).classList.add('border-error'));
     }
 
     function hideError() {
       document.getElementById('error-alert').classList.add('hidden');
-      document.getElementById('email').classList.remove('border-error');
-      document.getElementById('password').classList.remove('border-error');
+      ['email', 'password', 'twofa-code'].forEach(id => document.getElementById(id).classList.remove('border-error'));
     }
 
     function resetBtn() {

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luyện Viết – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+  // Thoát ký tự HTML cho dữ liệu người dùng nhập trước khi chèn vào innerHTML (chống XSS)
+  function esc(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d', 'on-primary': '#ffffff',
+            secondary: '#0061a5', 'secondary-container': '#66affe', 'on-secondary': '#ffffff',
+            accent: '#e07b28', surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
+        <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
+        <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
+        <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+        <a href="writing.html" class="text-secondary font-bold border-b-2 border-secondary pb-0.5 text-sm">Luyện viết AI</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
+        </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
+      </div>
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <a href="writing.html" class="text-secondary font-bold text-base py-1">Luyện viết AI</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
+          </div>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <section class="bg-primary-container py-12">
+      <div class="max-w-container mx-auto px-4 md:px-16">
+        <p class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-blue-200 mb-2">
+          <span class="material-symbols-outlined text-base" aria-hidden="true">auto_awesome</span>Chấm bằng trợ lý AI
+        </p>
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Luyện Viết</h1>
+        <p class="text-blue-200 text-sm max-w-2xl">Viết bài theo đề IELTS, TOEFL, TOEIC và nhận điểm theo từng tiêu chí chấm của kỳ thi, kèm nhận xét, câu sửa lỗi và đoạn văn mẫu viết lại. Điểm do AI chấm chỉ để tham khảo.</p>
+      </div>
+    </section>
+
+    <section class="max-w-container mx-auto px-4 md:px-16 py-8 space-y-8">
+      <p id="ai-off" class="hidden bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-xl px-4 py-3">
+        Trung tâm chưa bật trợ lý AI nên tạm thời chưa chấm được bài viết. Bạn vẫn xem được đề và các bài đã chấm trước đây.
+      </p>
+
+      <div>
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+          <h2 class="text-lg font-bold text-primary">Đề luyện viết</h2>
+          <div class="flex flex-wrap items-center gap-3">
+            <label for="prompt-search" class="sr-only">Tìm đề</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base" aria-hidden="true">search</span>
+              <input id="prompt-search" type="search" placeholder="Tìm theo tên hoặc nội dung đề"
+                class="w-64 max-w-full pl-9 pr-3 py-1.5 text-sm border border-outline-variant rounded-full bg-white focus:outline-none focus:border-secondary" />
+            </div>
+            <div id="exam-tabs" class="flex flex-wrap gap-2" role="tablist" aria-label="Lọc theo kỳ thi"></div>
+            <button type="button" id="btn-my-prompt" onclick="openMyPrompt()"
+              class="hidden items-center gap-1.5 px-4 py-1.5 rounded-full bg-secondary text-white text-sm font-semibold hover:opacity-90">
+              <span class="material-symbols-outlined text-base" aria-hidden="true">add</span>Viết theo đề của tôi
+            </button>
+          </div>
+        </div>
+        <div id="prompt-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <p class="col-span-full text-center py-12 text-sm text-on-surface-variant">Đang tải đề...</p>
+        </div>
+      </div>
+
+      <div id="history-box" class="hidden">
+        <h2 class="text-lg font-bold text-primary">Bài viết của tôi</h2>
+        <p class="text-xs text-on-surface-variant mt-0.5 mb-4">Các đề bạn tự tạo và bài đã viết theo những đề đó. Bài viết theo đề của trung tâm xem ngay trên thẻ đề ở trên.</p>
+        <div class="bg-white rounded-2xl border border-outline-variant/40 overflow-x-auto">
+          <table class="w-full text-sm min-w-[560px]">
+            <thead class="bg-surface-low text-xs text-on-surface-variant uppercase tracking-wide">
+              <tr>
+                <th class="px-5 py-2.5 text-left font-semibold">Đề</th>
+                <th class="px-4 py-2.5 text-right font-semibold">Số từ</th>
+                <th class="px-4 py-2.5 text-right font-semibold">Điểm</th>
+                <th class="px-4 py-2.5 text-left font-semibold">Ngày nộp</th>
+                <th class="px-4 py-2.5"></th>
+              </tr>
+            </thead>
+            <tbody id="history" class="divide-y divide-outline-variant/20"></tbody>
+          </table>
+        </div>
+        <div class="text-center mt-3">
+          <button type="button" id="history-more" onclick="toggleHistory()"
+            class="hidden px-4 py-2 text-sm font-semibold text-secondary border border-secondary rounded-full hover:bg-blue-50"></button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-primary text-white py-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+      <span>© 2026 EngPro English Systems.</span>
+      <nav class="flex gap-5">
+        <a href="help.html" class="hover:text-white">Trung tâm trợ giúp</a>
+        <a href="contact.html" class="hover:text-white">Liên hệ</a>
+      </nav>
+    </div>
+  </footer>
+
+<!-- Học viên tự nhập đề của mình -->
+<div id="modal-my-prompt" class="hidden fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white w-full sm:max-w-xl sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[92vh] overflow-y-auto"
+    role="dialog" aria-modal="true" aria-labelledby="mp-title">
+    <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-outline-variant/30">
+      <div>
+        <h3 id="mp-title" class="font-bold text-primary">Viết theo đề của tôi</h3>
+        <p class="text-xs text-on-surface-variant mt-0.5">Dán đề từ sách hoặc đề thi thử, chọn đúng dạng bài để AI chấm theo tiêu chí của dạng đó.</p>
+      </div>
+      <button type="button" onclick="closeMyPrompt()" class="p-1.5 hover:bg-surface-low rounded-lg" aria-label="Đóng">
+        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+      </button>
+    </div>
+    <div class="px-5 py-4 space-y-4">
+      <div>
+        <label for="mp-task" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Dạng bài</label>
+        <select id="mp-task" class="w-full px-3 py-2.5 text-sm border border-outline-variant rounded-xl bg-white focus:outline-none focus:border-secondary">
+          <option value="ielts_task2">IELTS Writing Task 2</option>
+          <option value="ielts_task1">IELTS Academic Writing Task 1</option>
+          <option value="toefl_discussion">TOEFL Academic Discussion</option>
+          <option value="toeic_opinion">TOEIC Opinion Essay</option>
+        </select>
+      </div>
+      <div>
+        <label for="mp-title-input" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Tên đề để bạn dễ nhớ</label>
+        <input id="mp-title-input" type="text" maxlength="200" placeholder="VD: Đề Cam 18 Test 2"
+          class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+      </div>
+      <div>
+        <label for="mp-text" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Nội dung đề</label>
+        <textarea id="mp-text" rows="6" maxlength="5000" placeholder="Dán nguyên đề bài vào đây, tối thiểu 20 ký tự."
+          class="w-full px-4 py-2.5 text-sm leading-relaxed border border-outline-variant rounded-xl focus:outline-none focus:border-secondary resize-y"></textarea>
+        <p class="text-xs text-on-surface-variant mt-1">Với đề Task 1 có biểu đồ, hãy mô tả số liệu bằng chữ vì AI chấm dựa trên phần đề này.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="mp-words" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Số từ tối thiểu</label>
+          <input id="mp-words" type="number" min="20" max="1000"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+        <div>
+          <label for="mp-minutes" class="block text-xs font-semibold text-on-surface uppercase tracking-wider mb-1.5">Thời gian gợi ý (phút)</label>
+          <input id="mp-minutes" type="number" min="0" max="180"
+            class="w-full px-4 py-2.5 text-sm border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+        </div>
+      </div>
+      <p id="mp-error" class="hidden text-sm text-error bg-red-50 rounded-xl px-3 py-2"></p>
+    </div>
+    <div class="flex gap-3 px-5 py-4 border-t border-outline-variant/30">
+      <button type="button" onclick="closeMyPrompt()" class="flex-1 border border-outline-variant text-on-surface-variant font-semibold py-2.5 rounded-xl hover:bg-surface-low text-sm">Hủy</button>
+      <button type="button" id="mp-save" onclick="saveMyPrompt()" class="flex-1 bg-secondary text-white font-semibold py-2.5 rounded-xl hover:opacity-90 text-sm disabled:opacity-50">Tạo đề và viết ngay</button>
+    </div>
+  </div>
+</div>
+
+  <script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', () => document.getElementById('mobile-menu').classList.toggle('hidden'));
+
+    const EXAM_BADGE = { IELTS: 'text-primary bg-blue-50', TOEFL: 'text-white bg-accent', TOEIC: 'text-white bg-secondary' };
+    let _prompts = [];
+    let _exam = 'all';
+    const fmtScore = (score, max) => (score === null || score === undefined ? '–' : `${Number(score).toFixed(max === 9 ? 1 : Number.isInteger(Number(score)) ? 0 : 1)}/${max}`);
+
+    function promptCard(p) {
+      const excerpt = p.prompt_text.length > 180 ? p.prompt_text.slice(0, 177) + '...' : p.prompt_text;
+      const done = Number(p.my_submissions) > 0 || p.my_latest_id;
+      return `
+        <div class="bg-white rounded-2xl border border-outline-variant/50 shadow-sm hover:shadow-md hover:border-secondary transition flex flex-col">
+          <a href="writing-task.html?id=${p.id}" class="p-5 pb-3 flex flex-col flex-1">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded ${EXAM_BADGE[p.exam] || 'bg-gray-100'}">${esc(p.exam)}</span>
+              <span class="text-xs text-on-surface-variant">${esc(p.task_label)}</span>
+            </div>
+            <h3 class="font-bold text-primary">${esc(p.title)}</h3>
+            <p class="text-sm text-on-surface-variant mt-1 mb-3 whitespace-pre-line">${esc(excerpt)}</p>
+            <p class="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-on-surface-variant">
+              <span>Tối thiểu ${p.min_words} từ</span>
+              ${p.time_minutes ? `<span>Gợi ý ${p.time_minutes} phút</span>` : ''}
+              <span>Thang ${p.scale_max}</span>
+            </p>
+          </a>
+          ${done ? `
+            <div class="mx-5 mb-5 flex flex-wrap items-center justify-between gap-2 text-xs bg-surface-low rounded-lg px-3 py-2">
+              <span>${Number(p.my_submissions) ? `Đã viết ${p.my_submissions} lần · cao nhất <strong>${fmtScore(p.my_best, p.scale_max)}</strong>` : 'Đã nộp, đang chờ chấm'}</span>
+              <a href="writing-task.html?submission=${p.my_latest_id}" class="font-semibold text-secondary hover:underline">Xem bài cũ</a>
+            </div>` : '<div class="pb-2"></div>'}
+        </div>`;
+    }
+
+    // ── Đề tự nhập của học viên ───────────────────────────
+    const TASK_DEFAULTS = { ielts_task1: [150, 20], ielts_task2: [250, 40], toefl_discussion: [100, 10], toeic_opinion: [300, 30] };
+
+    function applyTaskDefaults() {
+      const [words, minutes] = TASK_DEFAULTS[document.getElementById('mp-task').value];
+      document.getElementById('mp-words').placeholder = `Mặc định ${words}`;
+      document.getElementById('mp-minutes').placeholder = `Mặc định ${minutes}`;
+    }
+    document.getElementById('mp-task').addEventListener('change', applyTaskDefaults);
+    document.getElementById('modal-my-prompt').addEventListener('click', e => {
+      if (e.target.id === 'modal-my-prompt') closeMyPrompt();
+    });
+
+    function openMyPrompt() {
+      ['mp-title-input', 'mp-text', 'mp-words', 'mp-minutes'].forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('mp-error').classList.add('hidden');
+      applyTaskDefaults();
+      document.getElementById('modal-my-prompt').classList.remove('hidden');
+      document.getElementById('mp-title-input').focus();
+    }
+    function closeMyPrompt() { document.getElementById('modal-my-prompt').classList.add('hidden'); }
+
+    async function saveMyPrompt() {
+      const num = id => { const v = document.getElementById(id).value.trim(); return v === '' ? '' : Number(v); };
+      const btn = document.getElementById('mp-save');
+      const errorEl = document.getElementById('mp-error');
+      btn.disabled = true;
+      try {
+        const json = await (await fetch('/api/writing/prompts/mine', {
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            task_type: document.getElementById('mp-task').value,
+            title: document.getElementById('mp-title-input').value,
+            prompt_text: document.getElementById('mp-text').value,
+            min_words: num('mp-words'),
+            time_minutes: num('mp-minutes'),
+          }),
+        })).json();
+        if (!json.success) throw new Error(json.message);
+        location.href = 'writing-task.html?id=' + json.data.id;   // vào viết luôn
+      } catch (e) {
+        errorEl.textContent = e.message || 'Không tạo được đề';
+        errorEl.classList.remove('hidden');
+        btn.disabled = false;
+      }
+    }
+
+    async function deleteMyPrompt(event, id) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!confirm('Xóa đề này khỏi danh sách của bạn?')) return;
+      try {
+        const json = await (await fetch('/api/writing/prompts/mine/' + id, { method: 'DELETE', credentials: 'include' })).json();
+        if (!json.success) return alert(json.message);
+        _prompts = _prompts.filter(p => p.id !== id);
+        _historyRows = _historyRows.filter(r => !(r.kind === 'prompt' && r.prompt_id === id));
+        renderGrid();
+        renderHistory();
+      } catch { alert('Không kết nối được máy chủ'); }
+    }
+
+    // So khớp tìm kiếm không phân biệt dấu và hoa thường
+    const plain = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
+    const centerPrompts = () => _prompts.filter(p => !p.mine);
+    document.getElementById('prompt-search').addEventListener('input', () => renderGrid());
+
+    function renderTabs() {
+      const exams = ['IELTS', 'TOEFL', 'TOEIC'].filter(e => centerPrompts().some(p => p.exam === e));
+      document.getElementById('exam-tabs').innerHTML = exams.length > 1 ? ['all', ...exams].map(e => `
+        <button type="button" role="tab" aria-selected="${e === _exam}" onclick="selectExam('${e}')"
+          class="px-4 py-1.5 rounded-full text-sm font-semibold ${e === _exam ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface-variant hover:border-secondary'}">
+          ${e === 'all' ? 'Tất cả' : e}</button>`).join('') : '';
+    }
+    function selectExam(e) { _exam = e; renderTabs(); renderGrid(); }
+    function renderGrid() {
+      const q = plain(document.getElementById('prompt-search').value.trim());
+      const list = centerPrompts()
+        .filter(p => _exam === 'all' || p.exam === _exam)
+        .filter(p => !q || plain(`${p.title} ${p.prompt_text} ${p.task_label}`).includes(q));
+      document.getElementById('prompt-grid').innerHTML = list.length
+        ? list.map(promptCard).join('')
+        : `<p class="col-span-full text-center py-12 text-sm text-on-surface-variant">${q
+          ? 'Không tìm thấy đề nào khớp với từ khóa. Thử từ khác hoặc bỏ bớt bộ lọc.'
+          : 'Chưa có đề luyện viết nào. Vui lòng quay lại sau.'}</p>`;
+    }
+
+    // ── Bài viết của tôi: đề tự tạo và các bài viết theo những đề đó ──
+    const HISTORY_STEP = 5;
+    let _historyRows = [];
+    let _historyShown = HISTORY_STEP;
+
+    function historyRowHtml(r) {
+      if (r.kind === 'prompt') {   // đề tự tạo nhưng chưa viết bài nào
+        return `
+          <tr>
+            <td class="px-5 py-3"><p class="font-semibold text-on-surface">${esc(r.prompt_title)}</p><p class="text-xs text-on-surface-variant">${esc(r.task_label)}</p></td>
+            <td class="px-4 py-3 text-right text-on-surface-variant">–</td>
+            <td class="px-4 py-3 text-right text-xs text-on-surface-variant">Chưa viết</td>
+            <td class="px-4 py-3 text-on-surface-variant whitespace-nowrap">${new Date(r.created_at).toLocaleDateString('vi-VN')}</td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <a href="writing-task.html?id=${r.prompt_id}" class="text-secondary text-xs font-semibold hover:underline">Viết ngay</a>
+              <button type="button" onclick="deleteMyPrompt(event, ${r.prompt_id})" class="ml-3 text-error text-xs font-semibold hover:underline">Xóa</button>
+            </td>
+          </tr>`;
+      }
+      return `
+        <tr>
+          <td class="px-5 py-3"><p class="font-semibold text-on-surface">${esc(r.prompt_title)}</p><p class="text-xs text-on-surface-variant">${esc(r.task_label)}</p></td>
+          <td class="px-4 py-3 text-right tabular-nums">${r.word_count}</td>
+          <td class="px-4 py-3 text-right tabular-nums font-semibold">${r.status === 'graded' ? fmtScore(r.overall_score, Number(r.scale_max)) : r.status === 'failed' ? '<span class="text-xs text-error">Chưa chấm được</span>' : '<span class="text-xs text-on-surface-variant">Đang chấm</span>'}</td>
+          <td class="px-4 py-3 text-on-surface-variant whitespace-nowrap">${new Date(r.created_at).toLocaleDateString('vi-VN')}</td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">
+            <a href="writing-task.html?submission=${r.id}" class="text-secondary text-xs font-semibold hover:underline">Xem</a>
+            <a href="writing-task.html?id=${r.prompt_id}" class="ml-3 text-on-surface-variant text-xs font-semibold hover:underline">Viết lại</a>
+          </td>
+        </tr>`;
+    }
+
+    function renderHistory() {
+      const box = document.getElementById('history-box');
+      box.classList.toggle('hidden', !_historyRows.length);
+      document.getElementById('history').innerHTML = _historyRows.slice(0, _historyShown).map(historyRowHtml).join('');
+      const more = document.getElementById('history-more');
+      const hidden = _historyRows.length - _historyShown;
+      more.classList.toggle('hidden', _historyRows.length <= HISTORY_STEP);
+      more.textContent = hidden > 0 ? `Xem thêm ${Math.min(hidden, HISTORY_STEP)} bài` : 'Thu gọn';
+    }
+
+    function toggleHistory() {
+      _historyShown = _historyShown >= _historyRows.length ? HISTORY_STEP : _historyShown + HISTORY_STEP;
+      renderHistory();
+    }
+
+    async function load() {
+      try {
+        const json = await (await fetch('/api/writing/prompts', { credentials: 'include' })).json();
+        if (!json.success) throw new Error(json.message);
+        _prompts = json.data.prompts;
+        document.getElementById('ai-off').classList.toggle('hidden', json.data.enabled);
+        // Nút nhập đề riêng chỉ dành cho học viên đã đăng nhập
+        try {
+          const me = await (await fetch('/api/auth/me', { credentials: 'include' })).json();
+          document.getElementById('btn-my-prompt').classList.toggle('hidden', me.data?.role !== 'user');
+          document.getElementById('btn-my-prompt').classList.toggle('inline-flex', me.data?.role === 'user');
+        } catch {}
+        renderTabs();
+        renderGrid();
+      } catch {
+        document.getElementById('prompt-grid').innerHTML = '<p class="col-span-full text-center py-12 text-sm text-error">Không tải được đề, vui lòng thử lại.</p>';
+      }
+      try {
+        const res = await fetch('/api/user/writing', { credentials: 'include' });
+        if (!res.ok) return; // chưa đăng nhập hoặc không phải học viên
+        const submissions = (await res.json()).data.filter(r => r.mine).map(r => ({ ...r, kind: 'submission' }));
+        // Đề tự tạo mà chưa viết bài nào cũng hiện ở đây để quay lại viết hoặc xóa
+        const unwritten = _prompts.filter(p => p.mine && !p.my_latest_id).map(p => ({
+          kind: 'prompt', prompt_id: p.id, prompt_title: p.title, task_label: p.task_label, created_at: p.created_at,
+        }));
+        _historyRows = [...submissions, ...unwritten].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        renderHistory();
+      } catch {}
+    }
+    load();
+  </script>
+  <script src="../js/auth-nav.js?v=20260918b"></script>
+</body>
+</html>

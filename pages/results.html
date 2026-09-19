@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kết quả học tập – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d',
+            secondary: '#0061a5', accent: '#e07b28',
+            surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface-low text-on-surface antialiased min-h-screen flex flex-col">
+
+<!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
+        <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
+        <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
+        <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+        <a href="writing.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện viết AI</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
+        </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
+      </div>
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <a href="writing.html" class="text-on-surface-variant text-base py-1">Luyện viết AI</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
+          </div>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
+      </div>
+    </div>
+  </header>
+
+<main class="flex-grow">
+<div class="max-w-5xl mx-auto px-4 py-8 space-y-6 w-full">
+
+  <div>
+    <h1 class="text-2xl font-bold text-primary">Kết quả học tập</h1>
+    <p class="text-sm text-on-surface-variant mt-1">Điểm các bài kiểm tra khóa học, bài test thử và luyện đề bạn đã làm.</p>
+  </div>
+
+  <div id="page-error" class="hidden bg-white rounded-2xl border border-outline-variant/40 p-8 text-center text-sm text-on-surface-variant"></div>
+
+  <div id="page-content" class="space-y-6">
+    <!-- Tổng quan -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-2xl border border-outline-variant/40 p-5">
+        <p class="text-xs text-on-surface-variant">Lượt làm bài</p>
+        <p class="text-2xl font-bold text-primary mt-1" id="stat-attempts">–</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-outline-variant/40 p-5">
+        <p class="text-xs text-on-surface-variant">Số đề đã làm</p>
+        <p class="text-2xl font-bold text-primary mt-1" id="stat-tests">–</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-outline-variant/40 p-5">
+        <p class="text-xs text-on-surface-variant">Điểm trung bình</p>
+        <p class="text-2xl font-bold text-secondary mt-1" id="stat-avg">–</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-outline-variant/40 p-5">
+        <p class="text-xs text-on-surface-variant">Tỉ lệ đạt</p>
+        <p class="text-2xl font-bold text-green-600 mt-1" id="stat-pass">–</p>
+      </div>
+    </div>
+
+    <!-- Trợ lý học tập AI (js/ai-insights.js) -->
+    <div id="ai-insights"></div>
+
+    <!-- Tỉ lệ đúng theo kỹ năng và theo dạng câu -->
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+        <h2 class="font-bold text-primary">Tỉ lệ đúng theo kỹ năng</h2>
+        <p class="text-xs text-on-surface-variant mt-0.5 mb-4">Tính trên từng câu đã làm, câu bỏ trống tính là sai.</p>
+        <div id="by-part" class="space-y-4"></div>
+        <p id="weakest" class="hidden mt-4 text-sm bg-amber-50 text-amber-800 border border-amber-200 rounded-xl px-3 py-2"></p>
+      </div>
+      <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+        <h2 class="font-bold text-primary">Tỉ lệ đúng theo dạng câu</h2>
+        <p class="text-xs text-on-surface-variant mt-0.5 mb-4">Giúp bạn biết dạng bài nào cần luyện thêm.</p>
+        <div id="by-type" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- Test xếp loại -->
+    <div id="placement" class="bg-white rounded-2xl border border-outline-variant/40 p-6 scroll-mt-24">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="font-bold text-primary">Test xếp loại</h2>
+          <p class="text-xs text-on-surface-variant mt-0.5">Band tham khảo theo từng lần làm bài test xếp loại.</p>
+        </div>
+        <a href="placement-test.html" class="px-4 py-2 border border-secondary text-secondary text-xs font-semibold rounded-xl hover:bg-blue-50">Làm test xếp loại</a>
+      </div>
+      <div id="placement-list"><p class="text-sm text-on-surface-variant text-center py-6">Đang tải...</p></div>
+    </div>
+
+    <!-- Lịch sử làm bài -->
+    <div class="bg-white rounded-2xl border border-outline-variant/40 p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="font-bold text-primary">Lịch sử làm bài</h2>
+        <div id="filters" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div id="history">
+        <p class="text-sm text-on-surface-variant text-center py-8">Đang tải...</p>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+  <footer class="bg-primary text-white py-8 mt-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+      <span>© 2026 EngPro English Systems.</span>
+      <nav class="flex gap-5">
+        <a href="help.html" class="hover:text-white">Trung tâm trợ giúp</a>
+        <a href="contact.html" class="hover:text-white">Liên hệ</a>
+      </nav>
+    </div>
+  </footer>
+
+<script>
+  document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+  });
+
+  const PARTS = [
+    { key: 'listening', label: 'Nghe',       hint: 'câu trong phần nghe' },
+    { key: 'reading',   label: 'Đọc',        hint: 'câu trong bài đọc' },
+    { key: 'other',     label: 'Câu hỏi lẻ', hint: 'ngữ pháp, từ vựng…' },
+  ];
+  const TYPES = [
+    { key: 'mcq',  label: 'Trắc nghiệm' },
+    { key: 'tfng', label: 'True / False / Not Given' },
+    { key: 'fill', label: 'Điền từ' },
+  ];
+  const TEST_TYPES = {
+    course:   { label: 'Kiểm tra khóa học', cls: 'bg-blue-50 text-secondary' },
+    test_thu: { label: 'Test thử',          cls: 'bg-purple-50 text-purple-700' },
+    luyen_de: { label: 'Luyện đề',          cls: 'bg-emerald-50 text-emerald-700' },
+  };
+  const FILTERS = [['all', 'Tất cả'], ['course', 'Kiểm tra khóa học'], ['test_thu', 'Test thử'], ['luyen_de', 'Luyện đề']];
+
+  let _attempts = [];
+  let _filter = 'all';
+
+  function esc(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  const rateOf = t => (t && t.answered ? Math.round(t.correct / t.answered * 100) : null);
+  const barColor = rate => rate >= 80 ? 'bg-green-500' : rate >= 50 ? 'bg-amber-500' : 'bg-red-500';
+
+  function barsHtml(items, tally) {
+    return items.map(it => {
+      const t = tally[it.key];
+      const rate = rateOf(t);
+      return `
+        <div>
+          <div class="flex items-baseline justify-between gap-3 text-sm mb-1.5">
+            <span class="font-semibold text-on-surface">${it.label}
+              ${it.hint ? `<span class="text-xs font-normal text-on-surface-variant">· ${it.hint}</span>` : ''}</span>
+            <span class="text-xs text-on-surface-variant shrink-0">
+              ${rate === null ? 'Chưa có dữ liệu' : `${t.correct}/${t.answered} câu · <span class="font-bold text-on-surface">${rate}%</span>`}
+            </span>
+          </div>
+          <div class="h-2 bg-surface-low rounded-full overflow-hidden">
+            <div class="h-full rounded-full ${rate === null ? '' : barColor(rate)}" style="width:${rate ?? 0}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderSummary(data) {
+    const { summary, by_part, by_type } = data;
+    document.getElementById('stat-attempts').textContent = summary.attempts;
+    document.getElementById('stat-tests').textContent    = summary.tests_done;
+    document.getElementById('stat-avg').textContent      = summary.avg_score === null ? '–' : summary.avg_score + '%';
+    document.getElementById('stat-pass').textContent     = summary.pass_rate === null ? '–' : summary.pass_rate + '%';
+    document.getElementById('by-part').innerHTML = barsHtml(PARTS, by_part);
+    document.getElementById('by-type').innerHTML = barsHtml(TYPES, by_type);
+
+    // Gợi ý kỹ năng cần ôn: kỹ năng có tỉ lệ đúng thấp nhất (dưới 80%) trong các kỹ năng đã làm ít nhất 5 câu
+    const weakest = PARTS
+      .map(p => ({ ...p, rate: rateOf(by_part[p.key]), answered: by_part[p.key]?.answered || 0 }))
+      .filter(p => p.rate !== null && p.answered >= 5 && p.rate < 80)
+      .sort((a, b) => a.rate - b.rate)[0];
+    const el = document.getElementById('weakest');
+    el.classList.toggle('hidden', !weakest);
+    if (weakest) el.textContent = `Kỹ năng nên ôn thêm: ${weakest.label} (đúng ${weakest.rate}%).`;
+  }
+
+  function renderFilters() {
+    document.getElementById('filters').innerHTML = FILTERS.map(([key, label]) => {
+      const count = key === 'all' ? _attempts.length : _attempts.filter(a => a.test_type === key).length;
+      const active = key === _filter;
+      return `<button type="button" onclick="setFilter('${key}')"
+        class="px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors
+               ${active ? 'bg-primary text-white border-primary' : 'bg-white text-on-surface-variant border-outline-variant hover:border-secondary'}">
+        ${label} <span class="${active ? 'text-blue-200' : 'text-outline'}">${count}</span>
+      </button>`;
+    }).join('');
+  }
+
+  function setFilter(key) {
+    _filter = key;
+    renderFilters();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const el = document.getElementById('history');
+    const list = _filter === 'all' ? _attempts : _attempts.filter(a => a.test_type === _filter);
+    if (!_attempts.length) {
+      el.innerHTML = `
+        <div class="text-center py-10">
+          <span class="material-symbols-outlined text-5xl text-outline-variant">assignment</span>
+          <p class="text-sm text-on-surface-variant mt-2 mb-4">Bạn chưa làm bài kiểm tra nào.</p>
+          <div class="flex justify-center gap-3">
+            <a href="my-learning.html" class="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90">Vào khóa học</a>
+            <a href="practice.html" class="px-4 py-2 border border-outline-variant text-sm font-semibold rounded-xl hover:bg-surface-low">Luyện đề</a>
+          </div>
+        </div>`;
+      return;
+    }
+    if (!list.length) {
+      el.innerHTML = '<p class="text-sm text-on-surface-variant text-center py-8">Chưa có lượt làm bài nào thuộc loại này.</p>';
+      return;
+    }
+    el.innerHTML = '<div class="divide-y divide-outline-variant/20">' + list.map(a => {
+      const type = TEST_TYPES[a.test_type] || TEST_TYPES.course;
+      const date = new Date(a.submitted_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+      const score = Math.round(a.score);
+      return `
+        <div class="py-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div class="flex-grow min-w-[14rem]">
+            <div class="flex flex-wrap items-center gap-2 mb-0.5">
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${type.cls}">${type.label}</span>
+              <p class="text-sm font-semibold text-on-surface">${esc(a.test_title)}</p>
+            </div>
+            <p class="text-xs text-on-surface-variant">${a.group_title ? esc(a.group_title) + ' · ' : ''}${date}
+              ${a.is_late ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-red-50 text-error font-semibold">Nộp muộn</span>' : ''}</p>
+          </div>
+          <div class="text-right w-20">
+            <p class="text-lg font-bold ${a.passed ? 'text-green-600' : 'text-error'}">${score}%</p>
+            ${a.total ? `<p class="text-xs text-on-surface-variant">${a.correct}/${a.total} câu đúng</p>` : ''}
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${a.passed ? 'bg-green-100 text-green-700' : 'bg-red-50 text-error'}">
+            ${a.passed ? 'Đạt' : 'Chưa đạt'}
+          </span>
+          ${a.has_detail
+            ? `<a href="test-take.html?source=${a.kind}&result=${a.id}"
+                 class="flex items-center gap-1 text-sm font-semibold text-secondary hover:underline">Xem lại <span class="material-symbols-outlined text-base">arrow_forward</span></a>`
+            : `<span class="text-xs text-on-surface-variant" title="Lần làm bài này có trước khi hệ thống lưu từng câu trả lời">Không có chi tiết</span>`}
+        </div>`;
+    }).join('') + '</div>';
+  }
+
+  async function loadResults() {
+    try {
+      const res  = await fetch('/api/user/results', { credentials: 'include' });
+      const json = await res.json();
+      if (res.status === 401) { window.location.href = 'login.html'; return; }
+      if (!json.success) {
+        document.getElementById('page-content').classList.add('hidden');
+        const errEl = document.getElementById('page-error');
+        errEl.textContent = res.status === 403 ? 'Trang này dành cho học viên.' : (json.message || 'Không tải được kết quả học tập.');
+        errEl.classList.remove('hidden');
+        return;
+      }
+      _attempts = json.data.attempts;
+      renderSummary(json.data);
+      renderFilters();
+      renderHistory();
+    } catch {
+      document.getElementById('history').innerHTML = '<p class="text-sm text-error text-center py-8">Không thể kết nối server.</p>';
+    }
+  }
+
+  async function loadPlacement() {
+    const box = document.getElementById('placement-list');
+    try {
+      const json = await (await fetch('/api/user/placement-results', { credentials: 'include' })).json();
+      if (!json.success) throw new Error(json.message);
+      if (!json.data.length) {
+        box.innerHTML = '<p class="text-sm text-on-surface-variant text-center py-6">Bạn chưa làm bài test xếp loại nào. Làm thử 20 câu để biết band hiện tại và khóa học phù hợp.</p>';
+        return;
+      }
+      // Lần gần nhất của mỗi kỳ thi hiện nổi bật, bên dưới là toàn bộ lịch sử
+      const latest = ['ielts', 'toefl', 'toeic'].map(exam => json.data.find(r => r.exam === exam)).filter(Boolean);
+      box.innerHTML = `
+        <div class="grid sm:grid-cols-3 gap-3 mb-4">
+          ${latest.map(r => `
+            <div class="rounded-xl bg-surface-low p-4">
+              <p class="text-xs font-semibold text-on-surface-variant">${esc(r.label)}</p>
+              <p class="text-xl font-bold text-primary mt-1">${esc(r.band)}</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">${esc(r.level)} · ${r.correct}/${r.total} câu · ${new Date(r.created_at).toLocaleDateString('vi-VN')}</p>
+              <p class="text-xs text-on-surface-variant mt-2">${r.skills.map(sk => `${esc(sk.cat)} ${Math.round(sk.correct / sk.total * 100)}%`).join(' · ')}</p>
+            </div>`).join('')}
+        </div>
+        <details ${json.data.length > latest.length ? '' : 'class="hidden"'}>
+          <summary class="text-sm font-semibold text-secondary cursor-pointer">Xem tất cả ${json.data.length} lần làm</summary>
+          <div class="mt-3 divide-y divide-outline-variant/30 text-sm">
+            ${json.data.map(r => `
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5">
+                <span class="font-semibold text-on-surface w-32">${esc(r.label)}</span>
+                <span class="text-primary font-bold">${esc(r.band)}</span>
+                <span class="text-on-surface-variant">${r.correct}/${r.total} câu</span>
+                <span class="ml-auto text-xs text-on-surface-variant">${new Date(r.created_at).toLocaleString('vi-VN')}</span>
+              </div>`).join('')}
+          </div>
+        </details>`;
+    } catch {
+      box.innerHTML = '<p class="text-sm text-error text-center py-6">Không tải được kết quả test xếp loại.</p>';
+    }
+  }
+
+  async function doLogout() {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = 'login.html';
+  }
+
+  loadResults();
+  loadPlacement();
+</script>
+<script src="../js/ai-insights.js?v=20260918b"></script>
+<script>EngProInsights.mount(document.getElementById('ai-insights'));</script>
+<script src="../js/auth-nav.js?v=20260918b"></script>
+</body>
+</html>

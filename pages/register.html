@@ -105,7 +105,7 @@
               <label class="block text-xs font-semibold text-on-surface mb-1.5 uppercase tracking-wider">Mật khẩu</label>
               <div class="relative">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">lock</span>
-                <input id="reg-password" type="password" placeholder="Tối thiểu 6 ký tự" required
+                <input id="reg-password" type="password" placeholder="Từ 8 đến 72 ký tự" required
                   class="w-full pl-10 pr-12 py-3 text-sm border border-outline-variant rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all" />
                 <button type="button" onclick="togglePwd('reg-password','eye1')" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
                   <span class="material-symbols-outlined text-lg" id="eye1">visibility</span>
@@ -374,7 +374,8 @@
 
       if (!name) { showStep1Error('Vui lòng nhập họ tên.'); return; }
       if (!email || !/\S+@\S+\.\S+/.test(email)) { showStep1Error('Email không hợp lệ.'); return; }
-      if (pwd.length < 6) { showStep1Error('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
+      if (pwd.length < 8) { showStep1Error('Mật khẩu phải có ít nhất 8 ký tự.'); return; }
+      if (new TextEncoder().encode(pwd).length > 72) { showStep1Error('Mật khẩu tối đa 72 ký tự.'); return; }
       if (pwd !== confirm) { showStep1Error('Mật khẩu xác nhận không khớp.'); return; }
 
       errEl.classList.add('hidden');
@@ -446,7 +447,7 @@
         setStep(3);
 
       } catch (err) {
-        showStep2Error('Không thể kết nối server. Kiểm tra XAMPP đã chạy chưa.');
+        showStep2Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng rồi thử lại.');
         btn.disabled = false; btn.textContent = origText;
       }
     }

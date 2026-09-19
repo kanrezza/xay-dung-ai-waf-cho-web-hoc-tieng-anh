@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trung tâm trợ giúp – EngPro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#002045', 'primary-container': '#1a365d',
+            secondary: '#0061a5', accent: '#e07b28',
+            surface: '#f7fafc', 'surface-low': '#f1f4f6',
+            'on-surface': '#181c1e', 'on-surface-variant': '#43474e',
+            outline: '#74777f', 'outline-variant': '#c4c6cf',
+            error: '#ba1a1a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          maxWidth: { container: '1280px' },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-surface-low text-on-surface antialiased min-h-screen flex flex-col">
+
+<!-- HEADER -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
+    <div class="max-w-container mx-auto px-4 md:px-16 h-20 flex items-center justify-between gap-8">
+      <a href="../index.html" class="flex items-center gap-2 shrink-0">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-xl">school</span>
+        </div>
+        <span class="text-xl font-bold text-primary">EngPro</span>
+      </a>
+      <nav class="hidden lg:flex items-center gap-6 xl:gap-8 whitespace-nowrap">
+        <a href="courses.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Khóa học</a>
+        <a href="mock-test.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Bài test thử</a>
+        <a href="practice.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện đề</a>
+        <a href="writing.html" class="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium">Luyện viết AI</a>
+      </nav>
+      <div id="auth-guest" class="hidden items-center gap-3 shrink-0">
+        <a href="login.html" class="px-5 py-2 text-sm font-semibold text-secondary border border-secondary rounded-lg hover:bg-surface-low transition-colors">Đăng nhập</a>
+        <a href="register.html" class="px-5 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:opacity-90 transition-opacity">Đăng ký</a>
+      </div>
+      <div id="auth-user" class="hidden relative items-center shrink-0">
+        <button id="user-menu-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-low transition-colors">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial">?</span>
+          </div>
+          <span class="text-sm font-semibold text-on-surface" id="user-name-display">...</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
+        </button>
+        <!-- Menu tài khoản: các mục do js/auth-nav.js tạo theo vai trò -->
+        <div id="user-menu" role="menu"
+          class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-outline-variant/30 py-2 z-50"></div>
+      </div>
+      <button id="mobile-menu-btn" class="lg:hidden text-on-surface-variant">
+        <span class="material-symbols-outlined text-3xl">menu</span>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-outline-variant/30 px-4 py-4 flex flex-col gap-4">
+      <a href="courses.html" class="text-on-surface-variant text-base py-1">Khóa học</a>
+      <a href="mock-test.html" class="text-on-surface-variant text-base py-1">Bài test thử</a>
+      <a href="practice.html" class="text-on-surface-variant text-base py-1">Luyện đề</a>
+      <a href="writing.html" class="text-on-surface-variant text-base py-1">Luyện viết AI</a>
+      <hr class="border-outline-variant/30" />
+      <div id="auth-guest-mobile" class="hidden flex-col gap-2">
+        <a href="login.html" class="text-sm font-semibold text-secondary border border-secondary rounded-lg px-4 py-2 text-center">Đăng nhập</a>
+        <a href="register.html" class="text-sm font-semibold text-white bg-primary rounded-lg px-4 py-2 text-center">Đăng ký</a>
+      </div>
+      <div id="auth-user-mobile" class="hidden flex-col gap-1">
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-surface-low rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold" id="user-initial-mobile">?</span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-primary truncate" id="user-name-mobile">...</p>
+            <p class="text-xs text-on-surface-variant truncate" id="user-email-mobile"></p>
+          </div>
+        </div>
+        <div id="user-menu-mobile" class="flex flex-col"></div>
+      </div>
+    </div>
+  </header>
+
+<main class="flex-grow">
+  <section class="bg-primary-container">
+    <div class="max-w-3xl mx-auto px-4 py-12 text-center">
+      <h1 class="text-3xl font-bold text-white">Trung tâm trợ giúp</h1>
+      <p class="text-blue-200 text-sm mt-2">Câu trả lời cho những thắc mắc thường gặp khi học trên EngPro.</p>
+      <div class="relative max-w-lg mx-auto mt-6">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input id="faq-search" type="search" placeholder="Tìm câu hỏi, ví dụ: quên mật khẩu"
+          class="w-full pl-12 pr-4 py-3 rounded-xl border-0 text-sm focus:ring-2 focus:ring-accent" />
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-3xl mx-auto px-4 py-8 space-y-5 w-full">
+    <section class="faq-topic bg-white rounded-2xl border border-outline-variant/40 px-6 py-2">
+      <h2 class="flex items-center gap-2 font-bold text-primary pt-4 pb-1">
+        <span class="material-symbols-outlined text-secondary">account_circle</span>Tài khoản và đăng nhập
+      </h2>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Tôi quên mật khẩu thì làm sao?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Bấm <a href="forgot-password.html" class="font-semibold text-secondary hover:underline">Quên mật khẩu</a> ở trang đăng nhập, nhập email đã đăng ký rồi nhập mã 6 số được gửi tới hộp thư. Mã có hiệu lực 15 phút; không thấy email thì hãy xem mục Spam.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Vì sao nên xác nhận email?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Email đã xác nhận bảo đảm bạn nhận được mã đặt lại mật khẩu và các thông báo quan trọng. Vào <b>Cài đặt tài khoản</b>, bấm <b>Gửi mã xác nhận</b> dưới ô email rồi nhập mã nhận được.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Xác thực 2 lớp là gì và bật ở đâu?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Sau khi bật, mỗi lần đăng nhập bạn nhập thêm mã 6 số từ ứng dụng Google Authenticator hoặc Microsoft Authenticator. Bật trong <b>Cài đặt tài khoản</b> và lưu lại 8 mã dự phòng để dùng khi mất điện thoại.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Làm sao để đổi mật khẩu hoặc xóa tài khoản?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Cả hai nằm trong <b>Cài đặt tài khoản</b> (bấm ảnh đại diện góc trên bên phải). Mật khẩu mới cần từ 8 đến 72 ký tự. Xóa tài khoản không thể hoàn tác và bạn sẽ mất quyền vào các khóa học đã đăng ký.</p></div>
+        </details>
+    </section>
+    <section class="faq-topic bg-white rounded-2xl border border-outline-variant/40 px-6 py-2">
+      <h2 class="flex items-center gap-2 font-bold text-primary pt-4 pb-1">
+        <span class="material-symbols-outlined text-secondary">menu_book</span>Khóa học và thanh toán
+      </h2>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Đăng ký một khóa học như thế nào?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Chọn khóa ở trang <a href="courses.html" class="font-semibold text-secondary hover:underline">Khóa học</a>, bấm đăng ký. Khóa có phí thì chuyển khoản theo mã QR hiển thị, nội dung chuyển khoản ghi đúng như hướng dẫn để trung tâm đối chiếu.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Chuyển khoản xong bao lâu thì được vào học?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Trung tâm xác nhận chuyển khoản rồi kích hoạt khóa học, thông báo sẽ hiện ở biểu tượng chuông. Bạn theo dõi trạng thái ở trang <a href="purchases.html" class="font-semibold text-secondary hover:underline">Thanh toán</a>; quá lâu chưa được kích hoạt thì <a href="contact.html" class="font-semibold text-secondary hover:underline">liên hệ trung tâm</a> kèm ảnh chụp giao dịch.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Tôi xem các khóa đang học ở đâu?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Trang <a href="my-learning.html" class="font-semibold text-secondary hover:underline">Học tập của tôi</a> liệt kê khóa đang học, đã hoàn thành và đang chờ kích hoạt, kèm bài học tiếp theo của từng khóa.</p></div>
+        </details>
+    </section>
+    <section class="faq-topic bg-white rounded-2xl border border-outline-variant/40 px-6 py-2">
+      <h2 class="flex items-center gap-2 font-bold text-primary pt-4 pb-1">
+        <span class="material-symbols-outlined text-secondary">quiz</span>Học tập và bài kiểm tra
+      </h2>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Vì sao tôi chưa làm được bài kiểm tra của bài giảng?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Bài kiểm tra gắn với một video chỉ mở khi bạn đã xem ít nhất 80% video đó. Hệ thống tính các đoạn bạn thật sự đã xem nên tua nhanh sẽ không được tính.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Hạn nộp bài theo tuần được tính thế nào?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Nếu giảng viên đặt hạn, mỗi tuần của khóa có một hạn nộp tính từ ngày bạn được kích hoạt vào khóa. Quá hạn bạn vẫn nộp được nhưng bài được ghi nhận là nộp muộn.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Đang làm bài mà lỡ tải lại trang hoặc mất mạng thì sao?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Đáp án được tự động lưu trong lúc làm. Mở lại bài, bạn bấm <b>Làm tiếp</b> để tiếp tục với đúng các câu đã chọn. Đồng hồ vẫn chạy trong lúc bạn rời trang; hết giờ, bài được chấm theo các đáp án đã lưu.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Tôi được làm lại bài bao nhiêu lần?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Tùy bài: giảng viên hoặc trung tâm có thể giới hạn số lần làm và thời gian làm bài. Màn hình trước khi bắt đầu cho biết bạn còn bao nhiêu lượt và bài có giới hạn thời gian hay không.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Xem lại đáp án các bài đã làm ở đâu?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Trang <a href="results.html" class="font-semibold text-secondary hover:underline">Kết quả học tập</a> có lịch sử làm bài, tỉ lệ đúng theo kỹ năng và nút xem lại từng lần làm bài.</p></div>
+        </details>
+    </section>
+    <section class="faq-topic bg-white rounded-2xl border border-outline-variant/40 px-6 py-2">
+      <h2 class="flex items-center gap-2 font-bold text-primary pt-4 pb-1">
+        <span class="material-symbols-outlined text-secondary">insights</span>Test xếp loại
+      </h2>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Bài test xếp loại dùng để làm gì?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p><a href="placement-test.html" class="font-semibold text-secondary hover:underline">Bài test xếp loại</a> gồm 20 câu cho IELTS, TOEFL hoặc TOEIC, cho biết band tham khảo và gợi ý khóa học hợp với trình độ của bạn. Bài không giới hạn thời gian và làm lại được.</p></div>
+        </details>
+        <details class="faq group border-b border-outline-variant/40 last:border-0">
+          <summary class="flex items-center justify-between gap-4 py-4 cursor-pointer list-none">
+            <span class="text-sm font-semibold text-on-surface">Kết quả test xếp loại được lưu ở đâu?</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div class="pb-4 -mt-1 text-sm text-on-surface-variant leading-relaxed space-y-2"><p>Khi đã đăng nhập, kết quả được lưu và hiện trong trang <b>Kết quả học tập</b>. Nếu làm bài lúc chưa đăng nhập, bấm <b>Đăng nhập để lưu kết quả</b> ở màn hình kết quả; sau khi đăng nhập, kết quả vừa làm sẽ được lưu lại.</p></div>
+        </details>
+    </section>
+    <p id="faq-empty" class="hidden bg-white rounded-2xl border border-outline-variant/40 p-8 text-center text-sm text-on-surface-variant">Không tìm thấy câu hỏi phù hợp.</p>
+
+    <div class="bg-white rounded-2xl border border-outline-variant/40 p-6 flex flex-col sm:flex-row items-center gap-4">
+      <span class="w-12 h-12 rounded-full bg-blue-50 text-secondary flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined">support_agent</span>
+      </span>
+      <div class="flex-grow text-center sm:text-left">
+        <p class="font-bold text-primary">Chưa tìm được câu trả lời?</p>
+        <p class="text-sm text-on-surface-variant">Gửi tin nhắn cho trung tâm, chúng tôi sẽ trả lời qua email của bạn.</p>
+      </div>
+      <a href="contact.html" class="px-5 py-2.5 bg-secondary text-white text-sm font-semibold rounded-xl hover:opacity-90 shrink-0">Liên hệ</a>
+    </div>
+  </div>
+</main>
+
+  <footer class="bg-primary text-white py-8 mt-8">
+    <div class="max-w-container mx-auto px-4 md:px-16 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+      <span>© 2026 EngPro English Systems.</span>
+      <nav class="flex gap-5">
+        <a href="help.html" class="hover:text-white">Trung tâm trợ giúp</a>
+        <a href="contact.html" class="hover:text-white">Liên hệ</a>
+      </nav>
+    </div>
+  </footer>
+
+<script>
+  document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+  });
+
+  // Lọc câu hỏi theo từ khóa (không phân biệt dấu)
+  const plain = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
+  document.getElementById('faq-search').addEventListener('input', e => {
+    const q = plain(e.target.value.trim());
+    let shown = 0;
+    document.querySelectorAll('.faq-topic').forEach(topic => {
+      let visible = 0;
+      topic.querySelectorAll('.faq').forEach(item => {
+        const match = !q || plain(item.textContent).includes(q);
+        item.classList.toggle('hidden', !match);
+        if (match) visible++;
+        if (q && match) item.open = true;
+      });
+      topic.classList.toggle('hidden', !visible);
+      shown += visible;
+    });
+    document.getElementById('faq-empty').classList.toggle('hidden', shown > 0);
+  });
+</script>
+<script src="../js/auth-nav.js?v=20260918b"></script>
+</body>
+</html>
