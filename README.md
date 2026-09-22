@@ -10,7 +10,7 @@ EngPro là website học và luyện thi ba chứng chỉ IELTS, TOEFL và TOEIC
 - Làm bài kiểm tra, test thử, luyện đề với ba dạng câu: trắc nghiệm, True/False/Not Given và điền từ. Có phần nghe (audio) và phần đọc (bài đọc).
 - Xem kết quả học tập, tỉ lệ đúng theo kỹ năng và dạng câu, xem lại từng bài đã làm.
 - Hỏi đáp dưới bài giảng với giảng viên, đánh giá khóa học, nhắn tin cho trung tâm và xem câu trả lời ngay trên web.
-- Cài đặt tài khoản: đổi mật khẩu, xác thực hai lớp, xác nhận email, ngôn ngữ nhận xét của AI.
+- Cài đặt tài khoản: đổi mật khẩu (cần mã xác nhận gửi về email đăng ký), xác thực hai lớp, xác nhận email, ngôn ngữ giao diện, bật hoặc tắt trợ lý AI trả lời bằng tiếng Anh.
 
 **Trợ lý AI (Google Gemini)**
 - Giải thích vì sao làm sai một câu, trích căn cứ trong bài đọc hoặc lời thoại.
@@ -71,7 +71,7 @@ Sao chép `.env.example` thành `.env` rồi điền giá trị. Các biến qua
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Bật trợ lý AI. Tạo khóa miễn phí tại https://aistudio.google.com/apikey |
 | `AI_LIMIT_*`, `AI_DAILY_TOTAL` | Số lượt AI mỗi học viên mỗi ngày và trần của cả hệ thống |
 | `SMTP_USER`, `SMTP_PASS` | Gửi email thật qua Gmail bằng mật khẩu ứng dụng |
-| `MAIL_REDIRECT_TO` | Khi phát triển, dồn mọi email về một hộp thư thử. Xóa khi chạy thật |
+| `MAIL_REDIRECT_TO`, `MAIL_REDIRECT_ONLY` | Khi phát triển, chuyển email về một hộp thư thử. Có `MAIL_REDIRECT_ONLY` thì chỉ chuyển thư tới các địa chỉ trong danh sách (ví dụ ba tài khoản mẫu), thư khác gửi thẳng |
 | `VNP_TMN_CODE`, `VNP_HASH_SECRET` | Thanh toán VNPay sandbox |
 
 Không cấu hình Gemini thì các nút AI tự ẩn. Không cấu hình SMTP thì email chỉ in ra cửa sổ chạy server. Muốn chạy thử AI mà không cần khóa, đặt `AI_PROVIDER=mock`.
@@ -88,6 +88,36 @@ Mở http://localhost:8080. Lệnh `npm start` dùng khi triển khai.
 
 Dữ liệu mẫu có ba tài khoản, cùng mật khẩu `123456`: quản trị viên `admin@gmail.com`, giảng viên `hoang@gmail.com`, học viên `danh@gmail.com`. Các địa chỉ này chỉ dùng để đăng nhập thử. Đừng dùng chúng để thử tính năng gửi email.
 
+### Dữ liệu demo
+
+Để trình bày, có thể tạo thêm 5 khóa học IELTS, TOEIC, TOEFL, mỗi khóa 3 bài giảng kèm video, tài liệu và bài kiểm tra, cùng 6 đề test thử và luyện đề. Tất cả bài giảng dùng chung một video và một tài liệu do bạn chọn. Script không tạo tài khoản nào: khóa học đứng tên các giảng viên có sẵn (khóa IELTS mặc định là `hoang@gmail.com`, đổi bằng `--ielts-teacher`; khóa TOEIC, TOEFL chọn bằng `--teacher`), số học viên và đánh giá đều là của người dùng thật.
+
+```bash
+npm run demo -- --video duong-dan/video.mp4 --doc duong-dan/tai-lieu.docx --teacher email-giang-vien@gmail.com
+```
+
+Xóa toàn bộ dữ liệu demo, kể cả file đã chép vào `uploads/`:
+
+```bash
+npm run demo -- --remove
+```
+
+## Ngôn ngữ giao diện
+
+Website có tiếng Việt và tiếng Anh. Người dùng đổi ở chân trang hoặc trong Cài đặt tài khoản; lựa chọn được lưu trên trình duyệt và vào tài khoản (cột `users.ui_language`). Ngôn ngữ trợ lý AI trả lời là cài đặt riêng (`users.ai_language`), mặc định là tiếng Anh, tắt được trong Cài đặt tài khoản. Các trang viết bằng tiếng Việt, `js/i18n.js` thay chữ bằng bản dịch trong `js/i18n-en.js` ngay khi trang hiện ra. Muốn tìm chữ chưa dịch trên một trang: bật English rồi gõ `EngProI18n.missing()` trong Console của trình duyệt. Bảng điều khiển giảng viên và quản trị viên hiện vẫn chỉ có tiếng Việt.
+
+## Kiểm thử
+
+Thư mục `tests/` chứa các bộ kiểm thử API. Chúng chạy trên một PostgreSQL riêng bị xóa sạch mỗi lần, không đụng tới dữ liệu thật:
+
+```bash
+docker run -d --name engpro-pg-test -e POSTGRES_PASSWORD=testpass -e POSTGRES_DB=engpro -p 127.0.0.1:55432:5432 postgres:16
+```
+
+```bash
+tests/run-suite.sh e2e-contact.js
+```
+
 ## Cấu trúc thư mục
 
 ```
@@ -100,7 +130,9 @@ data/            Ngân hàng câu hỏi test xếp loại
 db/engpro.sql    Cấu trúc cơ sở dữ liệu và dữ liệu mẫu
 index.html       Trang chủ
 pages/           Các trang giao diện
-js/              Mã JavaScript dùng chung cho nhiều trang
+js/              Mã JavaScript dùng chung cho nhiều trang, gồm cả bộ chuyển ngôn ngữ i18n.js và từ điển i18n-en.js
+scripts/         Script tạo và xóa dữ liệu demo
+tests/           Các bộ kiểm thử API
 uploads/         Video, tài liệu, ảnh đại diện tải lên (không đưa lên GitHub)
 ```
 

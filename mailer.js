@@ -52,15 +52,21 @@ function codeBlock(code) {
   return `<p style="margin:18px 0;text-align:center"><span style="display:inline-block;padding:12px 22px;background:#f1f4f6;border-radius:12px;font-size:30px;font-weight:bold;letter-spacing:8px;color:#002045">${esc(code)}</span></p>`;
 }
 
-// MAIL_REDIRECT_TO: khi phát triển, gửi mọi email về một hộp thư thử và ghi rõ người nhận gốc.
-// Bỏ dòng này trong .env khi chạy thật để thư tới đúng học viên.
+// MAIL_REDIRECT_TO: khi phát triển, chuyển email về một hộp thư thử và ghi rõ người nhận gốc.
+// MAIL_REDIRECT_ONLY (danh sách cách nhau dấu phẩy): chỉ chuyển hướng thư gửi tới các địa chỉ này,
+// ví dụ các tài khoản mẫu là hộp thư thật của người khác; thư tới địa chỉ khác vẫn gửi thẳng.
+// Không đặt MAIL_REDIRECT_ONLY thì mọi thư đều chuyển về MAIL_REDIRECT_TO.
 const REDIRECT_TO = (process.env.MAIL_REDIRECT_TO || '').trim();
+const REDIRECT_ONLY = (process.env.MAIL_REDIRECT_ONLY || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+const redirected = to => REDIRECT_TO && to !== REDIRECT_TO && (!REDIRECT_ONLY.length || REDIRECT_ONLY.includes(String(to).toLowerCase()));
 if (REDIRECT_TO) {
-  console.warn(`📧 Đang ở chế độ thử email: mọi thư đều gửi về ${REDIRECT_TO}. Khi chạy thật cho học viên, xóa MAIL_REDIRECT_TO trong .env.`);
+  console.warn(REDIRECT_ONLY.length
+    ? `📧 Thư gửi tới ${REDIRECT_ONLY.join(', ')} được chuyển về ${REDIRECT_TO}; thư tới địa chỉ khác gửi thẳng.`
+    : `📧 Đang ở chế độ thử email: mọi thư đều gửi về ${REDIRECT_TO}. Khi chạy thật cho học viên, xóa MAIL_REDIRECT_TO trong .env.`);
 }
 
 async function sendMail({ to, subject, text, html, replyTo }) {
-  if (REDIRECT_TO && to !== REDIRECT_TO) {
+  if (redirected(to)) {
     subject = `[Thử nghiệm, gửi cho ${to}] ${subject}`;
     text = `(Chế độ thử nghiệm: thư này lẽ ra gửi cho ${to})\n\n${text}`;
     to = REDIRECT_TO;
@@ -86,6 +92,19 @@ function sendResetCode(to, name, code, minutes) {
   });
 }
 
+// Mã xác nhận khi đổi mật khẩu trong Cài đặt tài khoản: người đang dùng máy mà không vào được hộp thư thì không đổi được
+function sendChangePasswordCode(to, name, code, minutes) {
+  return sendMail({
+    to,
+    subject: `${code} là mã xác nhận đổi mật khẩu EngPro`,
+    text: `Chào ${name},\n\nMã xác nhận đổi mật khẩu của bạn là: ${code}\nMã có hiệu lực trong ${minutes} phút. Nhập mã trong mục Đổi mật khẩu ở trang Cài đặt tài khoản.\n\nNếu bạn không yêu cầu đổi mật khẩu, đừng đưa mã này cho ai và hãy đăng xuất các thiết bị lạ trong Cài đặt tài khoản.`,
+    html: layout('Xác nhận đổi mật khẩu', `
+      <p style="margin:0 0 8px">Chào ${esc(name)},</p>
+      <p style="margin:0">Nhập mã dưới đây trong mục Đổi mật khẩu ở trang Cài đặt tài khoản. Mã có hiệu lực trong ${minutes} phút.</p>
+      ${codeBlock(code)}
+      <p style="margin:0;color:#43474e;font-size:13px">Nếu bạn không yêu cầu đổi mật khẩu, đừng đưa mã này cho ai và hãy đăng xuất các thiết bị lạ trong Cài đặt tài khoản.</p>`),
+  });
+}
 function sendVerifyCode(to, name, code, minutes) {
   return sendMail({
     to,
@@ -209,5 +228,5 @@ Xem lại kết quả: ${info.resultsLink || ''}
 
 module.exports = {
   isConfigured: () => !!transporter,
-  sendMail, sendResetCode, sendVerifyCode, sendPasswordChanged, sendContactNotice, sendContactReply, sendDeadlineReminder, sendCourseCompleted,
+  sendMail, sendResetCode, sendVerifyCode, sendChangePasswordCode, sendPasswordChanged, sendContactNotice, sendContactReply, sendDeadlineReminder, sendCourseCompleted,
 };

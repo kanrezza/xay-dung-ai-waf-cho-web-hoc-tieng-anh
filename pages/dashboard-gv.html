@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-i18n="off"><!-- data-i18n="off": trang này chưa có bản dịch tiếng Anh, luôn hiện tiếng Việt -->
 <head>
   <meta charset="UTF-8" />
+  <!-- Chuyển ngôn ngữ giao diện: phải nạp đồng bộ trước khi trang hiện ra -->
+  <script src="../js/i18n-en.js?v=20260922a"></script>
+  <script src="../js/i18n.js?v=20260922a"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Giảng Viên – EngPro</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -1007,13 +1010,13 @@
 <!-- Toast -->
 <div id="toast" class="hidden fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg text-sm font-semibold text-white min-w-[240px]"></div>
 
-<script src="../js/media.js?v=20260918b"></script>
-<script src="../js/deadline.js?v=20260918b"></script>
-<script src="../js/question-import.js?v=20260918b"></script>
-<script src="../js/test-editor.js?v=20260918b"></script>
-<script src="../js/test-stats.js?v=20260918b"></script>
-<script src="../js/lecture-qa.js?v=20260918b"></script>
-<script src="../js/notifications.js?v=20260918b"></script>
+<script src="../js/media.js?v=20260922a"></script>
+<script src="../js/deadline.js?v=20260922a"></script>
+<script src="../js/question-import.js?v=20260922a"></script>
+<script src="../js/test-editor.js?v=20260922a"></script>
+<script src="../js/test-stats.js?v=20260922a"></script>
+<script src="../js/lecture-qa.js?v=20260922a"></script>
+<script src="../js/notifications.js?v=20260922a"></script>
 <script>
   // ── Load thông tin người dùng hiện tại ──────────────────────
   (async function loadCurrentUser() {

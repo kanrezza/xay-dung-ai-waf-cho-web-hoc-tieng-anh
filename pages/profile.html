@@ -2,6 +2,9 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
+  <!-- Chuyển ngôn ngữ giao diện: phải nạp đồng bộ trước khi trang hiện ra -->
+  <script src="../js/i18n-en.js?v=20260922a"></script>
+  <script src="../js/i18n.js?v=20260922a"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hồ sơ – EngPro</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -203,22 +206,32 @@
       </button>
     </section>
 
-    <!-- Ngôn ngữ -->
+    <!-- Ngôn ngữ: giao diện và trợ lý AI là hai cài đặt riêng -->
     <section id="language-section" class="bg-white rounded-2xl border border-outline-variant/40 p-6">
       <h2 class="font-bold text-primary">Ngôn ngữ</h2>
       <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
         <div class="flex-grow">
-          <label for="ai-language" class="text-sm font-semibold text-on-surface">Ngôn ngữ nhận xét của AI</label>
-          <p class="text-sm text-on-surface-variant mt-0.5">Trợ lý AI giải thích câu sai, chấm bài viết, nhận xét quá trình học và trả lời trong bài giảng bằng ngôn ngữ này. Chọn tiếng Anh nếu bạn muốn luyện đọc hiểu cả phần nhận xét.</p>
+          <label for="ui-language" class="text-sm font-semibold text-on-surface">Ngôn ngữ giao diện</label>
+          <p class="text-sm text-on-surface-variant mt-0.5">Ngôn ngữ hiển thị trên toàn bộ các trang của website.</p>
         </div>
         <div class="shrink-0 flex items-center gap-2">
-          <select id="ai-language" onchange="saveAiLanguage()"
+          <select id="ui-language" onchange="saveUiLanguage()" translate="no"
             class="px-3 py-2 text-sm border border-outline-variant rounded-xl bg-white focus:outline-none focus:border-secondary">
             <option value="vi">Tiếng Việt</option>
             <option value="en">English</option>
           </select>
-          <span id="ai-language-msg" class="text-xs text-green-700 hidden" role="status">Đã lưu</span>
         </div>
+      </div>
+      <div class="mt-5 pt-5 border-t border-outline-variant/30 flex items-center gap-4">
+        <div class="flex-grow">
+          <p id="ai-english-label" class="text-sm font-semibold text-on-surface">Trợ lý AI trả lời bằng tiếng Anh</p>
+          <p class="text-sm text-on-surface-variant mt-0.5">Trợ lý AI giải thích câu sai, chấm bài viết, nhận xét quá trình học và trả lời trong bài giảng bằng tiếng Anh để bạn luyện đọc hiểu. Tắt để nhận câu trả lời bằng tiếng Việt.</p>
+          <span id="ai-language-msg" class="text-xs text-error hidden" role="status"></span>
+        </div>
+        <button type="button" role="switch" aria-checked="true" aria-labelledby="ai-english-label" id="ai-english-toggle" onclick="toggleAiEnglish()"
+          class="relative shrink-0 w-12 h-7 rounded-full bg-secondary transition-colors">
+          <span class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform translate-x-5"></span>
+        </button>
       </div>
     </section>
 
@@ -260,6 +273,16 @@
               <span class="material-symbols-outlined text-lg">visibility</span>
             </button>
           </div>
+        </div>
+        <div>
+          <label for="pwd-code" class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Mã xác nhận <span class="text-error">*</span></label>
+          <div class="flex gap-2">
+            <input id="pwd-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Mã 6 số" oninput="validatePasswordForm()"
+              class="w-36 px-4 py-2.5 text-sm font-mono tracking-widest border border-outline-variant rounded-xl focus:outline-none focus:border-secondary" />
+            <button type="button" id="btn-pwd-code" onclick="sendPasswordCode()"
+              class="px-4 py-2.5 border border-secondary text-secondary text-sm font-semibold rounded-xl hover:bg-surface-low disabled:opacity-50 disabled:cursor-not-allowed">Gửi mã</button>
+          </div>
+          <p id="pwd-code-msg" class="mt-1.5 text-xs text-on-surface-variant">Mã 6 số sẽ được gửi tới email bạn dùng để đăng ký tài khoản.</p>
         </div>
           <div id="pwd-msg" class="hidden text-sm px-3 py-2 rounded-xl"></div>
           <button id="btn-change-pwd" onclick="changePassword()" disabled
@@ -426,7 +449,8 @@
       document.getElementById('stat-done').textContent   = u.stats.completed_count || 0;
       setSwitch(document.getElementById('sound-toggle'), u.sound_effects !== 0);
       setSwitch(document.getElementById('reminder-toggle'), u.email_reminders !== 0);
-      document.getElementById('ai-language').value = u.ai_language || 'vi';
+      document.getElementById('ui-language').value = window.EngProI18n?.lang || u.ui_language || 'vi';
+      setSwitch(document.getElementById('ai-english-toggle'), (u.ai_language || 'en') === 'en');
       // Ngôn ngữ nhận xét AI chỉ áp dụng cho học viên
       document.getElementById('language-section').classList.toggle('hidden', u.role !== 'user');
       setTwofaState(!!u.totp_enabled, u.recovery_codes_left);
@@ -642,30 +666,32 @@
     } catch { setSwitch(el, !on); }
   }
 
-  async function saveAiLanguage() {
-    const select = document.getElementById('ai-language');
+  // Ngôn ngữ giao diện: sang English thì dịch ngay, về tiếng Việt thì tải lại trang; lưu cả vào tài khoản
+  function saveUiLanguage() {
+    window.EngProI18n?.setLang(document.getElementById('ui-language').value);
+  }
+
+  // Trợ lý AI trả lời bằng tiếng Anh (bật) hay tiếng Việt (tắt)
+  async function toggleAiEnglish() {
+    const el = document.getElementById('ai-english-toggle');
     const msg = document.getElementById('ai-language-msg');
-    const value = select.value;
-    select.disabled = true;
+    const on = !switchOn(el);
+    setSwitch(el, on);
+    msg.classList.add('hidden');
     try {
       const json = await (await fetch('/api/user/settings', {
         method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ai_language: value }),
+        body: JSON.stringify({ ai_language: on ? 'en' : 'vi' }),
       })).json();
       if (!json.success) throw new Error(json.message);
-      msg.textContent = 'Đã lưu';
-      msg.className = 'text-xs text-green-700';
     } catch (e) {
+      setSwitch(el, !on);
       msg.textContent = e.message || 'Không lưu được';
-      msg.className = 'text-xs text-error';
-      select.value = value === 'en' ? 'vi' : 'en';
-    } finally {
-      select.disabled = false;
-      clearTimeout(saveAiLanguage.timer);
-      saveAiLanguage.timer = setTimeout(() => msg.classList.add('hidden'), 2500);
+      msg.classList.remove('hidden');
     }
   }
+
 
   async function logoutOtherDevices() {
     if (!confirm('Đăng xuất tài khoản khỏi tất cả thiết bị khác?')) return;
@@ -709,7 +735,50 @@
       li.firstElementChild.textContent = pass ? 'check' : 'close';
       li.firstElementChild.classList.toggle('text-error', !pass);
     });
-    document.getElementById('btn-change-pwd').disabled = !(cur && Object.values(rules).every(Boolean));
+    const code = document.getElementById('pwd-code').value.trim();
+    document.getElementById('btn-change-pwd').disabled = !(cur && Object.values(rules).every(Boolean) && /^\d{6}$/.test(code));
+  }
+
+  // Mã xác nhận đổi mật khẩu: gửi về email đăng ký, 60 giây mới gửi lại được
+  let _pwdCodeCooldown = null;
+  function pwdCodeMsg(msg, ok) {
+    const el = document.getElementById('pwd-code-msg');
+    el.textContent = msg;
+    el.className = `mt-1.5 text-xs ${ok === null ? 'text-on-surface-variant' : ok ? 'text-green-700' : 'text-error'}`;
+  }
+
+  function pwdCodeCooldown(seconds) {
+    const btn = document.getElementById('btn-pwd-code');
+    clearInterval(_pwdCodeCooldown);
+    let left = seconds;
+    const tick = () => {
+      btn.disabled = left > 0;
+      btn.textContent = left > 0 ? `Gửi lại sau ${left}s` : 'Gửi lại mã';
+      if (left-- <= 0) clearInterval(_pwdCodeCooldown);
+    };
+    tick();
+    _pwdCodeCooldown = setInterval(tick, 1000);
+  }
+
+  async function sendPasswordCode() {
+    const btn = document.getElementById('btn-pwd-code');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/user/password/send-code', { method: 'POST', credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) {
+        pwdCodeMsg(json.message || 'Không gửi được mã', false);
+        if (json.data?.wait_seconds && json.data.wait_seconds <= 60) pwdCodeCooldown(json.data.wait_seconds);
+        else btn.disabled = false;
+        return;
+      }
+      pwdCodeMsg(`Đã gửi mã tới ${json.data.email}, mã có hiệu lực ${json.data.minutes} phút.`, true);
+      pwdCodeCooldown(json.data.cooldown);
+      document.getElementById('pwd-code').focus();
+    } catch {
+      pwdCodeMsg('Không thể kết nối server', false);
+      btn.disabled = false;
+    }
   }
 
   async function changePassword() {
@@ -721,11 +790,15 @@
       const res  = await fetch('/api/user/password', {
         method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ current_password: cur, new_password: nw }),
+        body: JSON.stringify({ current_password: cur, new_password: nw, code: document.getElementById('pwd-code').value.trim() }),
       });
       const json = await res.json();
       if (json.success) {
-        ['pwd-cur','pwd-new','pwd-cfm'].forEach(id => document.getElementById(id).value = '');
+        ['pwd-cur','pwd-new','pwd-cfm','pwd-code'].forEach(id => document.getElementById(id).value = '');
+        clearInterval(_pwdCodeCooldown);
+        pwdCodeMsg('Mã 6 số sẽ được gửi tới email bạn dùng để đăng ký tài khoản.', null);
+        document.getElementById('btn-pwd-code').disabled = false;
+        document.getElementById('btn-pwd-code').textContent = 'Gửi mã';
         showMsg('pwd-msg', 'Đổi mật khẩu thành công', true);
       } else showMsg('pwd-msg', json.message || 'Thất bại', false);
     } catch { showMsg('pwd-msg', 'Không thể kết nối server', false); }
@@ -833,7 +906,7 @@
   loadProfile();
   validatePasswordForm();
 </script>
-<script src="../js/sounds.js?v=20260918b"></script>
-<script src="../js/auth-nav.js?v=20260918b"></script>
+<script src="../js/sounds.js?v=20260922a"></script>
+<script src="../js/auth-nav.js?v=20260922a"></script>
 </body>
 </html>

@@ -1011,7 +1011,7 @@ app.get('/api/auth/me', async (req, res) => {
   if (!user) return;
   try {
     const [[u]] = await pool.query(
-      'SELECT id,name,email,role,phone,specialty,avatar,status,sound_effects,totp_enabled,created_at FROM users WHERE id=? LIMIT 1',
+      'SELECT id,name,email,role,phone,specialty,avatar,status,sound_effects,totp_enabled,ai_language,ui_language,created_at FROM users WHERE id=? LIMIT 1',
       [user.id]
     );
     ok(res, u ?? null);
@@ -1043,9 +1043,8 @@ app.post('/api/auth/register', uploadCV.single('cv'), async (req, res) => {
       'INSERT INTO users (name,email,password,role,status,cv_url) VALUES (?,?,?,?,?,?) RETURNING id',
       [name.trim(), email.toLowerCase(), hash, role, status, cvUrl]
     );
-    // Gửi mã xác nhận email ngay sau khi đăng ký; lỗi gửi mail không làm hỏng việc đăng ký
-    sendVerifyEmailCode({ id: created.insertId, name: name.trim(), email: email.toLowerCase() })
-      .catch(e => console.error('Không gửi được mã xác nhận email:', e.message));
+    // Không tự gửi mã lúc đăng ký: mã qua email chỉ dùng khi quên mật khẩu,
+    // hoặc khi học viên tự bấm "Gửi mã xác nhận" trong Cài đặt tài khoản
     ok(res, { name: name.trim(), email: email.toLowerCase(), role, status }, 201);
   } catch (e) {
     if (req.file) fs.unlinkSync(req.file.path);
@@ -3333,7 +3332,7 @@ app.get('/api/user/profile', async (req, res) => {
   if (!user) return err(res, 'Chưa đăng nhập', 401);
   try {
     const [[u]] = await pool.query(
-      `SELECT id,name,email,phone,role,avatar,bio,specialty,created_at,sound_effects,email_reminders,ai_language,totp_enabled,
+      `SELECT id,name,email,phone,role,avatar,bio,specialty,created_at,sound_effects,email_reminders,ai_language,ui_language,totp_enabled,
               email_verified_at IS NOT NULL AS email_verified,
               COALESCE(json_array_length(totp_recovery_codes::json), 0) AS recovery_codes_left
        FROM users WHERE id=?`, [user.id]
@@ -3427,16 +3426,37 @@ app.delete('/api/user/avatar', async (req, res) => {
   } catch (e) { err(res, 'Lỗi hệ thống', 500); }
 });
 
+// POST /api/user/password/send-code — gửi mã xác nhận đổi mật khẩu về email đã đăng ký của tài khoản
+app.post('/api/user/password/send-code', async (req, res) => {
+  const session = authRequired(req, res);
+  if (!session) return;
+  try {
+    const [[user]] = await pool.query('SELECT id, name, email FROM users WHERE id=?', [session.id]);
+    const issued = await issueEmailCode(user.id, 'change_password');
+    if (issued.waitSeconds) {
+      return res.status(429).json({ success: false, message: `Vui lòng chờ ${issued.waitSeconds} giây rồi gửi lại`, data: { wait_seconds: issued.waitSeconds } });
+    }
+    await mailer.sendChangePasswordCode(user.email, user.name, issued.code, EMAIL_CODE_MINUTES);
+    ok(res, { cooldown: EMAIL_CODE_COOLDOWN_S, minutes: EMAIL_CODE_MINUTES, email: user.email });
+  } catch (e) { console.error(e); err(res, 'Không gửi được email lúc này, vui lòng thử lại sau', 503); }
+});
+
+// PUT /api/user/password  { current_password, new_password, code } — code là mã 6 số vừa gửi về email
 app.put('/api/user/password', async (req, res) => {
   const user = req.session.user;
   if (!user) return err(res, 'Chưa đăng nhập', 401);
   const { current_password, new_password } = req.body;
+  const code = String(req.body.code ?? '').trim();
   if (!current_password || !new_password) return err(res, 'Thiếu thông tin');
   if (passwordError(new_password)) return err(res, passwordError(new_password));
   if (new_password === current_password) return err(res, 'Mật khẩu mới phải khác mật khẩu hiện tại');
+  if (!/^\d{6}$/.test(code)) return err(res, 'Nhập mã xác nhận 6 số được gửi tới email của bạn');
   try {
     const problem = await verifyCurrentPassword(user.id, current_password);
     if (problem) return err(res, problem.status === 400 ? 'Mật khẩu hiện tại không đúng' : problem.message, problem.status);
+    // Mật khẩu hiện tại đúng rồi mới xét mã, để lượt nhập sai mã chỉ tính khi đã biết mật khẩu
+    const codeProblem = await checkEmailCode(user.id, 'change_password', code, true);
+    if (codeProblem) return err(res, codeProblem);
     const newHash = await bcrypt.hash(new_password, 10);
     await pool.query('UPDATE users SET password=? WHERE id=?', [newHash, user.id]);
     await bumpSessionVersion(user.id, req); // đăng xuất các thiết bị khác, giữ thiết bị đang dùng
@@ -3475,16 +3495,16 @@ async function verifyCurrentPassword(userId, password) {
 app.put('/api/user/settings', async (req, res) => {
   const user = authRequired(req, res);
   if (!user) return;
-  // Mỗi lần gửi một hoặc nhiều cài đặt: sound_effects, email_reminders (true/false), ai_language ('vi' | 'en')
+  // Mỗi lần gửi một hoặc nhiều cài đặt: sound_effects, email_reminders (true/false),
+  // ai_language (ngôn ngữ trợ lý AI trả lời) và ui_language (ngôn ngữ giao diện), mỗi cái 'vi' | 'en'
   const fields = ['sound_effects', 'email_reminders'].filter(key => req.body[key] !== undefined);
   if (fields.some(key => typeof req.body[key] !== 'boolean')) return err(res, 'Giá trị không hợp lệ');
-  const lang = req.body.ai_language;
-  if (lang !== undefined && !AI_LANGUAGES[lang]) return err(res, 'Ngôn ngữ không hợp lệ');
-  if (!fields.length && lang === undefined) return err(res, 'Giá trị không hợp lệ');
+  const langs = ['ai_language', 'ui_language'].filter(key => req.body[key] !== undefined);
+  if (langs.some(key => !AI_LANGUAGES[req.body[key]])) return err(res, 'Ngôn ngữ không hợp lệ');
+  if (!fields.length && !langs.length) return err(res, 'Giá trị không hợp lệ');
   try {
-    const sets = fields.map(key => `${key}=?`);
-    const values = fields.map(key => (req.body[key] ? 1 : 0));
-    if (lang !== undefined) { sets.push('ai_language=?'); values.push(lang); }
+    const sets = [...fields, ...langs].map(key => `${key}=?`);
+    const values = [...fields.map(key => (req.body[key] ? 1 : 0)), ...langs.map(key => req.body[key])];
     await pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id=?`, [...values, user.id]);
     ok(res);
   } catch (e) { err(res, 'Lỗi hệ thống', 500); }
@@ -5728,7 +5748,7 @@ const AI_LANGUAGE_FEATURES = ['explain', 'insights', 'ask', 'writing'];
 
 async function aiLanguageOf(userId) {
   const [[row]] = await pool.query('SELECT ai_language FROM users WHERE id=?', [userId]);
-  return AI_LANGUAGES[row?.ai_language] ? row.ai_language : 'vi';
+  return AI_LANGUAGES[row?.ai_language] ? row.ai_language : 'en';   // mặc định trợ lý AI trả lời bằng tiếng Anh
 }
 
 // Gắn chỉ dẫn ngôn ngữ vào câu lệnh hệ thống trước khi gọi AI

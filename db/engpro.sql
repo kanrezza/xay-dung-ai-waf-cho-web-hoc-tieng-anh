@@ -371,7 +371,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE TABLE IF NOT EXISTS email_codes (
     id          SERIAL PRIMARY KEY,
     user_id     INT           NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    purpose     VARCHAR(20)   NOT NULL CHECK (purpose IN ('reset_password','verify_email')),
+    purpose     VARCHAR(20)   NOT NULL CHECK (purpose IN ('reset_password','verify_email','change_password')),
     code_hash   CHAR(64)      NOT NULL,
     attempts    SMALLINT      NOT NULL DEFAULT 0,
     expires_at  TIMESTAMPTZ   NOT NULL,
@@ -379,6 +379,9 @@ CREATE TABLE IF NOT EXISTS email_codes (
     created_at  TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_email_codes_user ON email_codes (user_id, purpose, created_at DESC);
+-- change_password: mã gửi về email khi đổi mật khẩu trong Cài đặt tài khoản
+ALTER TABLE email_codes DROP CONSTRAINT IF EXISTS email_codes_purpose_check;
+ALTER TABLE email_codes ADD CONSTRAINT email_codes_purpose_check CHECK (purpose IN ('reset_password','verify_email','change_password'));
 
 -- ------------------------------------------------------------
 -- 22. CONTACT_MESSAGES  (tin nhắn gửi từ trang Liên hệ)
@@ -663,10 +666,15 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_recovery_codes TEXT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at          TIMESTAMPTZ NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at   TIMESTAMPTZ NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_reminders     SMALLINT NOT NULL DEFAULT 1;
--- Ngôn ngữ trợ lý AI dùng khi nhận xét, giải thích, chấm bài cho học viên: vi | en
-ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_language         VARCHAR(5) NOT NULL DEFAULT 'vi';
+-- Ngôn ngữ trợ lý AI dùng khi nhận xét, giải thích, chấm bài cho học viên: vi | en (mặc định trả lời bằng tiếng Anh)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_language         VARCHAR(5) NOT NULL DEFAULT 'en';
+ALTER TABLE users ALTER COLUMN ai_language SET DEFAULT 'en';
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_ai_language_check;
 ALTER TABLE users ADD CONSTRAINT users_ai_language_check CHECK (ai_language IN ('vi','en'));
+-- Ngôn ngữ giao diện website của người dùng, tách riêng với ngôn ngữ trợ lý AI: vi | en
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ui_language         VARCHAR(5) NOT NULL DEFAULT 'vi';
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_ui_language_check;
+ALTER TABLE users ADD CONSTRAINT users_ui_language_check CHECK (ui_language IN ('vi','en'));
 ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version     INT NOT NULL DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio                 TEXT NULL;
 

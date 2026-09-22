@@ -182,6 +182,7 @@
       const json = await res.json();
       if (json.success && json.data) {
         window.__engproUser = json.data;
+        window.EngProI18n?.syncAccount(json.data.ui_language);
         showLoggedIn(json.data);
       } else {
         window.__engproUser = null;

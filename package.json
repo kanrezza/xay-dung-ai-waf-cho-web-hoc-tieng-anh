@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "dev": "node --watch --env-file-if-exists=.env server.js"
+    "dev": "node --watch --env-file-if-exists=.env server.js",
+    "demo": "node --env-file-if-exists=.env scripts/seed-demo.js"
   },
   "engines": {
     "node": ">=20.12"
