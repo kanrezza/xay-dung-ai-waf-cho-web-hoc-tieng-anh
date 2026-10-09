@@ -5,7 +5,7 @@
 --  Cách tạo CSDL (chạy một lần):
 --    createdb engpro
 --    psql -d engpro -f db/engpro.sql
---  Trên Railway: tạo dịch vụ PostgreSQL rồi chạy file này bằng psql
+--  Khi triển khai: tạo dịch vụ PostgreSQL rồi chạy file này bằng psql
 --  với chuỗi kết nối DATABASE_URL của dịch vụ đó.
 --
 --  File chạy lại nhiều lần vẫn an toàn (IF NOT EXISTS, ON CONFLICT).

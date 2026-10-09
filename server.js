@@ -27,8 +27,9 @@ const PORT = process.env.PORT || 8080;
 // ─────────────────────────────────────────────────────────────
 //  Middleware
 // ─────────────────────────────────────────────────────────────
-// Chạy sau proxy (Railway) thì lấy IP thật của người dùng từ X-Forwarded-For, dùng cho giới hạn số lần gửi
-if (process.env.TRUST_PROXY || process.env.RAILWAY_ENVIRONMENT) app.set('trust proxy', 1);
+// Chạy sau proxy (WAF, nginx, dịch vụ hosting) thì lấy IP thật của người dùng
+// từ X-Forwarded-For, dùng cho giới hạn số lần gửi. Đặt TRUST_PROXY=1 khi đứng sau proxy.
+if (process.env.TRUST_PROXY) app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
 // Header bảo mật cho mọi phản hồi
@@ -48,7 +49,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Khóa ký cookie phiên: bắt buộc đặt SESSION_SECRET khi chạy thật; máy phát triển dùng khóa tạm và cảnh báo
-const IS_PRODUCTION = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 let SESSION_SECRET = process.env.SESSION_SECRET;
 if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
   if (IS_PRODUCTION) {
@@ -5307,7 +5308,7 @@ app.get('/api/gv/questions', async (req, res) => {
 // Mỗi 30 phút quét các bài kiểm tra chưa đạt sẽ đến hạn trong 24 giờ tới và gửi một email gộp cho mỗi học viên.
 // Mỗi hạn nộp chỉ nhắc một lần (bảng email_reminders). Học viên tắt được trong Cài đặt tài khoản.
 const REMINDER_WINDOW_MS = 24 * 3600 * 1000;
-const APP_URL = (process.env.APP_URL || '').replace(/\/+$/, ''); // ví dụ https://engpro.up.railway.app, để email có nút mở bài
+const APP_URL = (process.env.APP_URL || '').replace(/\/+$/, ''); // địa chỉ web khi đã triển khai, để email có nút mở bài
 let reminderRunning = false;
 
 function relativeHours(ms) {

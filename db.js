@@ -17,7 +17,7 @@ const { Pool, types } = require('pg');
 types.setTypeParser(types.builtins.INT8,    v => parseInt(v, 10));
 types.setTypeParser(types.builtins.NUMERIC, v => parseFloat(v));
 
-// Railway cấp sẵn DATABASE_URL; chạy local thì dùng các biến PG* trong .env
+// Có DATABASE_URL (dịch vụ hosting thường cấp sẵn) thì dùng; chạy local thì dùng các biến PG* trong .env
 const config = process.env.DATABASE_URL
   ? { connectionString: process.env.DATABASE_URL }
   : {
