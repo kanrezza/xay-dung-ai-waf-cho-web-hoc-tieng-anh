@@ -132,6 +132,44 @@ Ba trường hợp chỉ ML bắt được: SQLi nối chuỗi `'||(SELECT passw
 XSS qua thẻ `<details ontoggle=>` và `<marquee onstart=>`. Đây là bằng chứng
 bằng số cho câu hỏi "đã có regex rồi thì cần học máy làm gì?".
 
+### WAF làm web chậm đi bao nhiêu (`python -m tests.bench_latency`)
+
+Đo trên Apple M2, 8 lõi, 16 GB RAM. Mỗi kịch bản 1000 lần, gửi xen kẽ thẳng
+EngPro và qua WAF, giữ kết nối như trình duyệt.
+
+| Kịch bản | Thẳng EngPro (p50) | Qua WAF (p50) | Thêm p50 | Thêm p95 | Thêm p99 |
+|---|---|---|---|---|---|
+| GET API nhỏ (105 B) | 3.67 ms | 6.33 ms | **+2.66 ms** | +3.48 ms | +4.40 ms |
+| GET danh sách khóa học (3 KB) | 3.30 ms | 5.68 ms | **+2.38 ms** | +2.53 ms | +2.99 ms |
+| GET file tĩnh JS (96 KB) | 2.36 ms | 3.62 ms | **+1.27 ms** | +1.51 ms | +1.72 ms |
+| POST bài Writing (~1.5 KB) | 0.47 ms | 2.64 ms | **+2.18 ms** | +2.48 ms | +2.72 ms |
+
+**WAF thêm khoảng 1–3 ms mỗi request.** Để so sánh: độ trễ mạng thật từ người
+dùng tới máy chủ thường 20–100 ms, và người dùng chỉ cảm nhận được chậm khi vượt
+khoảng 100 ms. Mức tăng này không nhận ra được khi dùng web.
+
+Thời gian từng thành phần bên trong WAF (đo trực tiếp, không qua mạng):
+
+| Thành phần | GET ngắn | Bài Writing 1.5 KB |
+|---|---|---|
+| Trích & giải mã đặc trưng | 0.002 ms | 0.002 ms |
+| Lớp 1 – luật regex (28 luật) | 0.023 ms | 0.349 ms |
+| Lớp 2 – mô hình ML | 0.153 ms | 0.738 ms |
+| Ghi log SQLite | 0.063 ms | 0.049 ms |
+| **Tổng phần kiểm tra** | **0.24 ms** | **1.14 ms** |
+
+Điều đáng chú ý: với request GET, phần kiểm tra (gồm cả AI) chỉ tốn 0.24 ms trong
+tổng 2.4–2.7 ms tăng thêm. **Khoảng 90% độ trễ đến từ việc chuyển tiếp** (thêm một
+chặng HTTP qua Python), không phải từ AI. Mô hình ML là thành phần tốn nhất trong
+phần kiểm tra và tăng theo độ dài văn bản (0.15 ms → 0.74 ms).
+
+**Khi nhiều người truy cập cùng lúc** (20 kết nối đồng thời, `/api/courses`), WAF
+giữ được khoảng **70–80% thông lượng** so với gửi thẳng (đo nhiều lần dao động
+trong khoảng này). Nguyên nhân: WAF chạy một tiến trình duy nhất và phần kiểm tra
+(regex, ML, ghi log) chạy tuần tự, nên request phải xếp hàng. Muốn tăng thì chạy
+nhiều tiến trình WAF, nhưng khi đó bộ đếm của lớp hành vi (đang để trong bộ nhớ)
+phải chuyển sang nơi dùng chung như Redis – xem *Hướng phát triển*.
+
 ## Demo "trước và sau khi có WAF"
 
 Mở dashboard rồi chạy kịch bản tấn công:
@@ -255,6 +293,7 @@ ai-waf/
 │   ├── demo_attack.py       # demo trên EngPro: chặn tấn công, không báo nhầm
 │   ├── demo_dvwa.py         # demo trên DVWA: đo khai thác thật bị chặn
 │   ├── compare_layers.py    # so sánh lớp luật với lớp học máy
+│   ├── bench_latency.py     # đo độ trễ và thông lượng WAF thêm vào
 │   └── test_security.py     # kiểm thử an toàn của chính WAF (9 bài)
 ├── dvwa.sh                  # dựng/xóa bia tập DVWA bằng Docker
 └── run.sh
@@ -294,3 +333,5 @@ môn An toàn và Bảo mật thông tin. Không dùng để tấn công hệ th
 - Huấn luyện trên bộ **CSIC 2010 HTTP dataset** thay vì dữ liệu tự sinh.
 - Thêm lớp chống **prompt injection** cho các endpoint AI (chấm Writing, hỏi đáp).
 - Thử mô hình sâu hơn (CNN/LSTM ký tự) và vẽ đường cong ROC.
+- Chạy nhiều tiến trình WAF để tăng thông lượng, chuyển bộ đếm của lớp hành vi
+  sang Redis để các tiến trình dùng chung.
