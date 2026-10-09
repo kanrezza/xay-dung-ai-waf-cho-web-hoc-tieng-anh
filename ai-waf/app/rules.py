@@ -16,8 +16,17 @@ _RAW_RULES = [
     ("SQLI-04", "SQL Injection", r"(?i)\b(?:sleep|pg_sleep|benchmark|waitfor\s+delay)\s*\("),
     ("SQLI-05", "SQL Injection", r"(?i)\b(?:drop|alter|truncate)\s+table\b"),
     ("SQLI-06", "SQL Injection", r"(?i)\binsert\s+into\b|\bdelete\s+from\b"),
-    ("SQLI-07", "SQL Injection", r"(?:--|#)\s*$|/\*.*?\*/"),                        # comment SQL
+    # Comment SQL. Dấu nháy LIỀN NGAY comment (admin'# / admin'--) là chữ ký SQLi,
+    # tiếng Anh gần như không có. Không khớp "--" đứng một mình (dấu gạch ngang
+    # trong câu) hay "#" (hashtag). Vẫn bắt comment khối /* */.
+    ("SQLI-07", "SQL Injection", r"['\"](?:--|#)|(?:--|#)\s*$|/\*!?\d*|/\*.*?\*/"),
     ("SQLI-08", "SQL Injection", r"(?i)\b(?:information_schema|pg_catalog|sqlite_master)\b"),
+    # Blind/trích dữ liệu: hàm SQL bọc truy vấn con, hoặc SELECT...FROM...LIMIT.
+    # Nhắm chữ ký mà câu tiếng Anh "select one from the list" KHÔNG có: hàm lồng
+    # select, hoặc mệnh đề LIMIT theo sau from.
+    ("SQLI-10", "SQL Injection",
+     r"(?i)(?:ascii|substring|substr|mid|ord|hex|concat|group_concat|extractvalue|updatexml)\s*\([^)]*\bselect\b"
+     r"|\bselect\b.{0,80}\bfrom\b.{0,40}\blimit\b"),
     # "99 OR TRUE--". Phải có số/nháy/ngoặc ngay trước và dấu kết thúc câu lệnh
     # ngay sau, nếu không sẽ chặn nhầm dạng câu hỏi True/False/Not Given của
     # EngPro ("Choose true or false", "The answer is false or true").

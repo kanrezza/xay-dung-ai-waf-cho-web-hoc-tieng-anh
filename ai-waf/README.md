@@ -117,20 +117,54 @@ Payload trong tập kiểm tra **không nằm** trong tập huấn luyện (grou
 | Tập kiểm tra (payload lạ) | 1.000 | 0.905 | **0.950** | 0 |
 | Tập holdout viết tay | 1.000 | 0.947 | **0.973** | 0 |
 
+### So với ModSecurity + OWASP CRS (`python -m tests.compare_modsec`)
+
+ModSecurity với bộ luật OWASP CRS là WAF mã nguồn mở chuẩn công nghiệp. Đặt nó
+đứng trước chính EngPro ở hai mức độ gắt (Paranoia Level), rồi chạy **cùng một bộ
+test** qua cả ba: 20 tấn công và 19 request bình thường (nhiều câu tiếng Anh tự
+do chứa từ khóa trông giống tấn công).
+
+| WAF | Phát hiện tấn công | Báo nhầm tiếng Anh | Độ trễ p50 |
+|---|---|---|---|
+| **AI WAF (đồ án)** | **20/20 (100%)** | **0/19 (0%)** | 1.1 ms |
+| ModSecurity PL1 (mặc định) | 19/20 (95%) | 1/19 (5%) | 1.9 ms |
+| ModSecurity PL2 (gắt hơn) | 20/20 (100%) | **6/19 (32%)** | 1.8 ms |
+
+Đây là đánh đổi kinh điển của WAF, và là lý do đề tài gắn với *web học tiếng Anh*:
+
+- **ModSecurity PL1** (mức mặc định) vừa bỏ sót một biến thể SQLi (`admin'#`), vừa
+  đã bắt đầu báo nhầm (chặn câu có công thức `=SUM(A1:A10)`).
+- **ModSecurity PL2** (mức gắt) bắt đủ 20 tấn công, nhưng **chặn nhầm 6/19 câu
+  tiếng Anh bình thường** — gồm *"In SQL we write SELECT name FROM students..."*,
+  *"select Save As from the menu"*, *"whether 1=1 is always true"*. Với học viên
+  nộp bài Writing, đây là mức báo nhầm không dùng được.
+- **AI WAF** đạt 100% phát hiện và 0% báo nhầm trên bộ test này, nhờ lớp học máy
+  hiểu được ngữ cảnh câu tiếng Anh thay vì chỉ khớp từ khóa.
+
+> **Giới hạn cần nói thẳng trong báo cáo.** Bộ test gồm 20 tấn công và 19 request
+> bình thường, phản ánh lưu lượng thật của EngPro chứ không phải mọi kiểu tấn
+> công. ModSecurity CRS có hàng nghìn luật và trên một bộ né tránh rộng hơn sẽ
+> bắt được nhiều đòn mà AI WAF bỏ sót. Kết luận đúng là: *trên lưu lượng đặc thù
+> của web học tiếng Anh, AI WAF đạt mức phát hiện ngang ModSecurity nhưng báo nhầm
+> ít hơn hẳn*, chứ không phải "AI WAF tốt hơn ModSecurity ở mọi mặt".
+
+Dựng ModSecurity để chạy lại: `./modsec.sh up` (cần Docker), rồi
+`python -m tests.compare_modsec`, xong thì `./modsec.sh down`.
+
 ### Vì sao cần cả luật lẫn học máy (`python -m tests.compare_layers`)
 
 Chạy 17 payload biến thể qua từng lớp riêng:
 
 | Nhóm | Số lượng | Ý nghĩa |
 |---|---|---|
-| Cả hai lớp bắt | 11 | Tấn công rõ ràng |
+| Cả hai lớp bắt | 12 | Tấn công rõ ràng |
 | **Chỉ luật bắt** | 3 | ML bỏ sót, regex cứu |
-| **Chỉ ML bắt** | 3 | Regex bỏ sót, ML cứu ← giá trị của AI |
+| **Chỉ ML bắt** | 2 | Regex bỏ sót, ML cứu ← giá trị của AI |
 | Cả hai bỏ sót | 0 | |
 
-Ba trường hợp chỉ ML bắt được: SQLi nối chuỗi `'||(SELECT password...)||'`,
-XSS qua thẻ `<details ontoggle=>` và `<marquee onstart=>`. Đây là bằng chứng
-bằng số cho câu hỏi "đã có regex rồi thì cần học máy làm gì?".
+Hai trường hợp chỉ ML bắt được: XSS qua thẻ `<details ontoggle=>` và
+`<marquee onstart=>` — các thẻ/sự kiện hiếm mà luật chưa liệt kê. Đây là bằng
+chứng bằng số cho câu hỏi "đã có regex rồi thì cần học máy làm gì?".
 
 ### WAF làm web chậm đi bao nhiêu (`python -m tests.bench_latency`)
 
@@ -153,7 +187,7 @@ Thời gian từng thành phần bên trong WAF (đo trực tiếp, không qua m
 | Thành phần | GET ngắn | Bài Writing 1.5 KB |
 |---|---|---|
 | Trích & giải mã đặc trưng | 0.002 ms | 0.002 ms |
-| Lớp 1 – luật regex (28 luật) | 0.023 ms | 0.349 ms |
+| Lớp 1 – luật regex (29 luật) | 0.023 ms | 0.349 ms |
 | Lớp 2 – mô hình ML | 0.153 ms | 0.738 ms |
 | Ghi log SQLite | 0.063 ms | 0.049 ms |
 | **Tổng phần kiểm tra** | **0.24 ms** | **1.14 ms** |
@@ -294,8 +328,10 @@ ai-waf/
 │   ├── demo_dvwa.py         # demo trên DVWA: đo khai thác thật bị chặn
 │   ├── compare_layers.py    # so sánh lớp luật với lớp học máy
 │   ├── bench_latency.py     # đo độ trễ và thông lượng WAF thêm vào
+│   ├── compare_modsec.py    # so sánh với ModSecurity + OWASP CRS
 │   └── test_security.py     # kiểm thử an toàn của chính WAF (9 bài)
 ├── dvwa.sh                  # dựng/xóa bia tập DVWA bằng Docker
+├── modsec.sh                # dựng/xóa ModSecurity CRS để so sánh
 └── run.sh
 ```
 
