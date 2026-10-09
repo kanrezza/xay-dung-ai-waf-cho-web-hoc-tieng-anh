@@ -1,0 +1,20 @@
+# AI WAF cho EngPro – thư viện Python
+#
+# Cài:
+#   python3 -m venv .venv
+#   ./.venv/bin/pip install -r requirements.txt
+#
+# Máy đã có sẵn scikit-learn/numpy/scipy ở Python hệ thống thì tạo venv bằng
+#   python3 -m venv --system-site-packages .venv
+# để dùng lại, khỏi tải lại vài trăm MB.
+
+# ── Reverse proxy ──
+fastapi>=0.115          # khung web cho reverse proxy + API dashboard
+uvicorn>=0.30           # máy chủ ASGI chạy FastAPI
+httpx>=0.27             # chuyển tiếp request đã lọc sang EngPro
+
+# ── Học máy (lớp 2) ──
+scikit-learn>=1.5       # TF-IDF + Logistic Regression
+numpy>=1.26             # tính toán số học (phụ thuộc của scikit-learn)
+scipy>=1.11             # ma trận thưa (phụ thuộc của scikit-learn)
+joblib>=1.3             # lưu / nạp mô hình đã huấn luyện

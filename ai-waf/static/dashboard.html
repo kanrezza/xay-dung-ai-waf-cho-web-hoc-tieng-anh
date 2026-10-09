@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI WAF – EngPro · Bảng giám sát</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#141a2e; --panel2:#1b2440; --line:#26304f;
+    --text:#e7ecf7; --muted:#8b96b3; --accent:#4f8cff; --danger:#ff5c72;
+    --ok:#2ecc71; --warn:#ffb020;
+    --rule:#ff8a3d; --ml:#a06bff; --anomaly:#ffb020;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+       background:var(--bg);color:var(--text);padding:20px}
+  h1{font-size:20px;margin:0 0 2px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .kpi .n{font-size:30px;font-weight:700}
+  .kpi .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .kpi.block .n{color:var(--danger)} .kpi.ok .n{color:var(--ok)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+  .chart-box{position:relative;height:230px}
+  h2{font-size:14px;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
+  td.snip{max-width:340px;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+  .tag{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;display:inline-block}
+  .tag.block{background:rgba(255,92,114,.15);color:var(--danger)}
+  .tag.allow{background:rgba(46,204,113,.15);color:var(--ok)}
+  .tag.rule{background:rgba(255,138,61,.15);color:var(--rule)}
+  .tag.ml{background:rgba(160,107,255,.15);color:var(--ml)}
+  .tag.anomaly{background:rgba(255,176,32,.15);color:var(--warn)}
+  .tag.dvwa{background:rgba(255,92,114,.12);color:#ff8a9c}
+  .tag.engpro{background:rgba(79,140,255,.15);color:var(--accent)}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .status{font-size:12.5px;color:var(--muted)}
+  .status b{color:var(--text)}
+  .badge{padding:3px 10px;border-radius:8px;font-size:12px;font-weight:600}
+  .badge.on{background:rgba(46,204,113,.15);color:var(--ok)}
+  .badge.off{background:rgba(255,92,114,.15);color:var(--danger)}
+  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);
+         padding:7px 14px;border-radius:9px;cursor:pointer;font-size:13px}
+  button:hover{border-color:var(--accent)}
+  .scroll{max-height:360px;overflow:auto}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;animation:p 1.6s infinite}
+  @keyframes p{50%{opacity:.3}}
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div>
+      <h1>🛡️ AI WAF – EngPro</h1>
+      <div class="sub"><span class="dot"></span>Tường lửa ứng dụng web tích hợp học máy · tự động làm mới mỗi 2 giây</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" id="statusBar"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card kpi"><div class="n" id="kTotal">0</div><div class="l">Tổng request</div></div>
+    <div class="card kpi block"><div class="n" id="kBlocked">0</div><div class="l">Đã chặn</div></div>
+    <div class="card kpi ok"><div class="n" id="kAllowed">0</div><div class="l">Cho qua</div></div>
+    <div class="card kpi"><div class="n" id="kRate">0%</div><div class="l">Tỉ lệ chặn</div></div>
+  </div>
+
+  <div class="row">
+    <div class="card"><h2>Chặn theo loại tấn công</h2><div class="chart-box"><canvas id="attackChart"></canvas></div></div>
+    <div class="card"><h2>Lớp nào ra quyết định</h2><div class="chart-box"><canvas id="layerChart"></canvas></div></div>
+  </div>
+
+  <div class="card">
+    <div class="bar">
+      <h2 style="margin:0">Nhật ký thời gian thực</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="flagged" class="status"></span>
+        <button onclick="unban()">Gỡ chặn IP</button>
+        <button onclick="refresh()">Làm mới</button>
+        <button onclick="clearLogs()">Xóa nhật ký</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Thời gian</th><th>Mục tiêu</th><th>IP</th><th>Method</th><th>Đường dẫn</th>
+        <th>Kết quả</th><th>Lớp</th><th>Tấn công</th><th>Điểm ML</th><th>Payload</th></tr></thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const ATTACK_COLORS = ['#ff5c72','#a06bff','#ffb020','#4f8cff','#2ecc71','#ff8a3d','#25c9d0'];
+const LAYER_COLORS = {rule:'#ff8a3d', ml:'#a06bff', anomaly:'#ffb020', '-':'#4f8cff'};
+let attackChart, layerChart;
+
+function initCharts(){
+  const common = {plugins:{legend:{labels:{color:'#8b96b3',font:{size:11}}}}};
+  attackChart = new Chart(document.getElementById('attackChart'), {
+    type:'doughnut',
+    data:{labels:[],datasets:[{data:[],backgroundColor:ATTACK_COLORS,borderColor:'#141a2e',borderWidth:2}]},
+    options:{...common, cutout:'62%', maintainAspectRatio:false}
+  });
+  layerChart = new Chart(document.getElementById('layerChart'), {
+    type:'bar',
+    data:{labels:[],datasets:[{label:'Số lần chặn',data:[],backgroundColor:[]}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#8b96b3'},grid:{display:false}},
+              y:{ticks:{color:'#8b96b3'},grid:{color:'#26304f'},beginAtZero:true}}}
+  });
+}
+
+const layerName = {rule:'Luật (regex)', ml:'Học máy', anomaly:'Hành vi', '-':'—'};
+
+async function loadStatus(){
+  const s = await (await fetch('/waf/api/status')).json();
+  const m = s.model;
+  document.getElementById('statusBar').innerHTML =
+    `<span class="badge ${s.layers.rules?'on':'off'}">Luật ${s.rules}</span>`+
+    `<span class="badge ${s.layers.ml?'on':'off'}">ML: ${m.trained?'đã train':'heuristic'}</span>`+
+    `<span class="badge ${s.layers.anomaly?'on':'off'}">Hành vi</span>`+
+    `<span class="badge ${s.detection_only?'off':'on'}">${s.detection_only?'Chỉ ghi log':'Đang chặn'}</span>`+
+    `<span class="status">→ <b>${s.backend}</b></span>`;
+}
+
+async function refresh(){
+  try{
+    const stats = await (await fetch('/waf/api/stats')).json();
+    document.getElementById('kTotal').textContent = stats.total;
+    document.getElementById('kBlocked').textContent = stats.blocked;
+    document.getElementById('kAllowed').textContent = stats.allowed;
+    document.getElementById('kRate').textContent =
+      (stats.total ? Math.round(stats.blocked/stats.total*100) : 0) + '%';
+
+    attackChart.data.labels = stats.by_attack.map(a=>a.attack);
+    attackChart.data.datasets[0].data = stats.by_attack.map(a=>a.n);
+    attackChart.update();
+
+    layerChart.data.labels = stats.by_layer.map(l=>layerName[l.layer]||l.layer);
+    layerChart.data.datasets[0].data = stats.by_layer.map(l=>l.n);
+    layerChart.data.datasets[0].backgroundColor = stats.by_layer.map(l=>LAYER_COLORS[l.layer]||'#4f8cff');
+    layerChart.update();
+
+    const events = await (await fetch('/waf/api/events?limit=120')).json();
+    document.getElementById('logBody').innerHTML = events.map(e=>{
+      const t = new Date(e.ts*1000).toLocaleTimeString('vi-VN');
+      const dec = e.decision==='block'
+        ? '<span class="tag block">CHẶN</span>' : '<span class="tag allow">Cho qua</span>';
+      const lay = e.layer && e.layer!=='-'
+        ? `<span class="tag ${e.layer}">${layerName[e.layer]||e.layer}</span>` : '—';
+      const sc = e.score ? Number(e.score).toFixed(2) : '—';
+      const tgt = e.target === 'DVWA'
+        ? '<span class="tag dvwa">DVWA</span>'
+        : `<span class="tag engpro">${e.target || '—'}</span>`;
+      return `<tr><td>${t}</td><td>${tgt}</td><td>${e.ip}</td><td>${e.method}</td>
+        <td>${e.path}</td><td>${dec}</td><td>${lay}</td>
+        <td>${e.attack||'—'}</td><td>${sc}</td>
+        <td class="snip" title="${(e.snippet||'').replace(/"/g,'&quot;')}">${(e.snippet||'').replace(/</g,'&lt;')}</td></tr>`;
+    }).join('');
+  }catch(err){ console.error(err); }
+}
+
+async function clearLogs(){
+  if(!confirm('Xóa toàn bộ nhật ký?')) return;
+  await fetch('/waf/api/clear',{method:'POST'});
+  refresh();
+}
+
+async function unban(){
+  await fetch('/waf/api/unban',{method:'POST'});
+  loadFlagged();
+}
+
+async function loadFlagged(){
+  try{
+    const f = await (await fetch('/waf/api/flagged')).json();
+    document.getElementById('flagged').innerHTML = f.length
+      ? `🚫 IP bị khóa đăng nhập: <b>${f.map(x=>x.ip+' ('+x.fails+' lần sai)').join(', ')}</b>`
+      : '';
+  }catch(e){}
+}
+
+initCharts(); loadStatus(); refresh(); loadFlagged();
+setInterval(refresh, 2000);
+setInterval(loadFlagged, 2000);
+setInterval(loadStatus, 5000);
+</script>
+</body>
+</html>

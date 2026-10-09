@@ -1,0 +1,254 @@
+# AI WAF cho EngPro
+
+Tường lửa ứng dụng web (Web Application Firewall) tích hợp học máy, đặt trước hệ
+thống học tiếng Anh trực tuyến **EngPro** để chặn tấn công web mà không phải sửa
+mã nguồn của EngPro.
+
+```
+Trình duyệt / Kẻ tấn công ──►  AI WAF (:8000)  ──►  EngPro (:8080)
+                                   │
+                                   ├─ Lớp 1  Luật & chữ ký (regex): SQLi, XSS, Path Traversal, Cmd Injection, scanner
+                                   ├─ Lớp 2  Học máy (TF-IDF n-gram ký tự + Logistic Regression): bắt biến thể né luật
+                                   ├─ Lớp 3  Hành vi bất thường: dò mật khẩu, quét/DoS tầng ứng dụng
+                                   └─ Ghi log (SQLite) + Dashboard giám sát thời gian thực
+```
+
+WAF là một **reverse proxy** riêng viết bằng Python: mọi request đi vào cổng 8000,
+được ba lớp kiểm tra; sạch thì chuyển tiếp sang EngPro (8080), độc hại thì trả 403
+và ghi log. Vì tách rời nên chứng minh được WAF bảo vệ web mà không đụng vào code web.
+
+## Vì sao dùng học máy chứ không chỉ dùng luật?
+
+- **Luật (regex)** chắc chắn và nhanh, nhưng dễ bị né bằng biến thể như
+  `UnIoN/**/SeLeCt`, `%3Cscript%3E`, đổi hoa thường… Lớp học máy học theo **n-gram
+  ký tự** nên tổng quát hơn, bắt được nhiều biến thể mà luật bỏ sót.
+- **Chống báo nhầm (false positive).** EngPro có bài Writing và hỏi đáp bằng tiếng
+  Anh tự do. Câu như *"students should **select** courses and **order** their study
+  plan"* chứa từ khóa SQL nhưng hoàn toàn bình thường. Mô hình được huấn luyện với
+  chính loại câu này để **không chặn nhầm** học viên — đây là điểm nhấn của đề tài.
+
+## Hai mục tiêu được bảo vệ (cách đánh giá WAF cho đúng)
+
+Không tự tạo lỗ hổng trong EngPro để rồi tự chặn — đó là lập luận vòng tròn và
+làm yếu báo cáo. Thay vào đó, đặt WAF trước **hai mục tiêu** và đo mỗi thứ một vế:
+
+```
+                        ┌─►  EngPro (:8080)   → đo BÁO NHẦM trên lưu lượng thật
+   AI WAF (2 tiến trình)┤
+                        └─►  DVWA  (:4280)    → đo CHẶN được KHAI THÁC THẬT
+        WAF cho EngPro ở cổng 8000  ·  WAF cho DVWA ở cổng 8001
+```
+
+- **DVWA** (Damn Vulnerable Web Application) là bia tập chuẩn, cố tình có lỗ hổng,
+  được dùng trong nhiều nghiên cứu WAF. Trên DVWA ta chứng minh được **khai thác
+  thành công thật** (SQLi lấy được danh sách người dùng, XSS phản chiếu chạy được),
+  rồi cho thấy WAF chặn đứng chúng.
+- **EngPro** dùng truy vấn tham số hóa nên vốn đã an toàn trước SQLi. Vai trò của
+  nó trong đánh giá là chứng minh WAF **không làm phiền người dùng thật**.
+
+## Yêu cầu
+
+- Python 3.11+ (đã kiểm thử với 3.11)
+- EngPro đang chạy ở `http://127.0.0.1:8080`
+- Docker (cho DVWA) — tùy chọn, chỉ cần khi demo khai thác thật
+
+## Cài đặt & chạy
+
+```bash
+cd ai-waf
+./run.sh          # lần đầu tự tạo venv, cài thư viện, huấn luyện mô hình rồi chạy WAF
+```
+
+Hoặc làm thủ công từng bước:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m ml.train                              # huấn luyện, in precision/recall/F1
+python -m uvicorn app.main:app --port 8000      # chạy WAF
+```
+
+Sau đó:
+- Truy cập EngPro **qua WAF**: <http://127.0.0.1:8000>
+- Bảng giám sát: <http://127.0.0.1:8000/waf/dashboard>
+
+## Kết quả đo được
+
+Số liệu dưới đây lấy từ lần chạy thật trên máy, không phải ước lượng.
+
+### Khai thác thật trên DVWA (`python -m tests.demo_dvwa`)
+
+Đây là số liệu thuyết phục nhất: đo *khai thác có thành công không*, không chỉ
+xem mã HTTP.
+
+| Lỗ hổng | Gửi thẳng DVWA | Qua AI WAF |
+|---|---|---|
+| SQL Injection `' OR '1'='1` | ⚠️ lấy trộm **5 bản ghi** người dùng | 🛡️ chặn (403) |
+| XSS phản chiếu `<script>` | ⚠️ payload **phản chiếu, chạy được** | 🛡️ chặn (403) |
+| **Khai thác thành công** | **2/2** | **0/2** |
+
+### Hiệu quả trên EngPro (`python -m tests.demo_attack`)
+
+| | Qua WAF | Gửi thẳng EngPro |
+|---|---|---|
+| Tấn công bị chặn | **13/13** | 0/13 |
+| Báo nhầm lưu lượng bình thường | **0/10** | 0/10 |
+
+> Trên EngPro, "0/13 chặn khi gửi thẳng" nghĩa là request *tới được* server
+> (HTTP 200), không phải khai thác thành công — EngPro dùng truy vấn tham số hóa
+> nên SQLi không lấy được dữ liệu. Vế "khai thác thật bị chặn" đo trên DVWA ở trên.
+
+### Riêng mô hình học máy (`python -m ml.train`)
+
+Payload trong tập kiểm tra **không nằm** trong tập huấn luyện (grouped split):
+
+| | Precision | Recall | F1 | Báo nhầm |
+|---|---|---|---|---|
+| Tập kiểm tra (payload lạ) | 1.000 | 0.905 | **0.950** | 0 |
+| Tập holdout viết tay | 1.000 | 0.947 | **0.973** | 0 |
+
+### Vì sao cần cả luật lẫn học máy (`python -m tests.compare_layers`)
+
+Chạy 17 payload biến thể qua từng lớp riêng:
+
+| Nhóm | Số lượng | Ý nghĩa |
+|---|---|---|
+| Cả hai lớp bắt | 11 | Tấn công rõ ràng |
+| **Chỉ luật bắt** | 3 | ML bỏ sót, regex cứu |
+| **Chỉ ML bắt** | 3 | Regex bỏ sót, ML cứu ← giá trị của AI |
+| Cả hai bỏ sót | 0 | |
+
+Ba trường hợp chỉ ML bắt được: SQLi nối chuỗi `'||(SELECT password...)||'`,
+XSS qua thẻ `<details ontoggle=>` và `<marquee onstart=>`. Đây là bằng chứng
+bằng số cho câu hỏi "đã có regex rồi thì cần học máy làm gì?".
+
+## Demo "trước và sau khi có WAF"
+
+Mở dashboard rồi chạy kịch bản tấn công:
+
+```bash
+source .venv/bin/activate
+python -m tests.demo_attack --direct    # gửi THẲNG EngPro (không WAF) – tấn công lọt hết
+python -m tests.demo_attack             # gửi QUA WAF – bị chặn, dashboard hiện log
+python -m tests.compare_layers          # so sánh lớp luật với lớp học máy
+```
+
+Kịch bản gồm SQLi, XSS, Path Traversal, Command Injection, biến thể né luật và
+User-Agent của sqlmap/Nikto; kèm request bình thường (bài Writing chứa từ khóa
+nhạy cảm, câu True/False, client dùng curl/Postman) để chứng minh WAF
+**không chặn nhầm**.
+
+### Demo khai thác thật trên DVWA
+
+```bash
+./dvwa.sh up                            # dựng DVWA + MariaDB, thiết lập sẵn (cần Docker)
+
+# bật WAF thứ hai bảo vệ DVWA (cổng 8001)
+WAF_TARGET_NAME=DVWA BACKEND_URL=http://127.0.0.1:4280 \
+  .venv/bin/python -m uvicorn app.main:app --app-dir . --port 8001 &
+
+python -m tests.demo_dvwa --direct      # THẲNG DVWA – SQLi/XSS khai thác thành công
+python -m tests.demo_dvwa               # QUA WAF – bị chặn, không lấy được gì
+./dvwa.sh down                          # dọn khi xong
+```
+
+Đây là phần trực quan nhất để quay video: mở `http://127.0.0.1:4280/vulnerabilities/sqli/`
+(đăng nhập `admin`/`password`), nhập `' OR '1'='1` vào ô ID — thấy toàn bộ danh
+sách người dùng đổ ra. Rồi thử lại qua `http://127.0.0.1:8001/...` — bị WAF chặn.
+
+### Demo dò mật khẩu (lớp hành vi)
+
+Gửi đăng nhập sai liên tiếp vào `/api/auth/login`. Kết quả thực tế:
+
+```
+lần 1-5  → 401  EngPro từ chối
+lần 6-8  → 429  EngPro tự giới hạn
+lần 9+   → 403  WAF chặn ngay tại cửa, request không còn tới EngPro
+```
+
+Lúc này **chính máy đang demo bị khóa đăng nhập 1 phút** (WAF chặn theo IP).
+Bấm nút **"Gỡ chặn IP"** trên dashboard để trình bày tiếp ngay, không phải chờ.
+Duyệt web bình thường vẫn hoạt động, chỉ riêng endpoint đăng nhập bị khóa.
+
+> Sau khi gỡ chặn ở WAF, EngPro có thể vẫn trả 429 do cơ chế giới hạn riêng của
+> nó (`server.js`). Đó là hai lớp bảo vệ độc lập, không phải lỗi.
+
+## Bật/tắt từng lớp (phục vụ so sánh trong báo cáo)
+
+Đặt biến môi trường trước khi chạy:
+
+| Biến | Ý nghĩa |
+|---|---|
+| `WAF_ENABLE_RULES=0` | Tắt lớp luật (chỉ còn ML) – cho thấy ML bắt được gì |
+| `WAF_ENABLE_ML=0` | Tắt lớp ML (chỉ còn luật) – cho thấy luật bỏ sót biến thể |
+| `WAF_DETECTION_ONLY=1` | Chỉ ghi log, không chặn – đo tỉ lệ báo nhầm an toàn |
+| `ML_THRESHOLD=0.7` | Hạ ngưỡng ML: bắt nhiều hơn nhưng dễ báo nhầm hơn |
+
+Ví dụ chỉ chạy ML để so sánh:
+
+```bash
+WAF_ENABLE_RULES=0 python -m uvicorn app.main:app --port 8000
+```
+
+## Cấu trúc thư mục
+
+```
+ai-waf/
+├── app/                # WAF (reverse proxy + 3 lớp)
+│   ├── main.py         #   proxy FastAPI + API dashboard
+│   ├── waf.py          #   điều phối 3 lớp, ra quyết định
+│   ├── rules.py        #   Lớp 1: luật/chữ ký (regex)
+│   ├── model.py        #   Lớp 2: nạp & chấm điểm mô hình ML
+│   ├── anomaly.py      #   Lớp 3: tần suất/hành vi
+│   ├── features.py     #   trích & giải mã đặc trưng từ request
+│   ├── logstore.py     #   ghi log SQLite cho dashboard
+│   └── config.py       #   cấu hình
+├── ml/
+│   ├── payloads.py     #   kho payload tấn công + câu tiếng Anh bình thường
+│   ├── generate_data.py#   sinh dataset (chia payload rời nhau train/test)
+│   ├── holdout.py      #   tập kiểm tra độc lập, viết tay, không dùng để train
+│   └── train.py        #   huấn luyện TF-IDF + Logistic Regression
+├── static/dashboard.html    # bảng giám sát (Chart.js), hiển thị cả EngPro và DVWA
+├── tests/
+│   ├── demo_attack.py       # demo trên EngPro: chặn tấn công, không báo nhầm
+│   ├── demo_dvwa.py         # demo trên DVWA: đo khai thác thật bị chặn
+│   └── compare_layers.py    # so sánh lớp luật với lớp học máy
+├── dvwa.sh                  # dựng/xóa bia tập DVWA bằng Docker
+└── run.sh
+```
+
+## Ba bài học kỹ thuật khi xây dựng (nên đưa vào báo cáo)
+
+Ba lỗi dưới đây đều đã xảy ra thật trong quá trình làm và đã sửa. Kể lại chúng
+làm báo cáo thuyết phục hơn nhiều so với chỉ khoe kết quả đẹp.
+
+**1. Độ chính xác 100% là dấu hiệu xấu.** Lần huấn luyện đầu đạt F1 = 1.000 vì
+tập kiểm tra được sinh từ chính kho payload của tập huấn luyện – mô hình chỉ cần
+học thuộc. Sửa bằng cách chia payload rời nhau (`split_pools`), F1 tụt về 0.95 –
+và đó mới là con số thật.
+
+**2. Dữ liệu huấn luyện phải đi qua đúng hàm trích đặc trưng lúc chạy.** Ban đầu
+bộ sinh dữ liệu tự ghép chuỗi theo một định dạng, còn WAF lúc chạy lại ghép theo
+định dạng khác (thiếu ô header). Mô hình học một đằng, bị hỏi một nẻo. Nay
+`generate_data.py` gọi thẳng `app.features.build_ml_text` nên không thể lệch.
+
+**3. Dữ liệu lệch sinh ra báo nhầm hàng loạt.** Vì chỉ mẫu tấn công mới có
+User-Agent, mô hình học thành "có User-Agent lạ = công cụ quét" và **chặn luôn
+trang chủ** (`Mozilla/5.0 (demo)` bị chấm 0.93). Sửa bằng cách bỏ header khỏi
+đầu vào của ML và giao hẳn việc nhận diện scanner cho lớp luật – danh sách công
+cụ quét là hữu hạn nên regex đúng gần như tuyệt đối. Sau khi sửa, F1 tăng từ
+0.932 lên 0.950 và báo nhầm về 0.
+
+## Lưu ý đạo đức & phạm vi
+
+Chỉ tấn công thử nghiệm trên EngPro của chính mình ở `localhost`, phục vụ học tập
+môn An toàn và Bảo mật thông tin. Không dùng để tấn công hệ thống của người khác.
+
+## Hướng phát triển thêm (nếu còn thời gian)
+
+- So sánh với **ModSecurity + OWASP CRS** làm mốc đối chứng (tỉ lệ phát hiện, báo
+  nhầm, độ trễ).
+- Huấn luyện trên bộ **CSIC 2010 HTTP dataset** thay vì dữ liệu tự sinh.
+- Thêm lớp chống **prompt injection** cho các endpoint AI (chấm Writing, hỏi đáp).
+- Thử mô hình sâu hơn (CNN/LSTM ký tự) và vẽ đường cong ROC.
