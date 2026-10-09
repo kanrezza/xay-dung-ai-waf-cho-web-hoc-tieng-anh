@@ -17,6 +17,10 @@ from . import config
 _hits = defaultdict(deque)
 # ip -> deque các mốc thời gian đăng nhập THẤT BẠI gần đây
 _login_fail = defaultdict(deque)
+# ip -> deque các lần nhập SAI mật khẩu dashboard WAF. Để riêng, không bị nút
+# "Gỡ chặn IP" xóa: kẻ dò mật khẩu quản trị không được tự gỡ khóa cho mình.
+_admin_fail = defaultdict(deque)
+ADMIN_FAIL_WINDOW_SEC = 300
 
 
 def _trim(dq: deque, window: float, now: float):
@@ -67,6 +71,21 @@ def reset(ip: str | None = None):
     else:
         _login_fail.clear()
         _hits.clear()
+
+
+def note_admin_failure(ip: str):
+    now = time.time()
+    dq = _admin_fail[ip]
+    dq.append(now)
+    _trim(dq, ADMIN_FAIL_WINDOW_SEC, now)
+
+
+def is_admin_locked(ip: str) -> bool:
+    """Sai mật khẩu dashboard quá ADMIN_MAX_FAIL lần trong 5 phút thì khóa."""
+    now = time.time()
+    dq = _admin_fail[ip]
+    _trim(dq, ADMIN_FAIL_WINDOW_SEC, now)
+    return len(dq) >= config.ADMIN_MAX_FAIL
 
 
 def is_login_flagged(ip: str) -> bool:

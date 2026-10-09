@@ -7335,8 +7335,13 @@ checkDatabase()
   .catch(e => console.error('⚠️  Không kết nối được PostgreSQL:', e.message))
   .then(releaseStuckWritingSubmissions)
   .finally(() => {
-    const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`✅  EngPro đang chạy tại http://localhost:${PORT}`);
+    // Đứng sau proxy/WAF (TRUST_PROXY) thì mặc định chỉ nhận kết nối từ chính máy này:
+    // mọi request buộc phải đi qua WAF, không ai vòng qua bằng cách gọi thẳng cổng này.
+    // Đây cũng là điều kiện để tin X-Forwarded-For an toàn. Đặt HOST để ghi đè.
+    const HOST = process.env.HOST || (process.env.TRUST_PROXY ? '127.0.0.1' : '0.0.0.0');
+    const server = app.listen(PORT, HOST, () => {
+      console.log(`✅  EngPro đang chạy tại http://localhost:${PORT}` +
+        (HOST === '127.0.0.1' ? ' (chỉ nhận kết nối từ máy này, truy cập qua WAF)' : ''));
     });
     // Upload video lớn có thể mất nhiều phút; mặc định Node ngắt request sau 5 phút
     server.requestTimeout = 60 * 60 * 1000;

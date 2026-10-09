@@ -112,6 +112,9 @@ function initCharts(){
   });
 }
 
+// Lệnh thay đổi trạng thái phải kèm header này (WAF chặn CSRF nếu thiếu)
+const ADMIN_POST = {method:'POST', headers:{'X-WAF-Admin':'1'}};
+
 const layerName = {rule:'Luật (regex)', ml:'Học máy', anomaly:'Hành vi', '-':'—'};
 
 async function loadStatus(){
@@ -164,12 +167,12 @@ async function refresh(){
 
 async function clearLogs(){
   if(!confirm('Xóa toàn bộ nhật ký?')) return;
-  await fetch('/waf/api/clear',{method:'POST'});
+  await fetch('/waf/api/clear',ADMIN_POST);
   refresh();
 }
 
 async function unban(){
-  await fetch('/waf/api/unban',{method:'POST'});
+  await fetch('/waf/api/unban',ADMIN_POST);
   loadFlagged();
 }
 

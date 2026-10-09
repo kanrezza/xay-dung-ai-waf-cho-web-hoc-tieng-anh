@@ -56,7 +56,7 @@ PY
   echo "✅ DVWA: http://127.0.0.1:$PORT  (admin / password)"
   echo "   Bật WAF bảo vệ DVWA:"
   echo "   WAF_TARGET_NAME=DVWA BACKEND_URL=http://127.0.0.1:$PORT \\"
-  echo "     .venv/bin/python -m uvicorn app.main:app --app-dir . --port 8001"
+  echo "     WAF_PORT=8001 .venv/bin/python -m app"
   ;;
 down)
   docker rm -f $APP $DB 2>/dev/null || true

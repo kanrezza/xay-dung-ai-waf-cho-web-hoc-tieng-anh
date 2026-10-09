@@ -7,6 +7,29 @@ rồi mới chuyển tiếp (forward) sang EngPro ở BACKEND_URL.
     Trình duyệt ──►  WAF (8000)  ──►  EngPro (8080)
 """
 import os
+import secrets
+
+# Package nằm ở ai-waf/app/, nên BASE_DIR = thư mục gốc ai-waf/
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _load_dotenv(path):
+    """
+    Đọc ai-waf/.env nếu có (không cần thư viện ngoài). Biến đã đặt sẵn trên dòng
+    lệnh được ưu tiên, nên vẫn chạy được 2 tiến trình WAF với BACKEND_URL khác nhau.
+    """
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 
 def _get(name, default):
@@ -40,8 +63,20 @@ RATE_WINDOW_SEC = int(_get("WAF_RATE_WINDOW_SEC", "10"))   # cửa sổ thời g
 RATE_MAX_REQ = int(_get("WAF_RATE_MAX_REQ", "80"))         # số request tối đa / cửa sổ / IP
 LOGIN_MAX_FAIL = int(_get("WAF_LOGIN_MAX_FAIL", "8"))      # số lần dò đăng nhập / phút / IP
 
-# Đường dẫn file. Package nằm ở ai-waf/app/, nên BASE_DIR = thư mục gốc ai-waf/
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# IP của proxy/cân bằng tải đứng TRƯỚC WAF (nếu có), cách nhau bằng dấu phẩy.
+# Chỉ request đến từ các IP này mới được đọc X-Forwarded-For. Mặc định để trống:
+# không tin header đó, vì kẻ tấn công tự đặt được nó để giả IP và né khóa dò mật khẩu.
+TRUSTED_PROXIES = {ip.strip() for ip in _get("WAF_TRUSTED_PROXIES", "").split(",") if ip.strip()}
+
+# Tài khoản quản trị dashboard và API /waf/api/*. Không đặt mật khẩu thì WAF
+# tự sinh mật khẩu ngẫu nhiên mỗi lần chạy và in ra cửa sổ dòng lệnh.
+ADMIN_USER = _get("WAF_ADMIN_USER", "admin")
+ADMIN_PASSWORD = _get("WAF_ADMIN_PASSWORD", "")
+ADMIN_PASSWORD_GENERATED = not ADMIN_PASSWORD
+if ADMIN_PASSWORD_GENERATED:
+    ADMIN_PASSWORD = secrets.token_urlsafe(12)
+ADMIN_MAX_FAIL = int(_get("WAF_ADMIN_MAX_FAIL", "5"))      # sai mật khẩu dashboard / 5 phút / IP
+
 MODEL_PATH = _get("WAF_MODEL_PATH", os.path.join(BASE_DIR, "ml", "model.joblib"))
 DB_PATH = _get("WAF_DB_PATH", os.path.join(BASE_DIR, "data", "waf_logs.db"))
 

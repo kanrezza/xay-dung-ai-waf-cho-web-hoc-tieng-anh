@@ -48,15 +48,17 @@ làm yếu báo cáo. Thay vào đó, đặt WAF trước **hai mục tiêu** v�
 
 ## Yêu cầu
 
-- Python 3.11+ (đã kiểm thử với 3.11)
-- EngPro đang chạy ở `http://127.0.0.1:8080`
+- Python 3.11+ (đã kiểm thử với 3.11 và 3.14)
+- EngPro đang chạy ở `http://127.0.0.1:8080`, với `TRUST_PROXY=1` trong `.env` của
+  EngPro (xem mục *Tự đánh giá an toàn* bên dưới)
 - Docker (cho DVWA) — tùy chọn, chỉ cần khi demo khai thác thật
 
 ## Cài đặt & chạy
 
 ```bash
 cd ai-waf
-./run.sh          # lần đầu tự tạo venv, cài thư viện, huấn luyện mô hình rồi chạy WAF
+cp .env.example .env    # rồi đặt WAF_ADMIN_PASSWORD (mật khẩu dashboard)
+./run.sh                # lần đầu tự tạo venv, cài thư viện, huấn luyện mô hình rồi chạy WAF
 ```
 
 Hoặc làm thủ công từng bước:
@@ -65,13 +67,20 @@ Hoặc làm thủ công từng bước:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m ml.train                              # huấn luyện, in precision/recall/F1
-python -m uvicorn app.main:app --port 8000      # chạy WAF
+python -m ml.train      # huấn luyện, in precision/recall/F1
+python -m app           # chạy WAF
 ```
+
+> **Luôn chạy bằng `python -m app`, đừng chạy `uvicorn app.main:app` trần.**
+> Mặc định uvicorn tin header `X-Forwarded-For` từ `127.0.0.1` và tự đổi IP người
+> gửi theo header đó, nên kẻ tấn công trên cùng máy giả được IP để né khóa dò mật
+> khẩu. `python -m app` tắt hành vi này (xem `app/__main__.py`).
 
 Sau đó:
 - Truy cập EngPro **qua WAF**: <http://127.0.0.1:8000>
-- Bảng giám sát: <http://127.0.0.1:8000/waf/dashboard>
+- Bảng giám sát: <http://127.0.0.1:8000/waf/dashboard> — trình duyệt sẽ hỏi tài
+  khoản: `admin` và mật khẩu `WAF_ADMIN_PASSWORD`. Chưa đặt mật khẩu thì WAF tự
+  sinh một mật khẩu tạm mỗi lần chạy và in ra cửa sổ dòng lệnh.
 
 ## Kết quả đo được
 
@@ -145,8 +154,8 @@ nhạy cảm, câu True/False, client dùng curl/Postman) để chứng minh WAF
 ./dvwa.sh up                            # dựng DVWA + MariaDB, thiết lập sẵn (cần Docker)
 
 # bật WAF thứ hai bảo vệ DVWA (cổng 8001)
-WAF_TARGET_NAME=DVWA BACKEND_URL=http://127.0.0.1:4280 \
-  .venv/bin/python -m uvicorn app.main:app --app-dir . --port 8001 &
+WAF_TARGET_NAME=DVWA BACKEND_URL=http://127.0.0.1:4280 WAF_PORT=8001 \
+  .venv/bin/python -m app &
 
 python -m tests.demo_dvwa --direct      # THẲNG DVWA – SQLi/XSS khai thác thành công
 python -m tests.demo_dvwa               # QUA WAF – bị chặn, không lấy được gì
@@ -188,7 +197,38 @@ Duyệt web bình thường vẫn hoạt động, chỉ riêng endpoint đăng n
 Ví dụ chỉ chạy ML để so sánh:
 
 ```bash
-WAF_ENABLE_RULES=0 python -m uvicorn app.main:app --port 8000
+WAF_ENABLE_RULES=0 python -m app
+```
+
+## Tự đánh giá an toàn của chính WAF
+
+Một WAF có lỗ hổng thì còn nguy hiểm hơn không có WAF, vì nó tạo cảm giác an
+toàn giả. Rà lại thiết kế ban đầu, tìm được ba lỗ hổng thật và đã vá:
+
+| # | Lỗ hổng | Cách tấn công | Cách vá |
+|---|---|---|---|
+| 1 | **Giả mạo IP** | Gửi `X-Forwarded-For` khác nhau mỗi lần thử mật khẩu, WAF tưởng là nhiều người nên không bao giờ khóa | Chỉ tin header này từ proxy khai báo trong `WAF_TRUSTED_PROXIES`; tắt `proxy_headers` của uvicorn; xóa các header chuyển tiếp do client tự gửi trước khi đẩy sang backend |
+| 2 | **Dashboard không mật khẩu** | Ai vào được cổng 8000 cũng xóa được log (xóa dấu vết) hoặc tự gỡ chặn cho mình | HTTP Basic Auth, so mật khẩu bằng `compare_digest`; sai 5 lần khóa IP 5 phút; thao tác ghi cần thêm header `X-WAF-Admin` để chặn CSRF |
+| 3 | **Đi vòng qua WAF** | EngPro nghe ở `0.0.0.0:8080`, gọi thẳng cổng 8080 là bỏ qua WAF hoàn toàn | Bật `TRUST_PROXY=1` thì EngPro chỉ nhận kết nối từ `127.0.0.1`; DVWA cũng chỉ mở ở `127.0.0.1` |
+
+Kiểm chứng trên hệ thống thật sau khi vá:
+
+```
+Giả IP, 12 lần mỗi lần một X-Forwarded-For khác → vẫn bị khóa từ lần 10 (403)
+Dashboard: không mật khẩu 401 · sai mật khẩu 401 · đúng mật khẩu 200
+Xóa log có mật khẩu nhưng thiếu header chống CSRF → 403
+Gọi thẳng EngPro qua IP mạng LAN, cổng 8080 → bị từ chối kết nối
+```
+
+Khi kiểm thử còn bắt thêm một lỗi chuyển tiếp: WAF gửi sang backend đường dẫn
+đã giải mã, nên `/api/courses%3Fx=1` bị biến thành query `x=1` — backend nhận
+khác với thứ WAF vừa kiểm tra. Nay WAF gửi nguyên đường dẫn gốc client gửi.
+
+Mỗi lỗ hổng có một bài kiểm thử riêng, vô tình mở lại là báo FAIL ngay. Không cần
+EngPro hay DVWA, chạy mất vài giây:
+
+```bash
+python -m tests.test_security      # 9/9 bài đạt
 ```
 
 ## Cấu trúc thư mục
@@ -196,7 +236,8 @@ WAF_ENABLE_RULES=0 python -m uvicorn app.main:app --port 8000
 ```
 ai-waf/
 ├── app/                # WAF (reverse proxy + 3 lớp)
-│   ├── main.py         #   proxy FastAPI + API dashboard
+│   ├── __main__.py     #   điểm khởi động: python -m app (tắt tin X-Forwarded-For)
+│   ├── main.py         #   proxy FastAPI + API dashboard (có mật khẩu)
 │   ├── waf.py          #   điều phối 3 lớp, ra quyết định
 │   ├── rules.py        #   Lớp 1: luật/chữ ký (regex)
 │   ├── model.py        #   Lớp 2: nạp & chấm điểm mô hình ML
@@ -213,7 +254,8 @@ ai-waf/
 ├── tests/
 │   ├── demo_attack.py       # demo trên EngPro: chặn tấn công, không báo nhầm
 │   ├── demo_dvwa.py         # demo trên DVWA: đo khai thác thật bị chặn
-│   └── compare_layers.py    # so sánh lớp luật với lớp học máy
+│   ├── compare_layers.py    # so sánh lớp luật với lớp học máy
+│   └── test_security.py     # kiểm thử an toàn của chính WAF (9 bài)
 ├── dvwa.sh                  # dựng/xóa bia tập DVWA bằng Docker
 └── run.sh
 ```

@@ -17,5 +17,5 @@ fi
 
 echo "▶ Khởi động WAF tại http://127.0.0.1:${WAF_PORT:-8000}"
 echo "  Dashboard: http://127.0.0.1:${WAF_PORT:-8000}/waf/dashboard"
-exec ./.venv/bin/python -m uvicorn app.main:app \
-  --host "${WAF_HOST:-0.0.0.0}" --port "${WAF_PORT:-8000}"
+# python -m app (không phải uvicorn trần) để uvicorn không tin X-Forwarded-For
+exec ./.venv/bin/python -m app
