@@ -12,6 +12,7 @@ Ngoài ra WAF tự phục vụ /waf/dashboard và /waf/api/* để giám sát (c
 Chạy bằng `python -m app` (xem app/__main__.py), KHÔNG chạy uvicorn trần: mặc định
 uvicorn tin X-Forwarded-For từ 127.0.0.1, khiến kẻ tấn công giả được IP.
 """
+import html
 import os
 import secrets
 import time
@@ -176,8 +177,48 @@ async def api_unban(ip: str | None = None):
     return {"ok": True, "unbanned": ip or "tất cả"}
 
 
-def _blocked_response(decision: waf.Decision, ip: str) -> Response:
+_LAYER_LABEL = {"rule": "Lớp 1 – Luật/chữ ký", "ml": "Lớp 2 – Học máy (AI)",
+                "anomaly": "Lớp 3 – Hành vi bất thường"}
+
+
+def _blocked_page(decision: waf.Decision, incident: str) -> HTMLResponse:
+    """
+    Trang báo chặn cho người mở bằng trình duyệt. CHỈ hiện giá trị do WAF tự sinh
+    (loại tấn công, lớp, mã luật, mã sự cố) và escape hết – tuyệt đối không in
+    lại payload của request, nếu không chính trang chặn sẽ thành chỗ bị XSS.
+    """
+    e = html.escape
+    rows = [("Loại tấn công", decision.attack or "—"),
+            ("Lớp phát hiện", _LAYER_LABEL.get(decision.layer, decision.layer))]
+    if decision.rule_id:
+        rows.append(("Mã luật", decision.rule_id))
+    if decision.layer == "ml":
+        rows.append(("Điểm rủi ro AI", f"{decision.score:.2f}"))
+    rows.append(("Mã sự cố", incident))
+    table = "".join(f"<tr><th>{e(k)}</th><td>{e(str(v))}</td></tr>" for k, v in rows)
+    page = f"""<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bị chặn bởi AI WAF</title><style>
+body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;
+color:#e7ecf7;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:16px}}
+.card{{max-width:520px;width:100%;background:#141a2e;border:1px solid #ff5c72;
+border-radius:16px;padding:28px}}
+h1{{margin:0 0 6px;font-size:24px;color:#ff5c72}} p{{color:#8b96b3;margin:0 0 18px}}
+table{{width:100%;border-collapse:collapse}} th,td{{text-align:left;padding:9px 0;
+border-top:1px solid #26304f;font-size:14px}} th{{color:#8b96b3;font-weight:500;width:42%}}
+</style></head><body><div class="card">
+<h1>🛡️ Yêu cầu đã bị chặn</h1>
+<p>AI WAF phát hiện yêu cầu này có dấu hiệu tấn công và đã chặn trước khi nó tới máy chủ.</p>
+<table>{table}</table></div></body></html>"""
+    return HTMLResponse(page, status_code=403)
+
+
+def _blocked_response(decision: waf.Decision, ip: str, request: Request | None = None) -> Response:
     incident = f"WAF-{int(time.time())}"
+    # Trình duyệt mở trang (Accept có text/html) -> trang HTML dễ đọc.
+    # Lệnh gọi API từ frontend/script -> JSON như cũ (frontend EngPro đọc 'message').
+    if request is not None and "text/html" in request.headers.get("accept", ""):
+        return _blocked_page(decision, incident)
     return JSONResponse(
         status_code=403,
         content={
@@ -227,7 +268,7 @@ async def proxy(request: Request, full_path: str):
     )
 
     if will_block:
-        return _blocked_response(decision, ip)
+        return _blocked_response(decision, ip, request)
 
     # ── Chuyển tiếp sang EngPro ──
     # Giữ nguyên Host của khách để EngPro dựng đường link (VD: link trả về của

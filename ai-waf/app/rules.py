@@ -69,7 +69,9 @@ _RAW_RULES = [
     ("SCAN-01", "Scanner", r"(?i)\b(?:sqlmap|nikto|nmap|acunetix|nessus|dirbuster|gobuster|wpscan|masscan|hydra)\b"),
 
     # ── NoSQL / lộ khóa nhạy cảm trong body ─────────────────────────
-    ("SENS-01", "Sensitive Path", r"(?i)/\.(?:env|git|htpasswd)\b|\bwp-config\.php\b"),
+    # File cấu hình/thông tin máy chủ mà công cụ quét hay dò. phpinfo.php làm lộ
+    # phiên bản PHP, đường dẫn, biến môi trường – để luật chặn tường minh.
+    ("SENS-01", "Sensitive Path", r"(?i)/\.(?:env|git|htpasswd)\b|\bwp-config\.php\b|/phpinfo\.php\b"),
 ]
 
 # Biên dịch sẵn để chạy nhanh

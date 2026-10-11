@@ -76,6 +76,14 @@ BENIGN_PATHS = [
     "/api/gv/courses/2/outline", "/api/admin/stats", "/api/admin/revenue",
     "/js/i18n.js", "/js/auth-nav.js", "/uploads/materials/lecture1.docx",
     "/api/user/results/mock/17", "/api/sections/9/audio", "/api/payments/config",
+    # Trang bình thường của một web PHP (như DVWA mà WAF cũng bảo vệ). Thiếu nhóm
+    # này, mô hình chỉ thấy ".php" trong dữ liệu tấn công (/wp-config.php) nên học
+    # nhầm "cứ .php là đáng ngờ" và chặn cả /setup.php, /login.php bình thường.
+    # Cố ý không thêm /phpinfo.php: trang đó làm lộ cấu hình máy chủ, chặn là đúng.
+    "/index.php", "/login.php", "/logout.php", "/about.php", "/setup.php",
+    "/security.php", "/instructions.php", "/profile.php", "/search.php",
+    "/contact.php", "/admin/index.php", "/vulnerabilities/sqli/",
+    "/vulnerabilities/xss_r/", "/vulnerabilities/brute/", "/dvwa/css/main.css",
 ]
 
 # Query bình thường
@@ -84,6 +92,8 @@ BENIGN_QUERIES = [
     "search=ielts", "search=business english", "category=TOEIC",
     "sort=newest", "level=intermediate", "band=6.5", "q=grammar",
     "ref=EP1732000000123", "vnp_ResponseCode=00&vnp_TxnRef=EP123",
+    "id=1&Submit=Submit", "id=3&Submit=Submit", "name=Danh", "name=Lan+Nguyen",
+    "page=include.php", "username=admin&Login=Login",
 ]
 
 # Câu tiếng Anh tự do như học viên nộp bài Writing / hỏi đáp – DỄ BỊ BÁO NHẦM.

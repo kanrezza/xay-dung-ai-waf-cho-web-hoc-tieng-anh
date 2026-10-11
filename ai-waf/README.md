@@ -114,7 +114,7 @@ Payload trong tập kiểm tra **không nằm** trong tập huấn luyện (grou
 
 | | Precision | Recall | F1 | Báo nhầm |
 |---|---|---|---|---|
-| Tập kiểm tra (payload lạ) | 1.000 | 0.905 | **0.950** | 0 |
+| Tập kiểm tra (payload lạ) | 1.000 | 0.915 | **0.956** | 0 |
 | Tập holdout viết tay | 1.000 | 0.947 | **0.973** | 0 |
 
 ### So với ModSecurity + OWASP CRS (`python -m tests.compare_modsec`)
@@ -205,6 +205,13 @@ nhiều tiến trình WAF, nhưng khi đó bộ đếm của lớp hành vi (đa
 phải chuyển sang nơi dùng chung như Redis – xem *Hướng phát triển*.
 
 ## Demo "trước và sau khi có WAF"
+
+Bật toàn bộ hệ thống (EngPro, 2 WAF, DVWA, ModSecurity) bằng một lệnh, cần mở
+Docker (OrbStack) trước:
+
+```bash
+./demo.sh start     # khoảng 10 giây; ./demo.sh status để kiểm tra, ./demo.sh stop để tắt
+```
 
 Mở dashboard rồi chạy kịch bản tấn công:
 
@@ -330,14 +337,15 @@ ai-waf/
 │   ├── bench_latency.py     # đo độ trễ và thông lượng WAF thêm vào
 │   ├── compare_modsec.py    # so sánh với ModSecurity + OWASP CRS
 │   └── test_security.py     # kiểm thử an toàn của chính WAF (9 bài)
+├── demo.sh                  # bật/tắt toàn bộ hệ thống demo bằng một lệnh
 ├── dvwa.sh                  # dựng/xóa bia tập DVWA bằng Docker
 ├── modsec.sh                # dựng/xóa ModSecurity CRS để so sánh
 └── run.sh
 ```
 
-## Ba bài học kỹ thuật khi xây dựng (nên đưa vào báo cáo)
+## Bốn bài học kỹ thuật khi xây dựng (nên đưa vào báo cáo)
 
-Ba lỗi dưới đây đều đã xảy ra thật trong quá trình làm và đã sửa. Kể lại chúng
+Bốn lỗi dưới đây đều đã xảy ra thật trong quá trình làm và đã sửa. Kể lại chúng
 làm báo cáo thuyết phục hơn nhiều so với chỉ khoe kết quả đẹp.
 
 **1. Độ chính xác 100% là dấu hiệu xấu.** Lần huấn luyện đầu đạt F1 = 1.000 vì
@@ -356,6 +364,14 @@ trang chủ** (`Mozilla/5.0 (demo)` bị chấm 0.93). Sửa bằng cách bỏ h
 đầu vào của ML và giao hẳn việc nhận diện scanner cho lớp luật – danh sách công
 cụ quét là hữu hạn nên regex đúng gần như tuyệt đối. Sau khi sửa, F1 tăng từ
 0.932 lên 0.950 và báo nhầm về 0.
+
+**4. Mô hình AI gắn với ứng dụng mà nó học.** Dữ liệu huấn luyện ban đầu chỉ có
+đường dẫn của EngPro (`/api/...`, `.html`); đuôi `.php` chỉ xuất hiện trong dữ
+liệu tấn công (`/wp-config.php`). Đem WAF bảo vệ DVWA (web PHP) thì mô hình chặn
+nhầm cả trang bình thường: `/setup.php` bị chấm 0.81, `/login.php` 0.79. Sửa bằng
+cách bổ sung lưu lượng bình thường của web PHP rồi huấn luyện lại: các trang đó
+còn 0.04–0.12, F1 tăng nhẹ lên 0.956. Bài học: muốn AI WAF bảo vệ ứng dụng mới
+thì phải dạy nó lưu lượng bình thường của chính ứng dụng đó.
 
 ## Lưu ý đạo đức & phạm vi
 

@@ -27,8 +27,17 @@ up)
     echo "▶ $name (Paranoia Level $pl) -> http://127.0.0.1:$port"
   done
   echo "▶ Chờ ModSecurity sẵn sàng..."
+  # Chờ tối đa 60 giây. ModSecurity chỉ trả lời được khi EngPro (8080) đã chạy,
+  # vì nó chuyển tiếp request sang EngPro – nên bật EngPro TRƯỚC khi chạy script này.
   for port in 8002 8003; do
-    until curl -s -o /dev/null "http://127.0.0.1:$port/api/public/home"; do sleep 1; done
+    ok=""
+    for _ in $(seq 1 60); do
+      # || true: container chưa sẵn sàng thì curl báo lỗi; không để set -e thoát script
+      code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "http://127.0.0.1:$port/api/public/home" || true)
+      [ "$code" = "200" ] && { ok=1; break; }
+      sleep 1
+    done
+    [ -n "$ok" ] || echo "   ! cổng $port chưa trả lời được – EngPro (8080) đã chạy chưa?"
   done
   echo "✅ Xong. So sánh:  python -m tests.compare_modsec"
   ;;

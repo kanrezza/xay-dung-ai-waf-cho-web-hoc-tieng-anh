@@ -146,6 +146,19 @@ def test_khoa_khi_do_mat_khau_dashboard(c):
     reset()
 
 
+# ── Trang báo chặn: trình duyệt nhận HTML, API nhận JSON, không phản chiếu payload ──
+def test_trang_chan_html_khong_phan_chieu_payload(c):
+    reset()
+    payload = "<script>alert('xss-trong-trang-chan')</script>"
+    r = c.get("/api/courses", params={"q": payload}, headers={"Accept": "text/html"})
+    assert r.status_code == 403
+    assert r.headers["content-type"].startswith("text/html")
+    assert "alert('xss-trong-trang-chan')" not in r.text, "Trang chặn in lại payload"
+    # Lệnh gọi API (frontend EngPro) vẫn nhận JSON để hiện được thông báo
+    r = c.get("/api/courses", params={"q": payload}, headers={"Accept": "application/json"})
+    assert r.status_code == 403 and r.json()["waf"]["blocked"] is True
+
+
 # ── Lỗi proxy: làm hỏng phản hồi của backend ───────────────────────
 def test_giu_nguyen_nhieu_set_cookie(c):
     reset()
